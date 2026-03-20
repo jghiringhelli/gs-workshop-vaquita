@@ -1,6 +1,8 @@
 node_modules/
 dist/
 *.db
-*.db-journal
-.env
+*.sqlite
 coverage/
+.env
+.env.local
+*.log

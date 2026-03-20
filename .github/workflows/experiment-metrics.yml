@@ -1,0 +1,62 @@
+name: Experiment Metrics
+on: push
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci --ignore-scripts
+
+      - name: TypeScript type-check
+        run: npx tsc --noEmit 2>&1 | tee type-check.log || true
+
+      - name: ESLint
+        run: npx eslint 'src/**/*.ts' --format json -o eslint-report.json || true
+
+      - name: Test suite
+        run: npx vitest run --reporter=json --outputFile=test-report.json 2>&1 || true
+
+      - name: Coverage
+        run: npx vitest run --coverage --coverage.reporter=json 2>&1 || true
+
+      - name: Structural metrics
+        run: |
+          echo "=== STRUCTURAL METRICS ==="
+          echo "Total .ts files: $(find src -name '*.ts' | wc -l)"
+          echo "Total test files: $(find src -name '*.test.ts' -o -name '*.spec.ts' | wc -l)"
+          echo "Total lines (src): $(find src -name '*.ts' ! -name '*.test.*' ! -name '*.spec.*' -exec cat {} + | wc -l)"
+          echo "Total lines (tests): $(find src \( -name '*.test.ts' -o -name '*.spec.ts' \) -exec cat {} + 2>/dev/null | wc -l)"
+          echo "Total commits: $(git rev-list --count HEAD)"
+          echo "Directories under src: $(find src -type d | wc -l)"
+          echo "Files with 'interface': $(grep -rl 'interface ' src --include='*.ts' | wc -l)"
+          echo "Files with 'class': $(grep -rl 'class ' src --include='*.ts' | wc -l)"
+          echo "Hardcoded ports/URLs: $(grep -rn 'localhost\|:3000\|:8080\|127\.0\.0' src --include='*.ts' | wc -l)"
+          echo "console.log count: $(grep -rn 'console\.log' src --include='*.ts' | wc -l)"
+          echo "TODO/FIXME count: $(grep -rn 'TODO\|FIXME\|HACK\|XXX' src --include='*.ts' | wc -l)"
+          echo "Error classes: $(grep -rn 'extends Error' src --include='*.ts' | wc -l)"
+
+      - name: Commit discipline
+        run: |
+          echo "=== COMMIT HISTORY ==="
+          git log --oneline --format="%H %s" | head -50
+          echo ""
+          echo "Conventional commits: $(git log --oneline | grep -cE '^[a-f0-9]+ (feat|fix|refactor|test|chore|docs)\(' || echo 0)"
+          echo "Total commits: $(git rev-list --count HEAD)"
+
+      - name: Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-${{ github.sha }}
+          path: |
+            type-check.log
+            eslint-report.json
+            test-report.json
+            coverage/

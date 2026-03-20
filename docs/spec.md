@@ -1,144 +1,82 @@
-# Vaquita — Group Savings Pool
+# Tanda API — Spec
 
-## Problem
+A **tanda** (also called *vaquita*) is an informal rotating savings group common in Mexico
+and Latin America. N participants each contribute a fixed amount every round. Each round,
+one participant receives the full pot. After N rounds, every participant has received exactly
+once.
 
-In Mexico and Latin America, informal savings circles (vaquitas, tandas, vacas) are common:
-a group of people pool money toward a shared goal — a trip, a gift, a repair, a purchase.
-One person holds the money. The money disappears.
+The problem: the money always disappears. The organiser holds it and there is no accountability.
 
-There is no accountability. No visibility. No enforcement. Trust alone does not scale.
-
-## What This App Does
-
-Vaquita is a transparent group savings pool API. A group creates a pool with a named
-purpose and a target amount. Members contribute. The holder cannot spend the money on
-anything other than the stated purpose — every withdrawal requires a reason, a receipt
-URL, and approval from a quorum of members.
-
-The pool is done when the target is reached. The final state (purpose met / dissolved /
-abandoned) is recorded and visible forever.
+This API solves that: transparent ledger, enforced business rules, rotation locked at start.
 
 ## Domain Model
 
-**Pool** — the savings group
-- `id`, `name`, `purpose` (what the money is for, immutable after creation)
-- `targetAmount` (in cents), `currency` (default: MXN)
-- `status`: `open` | `funded` | `closed` | `dissolved`
-- `createdBy` (the organiser), `createdAt`
-
-**Member** — a user's participation in a pool
-- `userId`, `poolId`, `role`: `organiser` | `member`
-- `joinedAt`
-
-**Contribution** — money added to the pool
-- `id`, `poolId`, `userId`, `amountCents`, `note` (optional), `createdAt`
-- Contributions are immutable once recorded
-
-**Withdrawal** — money taken out
-- `id`, `poolId`, `requestedBy`, `amountCents`
-- `reason` (required — what the money pays for)
-- `receiptUrl` (required — photo/link of proof, must be submitted before approval)
-- `status`: `pending` | `approved` | `rejected`
-- `approvedCount`, `rejectedCount`
-- `resolvedAt`
-
-**Vote** — a member's approval or rejection of a withdrawal
-- `id`, `withdrawalId`, `userId`, `vote`: `approve` | `reject`, `createdAt`
-- One vote per member per withdrawal
-
-**User**
-- `id`, `email`, `username`, `passwordHash`
-
-## Business Rules
-
-1. Only the organiser can invite members or request withdrawals.
-2. A withdrawal is approved when `⌈members / 2⌉` members vote `approve` (simple majority).
-3. A withdrawal is rejected when `⌊members / 2⌋ + 1` members vote `reject`.
-4. `receiptUrl` must be present before any vote can be cast.
-5. A member cannot vote on their own withdrawal request.
-6. Contributions can only be made to `open` pools.
-7. When `totalContributions ≥ targetAmount`, the pool status automatically becomes `funded`.
-8. A `funded` pool can have withdrawals approved. A `closed` pool cannot.
-9. The organiser can dissolve a pool at any time — status becomes `dissolved`, no further
-   contributions or withdrawals are possible.
-10. All monetary amounts are stored and returned in **cents** (integers). Display conversion
-    is the client's responsibility.
+- **User**: `id`, `email`, `name`
+- **Tanda**: `id`, `name`, `organizerId`, `contributionAmount`, `status` (`forming`|`active`|`completed`|`cancelled`), `currentRound`, `totalRounds`
+- **Participant**: `id`, `userId`, `tandaId`, `role` (`organizer`|`member`), `rotationPosition`
+- **Contribution**: `id`, `tandaId`, `participantId`, `round`, `amount`, `status` (`pending`|`paid`|`late`|`missed`)
 
 ## API Endpoints
 
-### Auth
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/users/register` | `{ email, username, password }` |
-| POST | `/users/login` | `{ email, password }` → `{ token }` |
+| `POST` | `/api/users` | Create a user |
+| `GET` | `/api/users` | List users |
+| `GET` | `/api/users/:id` | Get user by ID |
+| `POST` | `/api/tandas` | Create a tanda (creator = organizer, auto-joins) |
+| `GET` | `/api/tandas` | List tandas for a user (`?userId=`) |
+| `GET` | `/api/tandas/:id` | Get tanda details |
+| `POST` | `/api/tandas/:id/join` | Join a tanda |
+| `POST` | `/api/tandas/:id/start` | Start (organizer only — FORMING → ACTIVE) |
+| `POST` | `/api/tandas/:id/cancel` | Cancel (organizer only) |
+| `GET` | `/api/tandas/:id/participants` | List participants |
+| `POST` | `/api/tandas/:id/contributions` | Record a contribution for the current round |
+| `GET` | `/api/tandas/:id/rounds/:round` | Round summary |
+| `POST` | `/api/tandas/:id/advance` | Advance to next round (organizer only) |
+| `GET` | `/api/tandas/:id/participants/:pid/history` | Contribution history for a participant |
 
-### Pools
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/pools` | ✓ | Create a pool `{ name, purpose, targetAmount, currency? }` |
-| GET | `/pools/:id` | ✓ | Pool detail + members + contribution total |
-| GET | `/pools/:id/ledger` | ✓ (member) | Full contribution + withdrawal history |
-| POST | `/pools/:id/invite` | ✓ (organiser) | `{ userId }` — add a member |
-| POST | `/pools/:id/dissolve` | ✓ (organiser) | Dissolve the pool |
-| GET | `/pools/:id/balance` | ✓ (member) | Live balance: contributions minus approved withdrawals |
+## Business Rules
 
-### Contributions
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/pools/:id/contributions` | ✓ (member) | `{ amountCents, note? }` |
-
-### Withdrawals
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | `/pools/:id/withdrawals` | ✓ (organiser) | `{ amountCents, reason, receiptUrl }` |
-| GET | `/pools/:id/withdrawals` | ✓ (member) | List withdrawals with vote counts |
-| POST | `/withdrawals/:id/vote` | ✓ (member) | `{ vote: "approve" \| "reject" }` |
-
-### Testing
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/pools/:id/preview` | — | Pool summary without auth (for demo/testing) |
-
-## Non-Functional Requirements
-
-- **No money disappears**: every cent in must be accounted for. `totalContributions - totalApprovedWithdrawals` must always equal the available balance.
-- **Atomicity**: when a vote tips a withdrawal to approved, the status update and `resolvedAt` must be set in the same transaction.
-- **Audit trail**: the ledger endpoint returns contributions and withdrawals interleaved, ordered by `createdAt`. Nothing is deletable.
-- **Layer separation**: route handlers must not contain SQL or ORM calls directly. All data access goes through a service or repository layer.
-- **Tests**: every endpoint must have at least one happy-path and one sad-path test.
+1. A tanda needs **at least 3 participants** to start.
+2. Maximum **20 participants** per tanda (configurable).
+3. The organizer is automatically the first participant.
+4. Rotation order is **randomized** when the tanda transitions FORMING → ACTIVE.
+5. Contributions must be recorded within the round's contribution window.
+6. Late contributions incur a **5% penalty fee** (configurable).
+7. A participant who misses **2 consecutive contributions** is flagged as defaulter.
+8. Only the **organizer** can advance to the next round.
+9. The tanda **auto-completes** after the last round.
+10. Status transitions: `FORMING → ACTIVE → COMPLETED` or `FORMING/ACTIVE → CANCELLED`.
 
 ## Tech Stack
 
-- Node.js + TypeScript
+- TypeScript + Node.js
 - Express (or Hono)
-- Prisma + SQLite (for portability during the workshop)
-- Jest or Vitest for tests
-- JWT for auth (secret from env var — never hardcoded)
+- SQLite via `better-sqlite3` — no database setup needed
+- Zod for input validation
+- Vitest + supertest for testing
+- JWT for auth (secret from env var only — never hardcoded)
+
+## Non-Functional Requirements
+
+- **Layer separation**: route handlers must not contain SQL. Services call repositories; routes call services.
+- **Error hierarchy**: custom error classes, not bare `throw new Error()`.
+- **Config**: all magic numbers (max participants, penalty %) are named constants from environment config.
+- **Tests**: every endpoint needs at least a happy-path and a 4xx test.
 
 ## Acceptance Check
 
 ```bash
-# 1. Register and login
-TOKEN=$(curl -s -X POST http://localhost:3000/users/login \
+# Create a user
+curl -s -X POST http://localhost:3000/api/users \
   -H "Content-Type: application/json" \
-  -d '{"email":"alice@example.com","password":"password123"}' \
-  | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).token))")
+  -d '{"email":"alice@example.com","name":"Alice"}'
 
-# 2. Create a pool
-POOL=$(curl -s -X POST http://localhost:3000/pools \
-  -H "Authorization: Bearer $TOKEN" \
+# Create a tanda
+curl -s -X POST http://localhost:3000/api/tandas \
   -H "Content-Type: application/json" \
-  -d '{"name":"Cumpleaños de Juan","purpose":"Fiesta de cumpleaños para Juan","targetAmount":500000}')
-POOL_ID=$(echo $POOL | node -e "process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).id))")
+  -d '{"name":"Tanda Enero","organizerId":1,"contributionAmount":1000}'
 
-# 3. Contribute
-curl -s -X POST http://localhost:3000/pools/$POOL_ID/contributions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"amountCents":100000,"note":"Mi parte"}'
-
-# 4. Check balance
-curl -s http://localhost:3000/pools/$POOL_ID/preview
+# List tandas
+curl -s "http://localhost:3000/api/tandas?userId=1"
 ```
-
-All steps should complete without errors.

@@ -1,74 +1,79 @@
-# vaquita — Workshop Project 3 (Greenfield)
+# 🫰 Tanda API — Workshop
 
-A transparent group savings pool API. Build it from the spec.
+Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
 
----
-
-## Your starting point
-
-You have one thing: **[`docs/spec.md`](docs/spec.md)**
-
-It contains the problem, the domain model, all business rules, the full API surface,
-and an acceptance check. Everything you build must satisfy it.
+Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
 
 ---
 
-## Groups
-
-### Group A — Prompt-Only
-
-Use the prompt cards in `PROMPT_CARDS.md`, in order. Wait for each to finish before
-sending the next. Log what you changed about each prompt (and why) in `PROMPT_LOG.md`.
-Commit after each prompt: `git commit -m "prompt-N: brief description"`.
-
-### Group B — ForgeCraft GS
-
-Before writing any code, run:
-
-```
-Use forgecraft to run setup_project for /path/to/this/repo
-```
-
-Answer the calibration questions. Then follow the generated session prompt.
-You may only intervene if the AI is blocked. Record interventions in `INTERVENTIONS.md`.
-
----
-
-## Setup (when your code is ready)
+## Setup
 
 ```bash
 npm install
-npm run db:push
-npm run dev
+npm run dev     # starts on http://localhost:3000
+npm test        # run tests
 ```
 
 ---
 
-## Scoring (run at end of session)
+## Which group are you in?
 
+Your facilitator will tell you. Instructions differ — read only your group's section.
+
+---
+
+## Group A — Free Prompting
+
+You have the spec. You have an AI assistant. Build the best version you can.
+
+**No rules on how you prompt.** Use whatever approach feels natural to you.
+If you want guidance, `PROMPT_CARDS.md` has a suggested breakdown — use it or ignore it.
+
+One ask: **commit after each meaningful step** so we can see the progression:
 ```bash
-# 1. Tests
-npm test 2>/dev/null | tail -5
-
-# 2. Layer separation — direct ORM calls in routes (0 = clean)
-grep -rn "prisma\." src/routes/ 2>/dev/null | grep -v "//.*prisma" | wc -l
-
-# 3. Feature works
-curl -s http://localhost:3000/pools/1/preview
-
-# 4. Business rule: receipt required before vote
-# Try to vote without a receiptUrl — should return 4xx
+git commit -m "feat: add tanda creation endpoint"
 ```
 
-Record in the shared sheet: participant ID, group, test count, prisma-in-routes count,
-feature working (Y/N), business rules enforced (Y/N), one observation.
+At the end, record in the shared sheet: your participant ID, test count, and one observation.
+
+---
+
+## Group B — ForgeCraft GS
+
+Before writing any code, run this in your AI assistant:
+
+```
+I have a new project at /path/to/this/repo. Use the forgecraft MCP tool to
+run setup_project on it. Answer any questions it asks you.
+```
+
+Then follow wherever ForgeCraft leads. Let it drive. Only intervene if the AI is blocked.
+
+**Once the spec is implemented:** try adding one feature that isn't in the spec — just tell
+your AI to add it. Watch whether ForgeCraft updates the spec and cascade documents.
+Record what happened in `INTERVENTIONS.md`.
+
+At the end, record in the shared sheet: your participant ID, test count, and one observation.
+
+---
+
+## What the metrics workflow measures
+
+On every push, `.github/workflows/experiment-metrics.yml` records automatically:
+
+| Metric | What it captures |
+|--------|-----------------|
+| TypeScript errors | Type safety |
+| Test count | Test coverage investment |
+| Line coverage % | Coverage depth |
+
+These appear in the **Actions** tab of your fork after each push. No manual scoring needed.
 
 ---
 
 ## What good looks like
 
-- Every business rule in the spec is enforced
-- `GET /pools/:id/balance` is always consistent: contributions minus approved withdrawals
-- No SQL in route handlers
-- JWT secret comes from env var
-- Every endpoint has a test
+- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
+- No SQL in route handlers — services and repositories are separate layers
+- JWT secret comes from an env var, never hardcoded
+- Every endpoint has at least one test
