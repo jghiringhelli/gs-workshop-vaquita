@@ -7,15 +7,43 @@ npm run dev     # starts on http://localhost:3000
 npm test        # confirm baseline passes before you start
 ```
 
-## Your task
-Build a **Tanda/Vaquita REST API** from the spec.
+## Step 1 — Connect ForgeCraft to your AI assistant
 
-→ Read `docs/spec.md` first — full domain rules and API surface.
+Create `.vscode/mcp.json` in this folder:
+```json
+{
+  "servers": {
+    "forgecraft": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "forgecraft-mcp"]
+    }
+  }
+}
+```
+Open Copilot Chat → Agent mode → confirm `forgecraft` appears in the tools list.
 
-## How to work
-- Use your AI assistant however you want — no constraints
-- `PROMPT_CARDS.md` has a suggested prompt breakdown — use it or ignore it
-- **Commit after each meaningful step** so you can see progression
+## Step 2 — Run project setup
+Tell your AI assistant:
+```
+I have a new project at [paste your local path here].
+Use the forgecraft MCP tool to run setup_project on it.
+Answer any questions it asks you.
+```
+Follow wherever it leads. Let ForgeCraft drive.
+
+## Step 3 — Build the spec
+Once setup is done, tell the AI:
+```
+Read docs/spec.md carefully. Use ForgeCraft check_cascade to confirm
+we are ready to build, then implement the spec.
+```
+
+## Step 4 — Bonus (if time allows)
+Once the spec is implemented:
+```
+Add a pool leaderboard endpoint — members ranked by total contributions.
+```
 
 ## At the end (run these, note the results)
 ```bash
@@ -23,6 +51,6 @@ npm test
 ```
 
 Note down:
-- What % of the spec did you implement?
-- How many times did you have to correct the AI?
-- Roughly how much of your time was prompting vs. fixing?
+- Did the setup feel smooth or confusing?
+- How many times did you have to intervene manually?
+- Did the AI stay aligned with `docs/spec.md` throughout?
