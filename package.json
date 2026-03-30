@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint 'src/**/*.ts'",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "score": "tsx scripts/score.ts"
   },
   "dependencies": {
     "express": "^4.21.0",
