@@ -1,5 +1,8 @@
 name: Experiment Metrics
-on: push
+on:
+  push:
+    branches:
+      - 'participant/**'
 
 jobs:
   score:
