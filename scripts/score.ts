@@ -23,9 +23,10 @@ const SRC = join(ROOT, 'src');
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Run a shell command, return stdout. Never throws — returns empty string on error. */
-function run(cmd: string): string {
+function run(cmd: string, env?: Record<string, string>): string {
   try {
-    return execSync(cmd, { cwd: ROOT, stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+    const opts = { cwd: ROOT, stdio: ['pipe', 'pipe', 'pipe'] as const, env: { ...process.env, ...env } };
+    return execSync(cmd, opts).toString().trim();
   } catch (e: any) {
     return e.stdout?.toString().trim() ?? '';
   }
@@ -72,18 +73,23 @@ function checkSelfDescribing(): { score: number; max: number; details: string } 
 
 function checkBounded(): { score: number; max: number; details: string; violations: string[] } {
   // Vaquita uses better-sqlite3 — check for direct db calls in route/handler files.
-  // Participants should use a repository/service layer, not call db directly in routes.
-  const routeFiles = collectFiles(SRC, f => f.endsWith('.ts') && !f.endsWith('.test.ts') && !f.endsWith('.spec.ts'));
-  // Direct DB call patterns: db.prepare, db.exec, db.run, new Database
+  // Exclude db/ and repositories/ directories where direct DB access is expected.
+  const DB_DIRS = ['db', 'database', 'repositories', 'repository'];
+  const routeFiles = collectFiles(SRC, f => {
+    if (!f.endsWith('.ts') || f.endsWith('.test.ts') || f.endsWith('.spec.ts')) return false;
+    const rel = relative(SRC, f).replace(/\\/g, '/');
+    return !DB_DIRS.some(d => rel.startsWith(d + '/') || rel === d + '.ts');
+  });
+  // Direct DB call patterns: db.prepare, db.exec, db.run, db.get, db.all, new Database
   const [count, violations] = countMatches(routeFiles, /\bdb\.(prepare|exec|run|get|all|transaction)\b|new Database\(/g);
-  if (count === 0) return { score: 2, max: 2, details: 'No direct DB calls in source files', violations: [] };
-  if (count <= 3) return { score: 1, max: 2, details: `${count} direct DB call(s) found`, violations };
+  if (count === 0) return { score: 2, max: 2, details: 'No direct DB calls in route/service files', violations: [] };
+  if (count <= 3) return { score: 1, max: 2, details: `${count} direct DB call(s) outside repository layer`, violations };
   return { score: 0, max: 2, details: `${count} direct DB calls found — repository layer missing`, violations };
 }
 
 function checkVerifiable(): { score: number; max: number; details: string; testsPassed: number; testsFailed: number; coveragePct: number | null } {
-  // Run tests
-  const testOutput = run('npx vitest run --reporter=json --outputFile=.score-test-report.json');
+  // Run tests — NODE_ENV=test prevents the Express server from binding a port during import
+  const testOutput = run('npx vitest run --reporter=json --outputFile=.score-test-report.json', { NODE_ENV: 'test' });
   let testsPassed = 0;
   let testsFailed = 0;
   let coveragePct: number | null = null;
@@ -97,8 +103,8 @@ function checkVerifiable(): { score: number; max: number; details: string; tests
     } catch { /* ignore parse errors */ }
   }
 
-  // Run coverage
-  const coverageOutput = run('npx vitest run --coverage --coverage.reporter=json --coverage.reportsDirectory=.score-coverage');
+  // Run coverage — json-summary produces coverage-summary.json read below
+  const coverageOutput = run('npx vitest run --coverage --coverage.reporter=json-summary --coverage.reportsDirectory=.score-coverage', { NODE_ENV: 'test' });
   const coverageSummaryPath = join(ROOT, '.score-coverage', 'coverage-summary.json');
   if (existsSync(coverageSummaryPath)) {
     try {
