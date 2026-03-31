@@ -16,7 +16,7 @@ Create `.vscode/mcp.json` in this folder:
     "forgecraft": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "forgecraft-mcp"]
+      "args": ["-y", "forgecraft-mcp@1.1.0"]
     }
   }
 }
@@ -54,3 +54,4 @@ Note down:
 - Did the setup feel smooth or confusing?
 - How many times did you have to intervene manually?
 - Did the AI stay aligned with `docs/spec.md` throughout?
+
