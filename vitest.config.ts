@@ -4,6 +4,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    env: {
+      DATABASE_URL: ":memory:",
+      JWT_SECRET: "test-secret-vitest",
+      NODE_ENV: "test",
+    },
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {
       provider: "v8",
