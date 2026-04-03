@@ -4,7 +4,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    env: { NODE_ENV: "test" },
+    env: {
+      NODE_ENV: "test",
+      JWT_SECRET: "test-secret-for-vitest",
+    },
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {
       provider: "v8",
