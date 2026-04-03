@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "061d7ce",
-    "branch": "condition-a",
-    "timestamp": "2026-03-30T15:45:01.740Z",
+    "commit": "8a8807d",
+    "branch": "participant/P000",
+    "timestamp": "2026-04-03T02:14:44.008Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,18 +13,20 @@
       "details": "README present (2296 chars)"
     },
     "bounded": {
-      "score": 2,
-      "max": 2,
-      "details": "No direct DB calls in source files",
-      "violations": []
-    },
-    "verifiable": {
       "score": 0,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "41 direct DB calls found — repository layer missing",
+      "violations": [
+        "src/app.ts"
+      ]
+    },
+    "verifiable": {
+      "score": 1,
+      "max": 2,
+      "details": "Tests: 11 passed, 0 failed | Coverage: 48.5%",
+      "testsPassed": 11,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 48.54
     },
     "defended": {
       "score": 1,
@@ -34,8 +36,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 8/9 (89%) | ADR/decision doc: missing",
-      "conventionalPct": 0.8888888888888888,
+      "details": "Conventional commits: 15/16 (94%) | ADR/decision doc: missing",
+      "conventionalPct": 0.9375,
       "hasAdr": false
     },
     "composable": {
@@ -49,7 +51,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 4,
       "max": 8
     },
     "total_with_live_tests": {
@@ -59,15 +61,15 @@
     }
   },
   "external_metrics": {
-    "tscErrors": 0,
-    "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "tscErrors": 1,
+    "eslintErrors": 1,
+    "eslintWarnings": 2,
     "auditCritical": 0,
     "auditHigh": 0,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "duplicatePct": 8.07,
+    "branchCount": 41,
+    "testCoverage": 48.54,
+    "testCount": 11,
+    "depCount": 6
   }
 }
