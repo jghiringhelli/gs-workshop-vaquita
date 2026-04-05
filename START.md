@@ -21,18 +21,16 @@ npm run dev     # starts on http://localhost:3000 — leave this running in a se
 
 > **Note:** `npm run dev` starts a file-watching server and does not return to the prompt. Open a second terminal for everything else.
 
-## The Task
-You are building a Tanda/Vaquita API — a rotating savings group system where:
-- Users form groups and contribute a fixed amount each cycle
-- One member receives the collected pot each cycle (rotation order is set at group creation)
-- Members can record payments; the system tracks who has paid each cycle
+## The Brief
 
-The spec is in `docs/spec.md`. Start there before writing any code.
+Your stakeholder sent this message:
 
-## Your Goal
-Build the Vaquita REST API from the spec in `docs/spec.md`.
+> *"We need a rotating savings app — tandas. A fixed group of people each put in the same
+> amount every round, and one person takes the whole collected pot each round. Everyone
+> gets a turn before the cycle repeats. Members need to track who has paid each round."*
 
-## Success Criteria (8 pts automated + 6 pts hidden live tests = 14 pts total)
+More domain detail is in `docs/spec.md` if you need it. Build a production-quality REST API.
+## Success Criteria## Success Criteria (8 pts automated + 6 pts hidden live tests = 14 pts total)
 
 | Property | Pts | What earns it |
 |----------|-----|---------------|
@@ -40,7 +38,7 @@ Build the Vaquita REST API from the spec in `docs/spec.md`.
 | **Composable** | 3 | HTTP layer translates only — business logic never leaks into routes *(hidden live test)* |
 | **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
 | **Bounded** | 2 | Zero direct `db.prepare / db.run / db.get / db.all` calls in route files — persistence behind a repository layer |
-| **Auditable** | 2 | ≥50% conventional commits (1pt) + at least one ADR or decision doc (1pt) |
+| **Auditable** | 2 | ≥50% conventional commits (1pt) + one decision log entry: document a design choice you made and why (1pt) |
 | **Self-describing** | 1 | README describes what you built |
 | **Defended** | 1 | Zero TypeScript errors — type contracts intact |
 | **Total** | **14** | 8 pts automated on push · 6 pts revealed after submission |
