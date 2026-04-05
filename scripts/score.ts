@@ -275,3 +275,4 @@ function main(): void {
 }
 
 main();
+
