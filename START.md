@@ -14,6 +14,8 @@ npm install
 npm test        # confirm baseline passes before you start
 ```
 
+> **Before you write any code:** open `INTAKE.md`, fill in your developer profile answers, tick the consent box, and commit it. The scoring pipeline reads it automatically.
+
 Start the server in a dedicated terminal:
 ```bash
 npm run dev     # starts on http://localhost:3000
