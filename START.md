@@ -61,6 +61,31 @@ In VS Code with GitHub Copilot, create `.vscode/mcp.json` in this folder:
 
 Open Copilot Chat → Agent mode → confirm `forgecraft` appears in tools.
 
+## Fallback — if ForgeCraft isn't loading
+
+If `forgecraft` doesn't appear in your Copilot tools list, use the local fallback — identical behaviour, zero network dependency:
+
+```bash
+git clone https://github.com/jghiringhelli/forgecraft-mcp
+cd forgecraft-mcp && npm install && npm run build
+```
+
+Update `.vscode/mcp.json` to use the local build:
+
+```json
+{
+  "servers": {
+    "forgecraft": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:/absolute/path/to/forgecraft-mcp/dist/index.js"]
+    }
+  }
+}
+```
+
+Then `Ctrl+Shift+P` → *Developer: Reload Window*.
+
 ## Step 2 — Run setup
 
 Tell your AI assistant (in Agent mode), replacing the path with wherever you cloned the repo:
