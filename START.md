@@ -40,7 +40,7 @@ Build the Vaquita REST API from the spec, guided by the ForgeCraft workflow.
 | **Composable** | 3 | HTTP layer translates only — business logic never leaks into routes *(hidden live test)* |
 | **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
 | **Bounded** | 2 | Zero direct `db.prepare / db.run / db.get / db.all` calls in route files — persistence behind a repository layer |
-| **Auditable** | 2 | ≥50% conventional commits (1pt) + at least one ADR or decision doc (1pt) |
+| **Auditable** | 2 | ≥50% conventional commits (1pt) + at least one decision log entry (1pt) |
 | **Self-describing** | 1 | README describes what you built |
 | **Defended** | 1 | Zero TypeScript errors — type contracts intact |
 | **Total** | **14** | 8 pts automated on push · 6 pts revealed after submission |
@@ -82,7 +82,7 @@ Once the spec is implemented, say:
 ```
 Add a pool leaderboard endpoint — show members ranked by total contributions.
 ```
-Watch whether ForgeCraft updates the spec, emits an ADR, and drives TDD.
+Watch whether ForgeCraft updates the spec, records a design decision, and drives TDD.
 
 ## What to Observe (write notes in OBSERVATIONS.md as you go)
 
@@ -100,7 +100,7 @@ Watch whether ForgeCraft updates the spec, emits an ADR, and drives TDD.
 **ForgeCraft:**
 - [ ] Did ForgeCraft correctly infer the project tags (UNIVERSAL, API, FINTECH)?
 - [ ] Did `check_cascade` pass cleanly or were there stubs to fill?
-- [ ] Did the bonus feature trigger an ADR + spec update automatically?
+- [ ] Did the bonus feature trigger a decision log entry + spec update automatically?
 - [ ] Was the AI instruction file (CLAUDE.md / copilot-instructions) useful or noise?
 - [ ] What was confusing about the tools or workflow?
 
