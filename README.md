@@ -16,58 +16,46 @@ npm test        # run tests
 
 ---
 
-## Which group are you in?
+## Your instructions are in START.md
 
-Your facilitator will tell you. Instructions differ — read only your group's section.
-
----
-
-## Group A — Free Prompting
-
-You have the spec. You have an AI assistant. Build the best version you can.
-
-**No rules on how you prompt.** Use whatever approach feels natural to you.
-If you want guidance, `PROMPT_CARDS.md` has a suggested breakdown — use it or ignore it.
-
-One ask: **commit after each meaningful step** so we can see the progression:
-```bash
-git commit -m "feat: add tanda creation endpoint"
-```
-
-At the end, record in the shared sheet: your participant ID, test count, and one observation.
+Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
 
 ---
 
-## Group B — ForgeCraft GS
+## How scoring works
 
-Before writing any code, run this in your AI assistant:
+Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
 
-```
-I have a new project at /path/to/this/repo. Use the forgecraft MCP tool to
-run setup_project on it. Answer any questions it asks you.
-```
+1. Checks out your code
+2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
+3. Writes the result to `score.json` on your branch (committed by the bot)
+4. Uploads it as a workflow artifact
 
-Then follow wherever ForgeCraft leads. Let it drive. Only intervene if the AI is blocked.
+**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
 
-**Once the spec is implemented:** try adding one feature that isn't in the spec — just tell
-your AI to add it. Watch whether ForgeCraft updates the spec and cascade documents.
-Record what happened in `INTERVENTIONS.md`.
-
-At the end, record in the shared sheet: your participant ID, test count, and one observation.
+The score is re-computed on every push, so the latest push always reflects your current state.
 
 ---
 
-## What the metrics workflow measures
+## What gets scored (automated, 8 pts)
 
-On every push, `.github/workflows/experiment-metrics.yml` records automatically:
+| Property | Pts | What earns it |
+|----------|-----|---------------|
+| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
+| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
+| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
+| **Bounded** | 2 | Zero direct `db.*` calls in route files |
+| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
+| **Self-describing** | 1 | README describes what you built |
+| **Defended** | 1 | Zero TypeScript errors |
 
-| Metric | What it captures |
-|--------|-----------------|
-| TypeScript errors | Type safety |
-| Test count | Test coverage investment |
-| Line coverage % | Coverage depth |
+Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
 
-These appear in the **Actions** tab of your fork after each push. No manual scoring needed.
+---
+
+## Scoring is blind
+
+`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
 
 ---
 
