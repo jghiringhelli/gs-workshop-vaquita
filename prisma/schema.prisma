@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  name  String
+  participants Participant[]
+  organizedTandas Tanda[] @relation("TandaOrganizer")
+}
+
+model Tanda {
+  id                 Int           @id @default(autoincrement())
+  name               String
+  organizerId        Int
+  contributionAmount Int
+  status             String   @default("FORMING")
+  currentRound       Int           @default(1)
+  totalRounds        Int
+  organizer          User          @relation("TandaOrganizer", fields: [organizerId], references: [id])
+  participants       Participant[]
+  contributions      Contribution[]
+}
+
+
+
+model Participant {
+  id               Int             @id @default(autoincrement())
+  userId           Int
+  tandaId          Int
+  role             String @default("MEMBER")
+  rotationPosition Int
+  user             User            @relation(fields: [userId], references: [id])
+  tanda            Tanda           @relation(fields: [tandaId], references: [id])
+  contributions    Contribution[]
+}
+
+
+
+model Contribution {
+  id            Int                 @id @default(autoincrement())
+  tandaId       Int
+  participantId Int
+  round         Int
+  amount        Int
+  status        String  @default("PENDING")
+  tanda         Tanda               @relation(fields: [tandaId], references: [id])
+  participant   Participant         @relation(fields: [participantId], references: [id])
+}
+
+
