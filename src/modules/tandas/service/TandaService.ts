@@ -26,7 +26,18 @@ export class TandaService {
   ) {}
 
   /**
-   * Creates a tanda and auto-joins the organizer as first participant.
+   * Retrieves a tanda by ID.
+   * @param id - Tanda UUID.
+   * @returns The tanda.
+   */
+  getTandaById(id: string): Tanda {
+    const tanda = this.tandaRepo.findTandaById(id);
+    if (!tanda) throw new NotFoundError(`Tanda ${id} not found`);
+    return tanda;
+  }
+
+  /**
+   * Creates a tanda and auto-joinsthe organizer as first participant.
    * @param raw - Unvalidated request body.
    * @returns The created tanda.
    */
@@ -41,6 +52,7 @@ export class TandaService {
       tandaId: tanda.id,
       role: 'organizer',
       rotationPosition: null,
+      isDefaulter: false,
     });
     return tanda;
   }
@@ -69,6 +81,7 @@ export class TandaService {
       tandaId,
       role: 'member',
       rotationPosition: null,
+      isDefaulter: false,
     });
   }
 

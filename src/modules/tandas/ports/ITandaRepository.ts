@@ -22,4 +22,7 @@ export interface ITandaRepository {
 
   /** Updates rotation positions for all participants of a tanda. */
   setRotationPositions(tandaId: string, positions: Map<string, number>): void;
+
+  /** Marks a participant as a defaulter. */
+  markDefaulter(participantId: string): void;
 }

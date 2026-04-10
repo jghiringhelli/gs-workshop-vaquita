@@ -37,6 +37,7 @@ function migrate(db: Database.Database): void {
       tanda_id TEXT NOT NULL REFERENCES tandas(id),
       role TEXT NOT NULL DEFAULT 'member',
       rotation_position INTEGER,
+      is_defaulter INTEGER NOT NULL DEFAULT 0,
       UNIQUE(user_id, tanda_id)
     );
 

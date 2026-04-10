@@ -25,6 +25,7 @@ export interface Participant {
   tandaId: string;
   role: ParticipantRole;
   rotationPosition: number | null;
+  isDefaulter: boolean;
 }
 
 /** Contribution domain entity. */

@@ -25,7 +25,7 @@ export function createUserRouter(userService: UserService): Router {
     }
   });
 
-  router.get('/:id', (req: Request, res: Response, next: NextFunction) => {
+  router.get('/:id', (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     try {
       const user = userService.getUserById(req.params.id);
       res.json(user);

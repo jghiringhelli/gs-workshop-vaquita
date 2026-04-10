@@ -3,6 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { Tanda, Participant, CreateTandaInput } from '../domain/Tanda';
 import { ITandaRepository } from '../ports/ITandaRepository';
 
+type ParticipantRow = Omit<Participant, 'isDefaulter'> & { isDefaulter: number };
+
+const toParticipant = (r: ParticipantRow): Participant => ({ ...r, isDefaulter: r.isDefaulter === 1 });
+
 /** SQLite adapter for the tanda repository port. */
 export class SqliteTandaRepository implements ITandaRepository {
   constructor(private readonly db: Database.Database) {}
@@ -39,25 +43,32 @@ export class SqliteTandaRepository implements ITandaRepository {
   createParticipant(data: Omit<Participant, 'id'>): Participant {
     const id = uuidv4();
     this.db.prepare(`
-      INSERT INTO participants (id, user_id, tanda_id, role, rotation_position)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO participants (id, user_id, tanda_id, role, rotation_position, is_defaulter)
+      VALUES (?, ?, ?, ?, ?, 0)
     `).run(id, data.userId, data.tandaId, data.role, data.rotationPosition ?? null);
-    return { id, ...data };
+    return { id, ...data, isDefaulter: false };
   }
 
   findParticipantsByTandaId(tandaId: string): Participant[] {
-    return this.db.prepare(`
-      SELECT id, user_id as userId, tanda_id as tandaId, role, rotation_position as rotationPosition
+    return (this.db.prepare(`
+      SELECT id, user_id as userId, tanda_id as tandaId, role,
+             rotation_position as rotationPosition, is_defaulter as isDefaulter
       FROM participants WHERE tanda_id = ?
       ORDER BY rotation_position ASC NULLS LAST, rowid ASC
-    `).all(tandaId) as Participant[];
+    `).all(tandaId) as ParticipantRow[]).map(toParticipant);
   }
 
   findParticipant(userId: string, tandaId: string): Participant | undefined {
-    return this.db.prepare(`
-      SELECT id, user_id as userId, tanda_id as tandaId, role, rotation_position as rotationPosition
+    const row = this.db.prepare(`
+      SELECT id, user_id as userId, tanda_id as tandaId, role,
+             rotation_position as rotationPosition, is_defaulter as isDefaulter
       FROM participants WHERE user_id = ? AND tanda_id = ?
-    `).get(userId, tandaId) as Participant | undefined;
+    `).get(userId, tandaId) as ParticipantRow | undefined;
+    return row ? toParticipant(row) : undefined;
+  }
+
+  markDefaulter(participantId: string): void {
+    this.db.prepare('UPDATE participants SET is_defaulter = 1 WHERE id = ?').run(participantId);
   }
 
   setRotationPositions(tandaId: string, positions: Map<string, number>): void {
