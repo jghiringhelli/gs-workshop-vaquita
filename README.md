@@ -1,67 +1,117 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+REST API for managing **tandas / vaquitas** with Express, TypeScript, and SQLite.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+The implementation covers the full workshop flow:
+- users can be created and queried
+- tandas can be created, listed, started, cancelled, and joined
+- the organizer is auto-added as the first participant
+- rotation is locked on start
+- contributions are tracked per round with `paid`, `late`, `pending`, and `missed` states
+- the organizer can advance rounds and the tanda auto-completes after the final round
+- participants with two consecutive missed contributions are flagged as defaulters
 
----
+## Tech stack
 
-## Setup
+- **TypeScript**
+- **Express**
+- **better-sqlite3**
+- **Zod**
+- **Vitest + supertest**
+
+## Project structure
+
+The API is intentionally layered to keep route handlers thin:
+
+```text
+src/
+  app.ts
+  config/
+  db/
+  errors/
+  http/
+  users/
+  tandas/
+  testing/
+```
+
+- **Routes** validate/translate HTTP
+- **Services** enforce business rules
+- **Repositories** own all SQLite access
+
+## Environment
+
+Use these values as shell environment variables, or copy them from `.env.example` into your local setup:
+
+```bash
+NODE_ENV=development
+DATABASE_URL="file:./dev.db"
+JWT_SECRET=change-me-to-a-long-random-string
+PORT=3000
+MAX_PARTICIPANTS=20
+LATE_PENALTY_PERCENT=5
+```
+
+## Running the API
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run dev
 ```
 
----
+Server starts on `http://localhost:3000`.
 
-## Your instructions are in START.md
+## Validation
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+```bash
+npm test
+npm run typecheck
+npm run lint
+```
 
----
+## Implemented endpoints
 
-## How scoring works
+### Users
 
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/users` | Create a user |
+| `GET` | `/api/users` | List users |
+| `GET` | `/api/users/:id` | Get user by id |
 
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
+### Tandas
 
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/tandas` | Create a tanda and auto-join organizer |
+| `GET` | `/api/tandas` | List all tandas or filter by `?userId=` |
+| `GET` | `/api/tandas/:id` | Get tanda details |
+| `GET` | `/api/tandas/:id/participants` | List participants with defaulter flag |
+| `POST` | `/api/tandas/:id/join` | Join a tanda while it is forming |
+| `POST` | `/api/tandas/:id/start` | Start a tanda (organizer only) |
+| `POST` | `/api/tandas/:id/cancel` | Cancel a tanda (organizer only) |
+| `POST` | `/api/tandas/:id/contributions` | Record the current-round contribution |
+| `GET` | `/api/tandas/:id/rounds/:round` | Get round summary |
+| `POST` | `/api/tandas/:id/advance` | Advance to the next round (organizer only) |
+| `GET` | `/api/tandas/:id/participants/:pid/history` | Get contribution history for one participant |
 
-The score is re-computed on every push, so the latest push always reflects your current state.
+## Example flow
 
----
+```bash
+curl -X POST http://localhost:3000/api/users ^
+  -H "Content-Type: application/json" ^
+  -d "{\"email\":\"alice@example.com\",\"name\":\"Alice\"}"
 
-## What gets scored (automated, 8 pts)
+curl -X POST http://localhost:3000/api/tandas ^
+  -H "Content-Type: application/json" ^
+  -d "{\"name\":\"Tanda Enero\",\"organizerId\":1,\"contributionAmount\":1000}"
 
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
+curl -X POST http://localhost:3000/api/tandas/1/start ^
+  -H "Content-Type: application/json" ^
+  -d "{\"userId\":1}"
+```
 
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
+## Notes
 
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+- Organizer-only actions currently identify the actor through the request body (`userId` or `organizerId`) because the workshop contract does not include login/auth endpoints yet.
+- The app is bootstrapped through `createApp()` so it can be imported cleanly in tests without binding a port.
