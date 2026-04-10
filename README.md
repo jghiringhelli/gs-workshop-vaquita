@@ -1,22 +1,41 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+REST API para gestionar **tandas** (grupos de ahorro rotativo / vaquitas).
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+Una tanda es un grupo de N personas que cada ronda aportan una cantidad fija.
+Cada ronda, un participante recibe el pozo completo. Al finalizar N rondas,
+todos han recibido exactamente una vez.
 
----
+## Lo que se construyó
+
+- **15 endpoints REST** — usuarios, tandas, participantes, contribuciones, rondas e historial
+- **Arquitectura en 3 capas** — routes → services → repositories (sin SQL en handlers)
+- **Reglas de negocio** — mínimo 3 participantes, rotación aleatoria al iniciar, penalización 5% por pago tardío, auto-completar en última ronda
+- **Endpoint extra** — `GET /api/tandas/:id/stats` con dashboard de la tanda
+- **25 tests** con supertest, cobertura en todos los endpoints
 
 ## Setup
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run dev     # http://localhost:3000
+npm test        # correr tests
 ```
 
----
+## Endpoints principales
 
-## Your instructions are in START.md
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | /api/users | Crear usuario |
+| GET | /api/users | Listar usuarios |
+| GET | /api/users/:id | Obtener usuario |
+| POST | /api/tandas | Crear tanda |
+| GET | /api/tandas | Listar tandas |
+| POST | /api/tandas/:id/start | Iniciar tanda |
+| POST | /api/tandas/:id/join | Unirse a tanda |
+| POST | /api/tandas/:id/contributions | Registrar contribución |
+| POST | /api/tandas/:id/advance | Avanzar ronda |
+| GET | /api/tandas/:id/stats | Dashboard de la tanda |
 
 Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
 
