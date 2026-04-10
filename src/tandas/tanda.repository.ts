@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { ITandaRepository } from './tanda.repository.interface';
+import { ITandaRepository, StartTandaData } from './tanda.repository.interface';
 import { Tanda, TandaRow, CreateTandaDTO } from './tanda.types';
 
 /**
@@ -57,6 +57,51 @@ export class TandaRepository implements ITandaRepository {
       )
       .all(userId) as TandaRow[];
     return rows.map(rowToTanda);
+  }
+
+  /**
+   * Atomically transitions a tanda to ACTIVE, assigns rotation positions to all
+   * participants, and sets totalRounds — all within a single SQLite transaction.
+   *
+   * Using db.transaction() ensures that either every write succeeds or none do.
+   * Prepared statements are created before the transaction for efficiency
+   * (reused across the loop without re-parsing SQL on each iteration).
+   *
+   * @param tandaId - Tanda UUID
+   * @param data - Rotation assignments and total round count computed by the service
+   */
+  startTanda(tandaId: string, data: StartTandaData): Tanda {
+    const updateTanda = this.db.prepare(
+      `UPDATE tandas SET status = 'active', total_rounds = ? WHERE id = ?`,
+    );
+    const updateParticipant = this.db.prepare(
+      `UPDATE participants SET rotation_position = ? WHERE id = ?`,
+    );
+
+    this.db.transaction(() => {
+      updateTanda.run(data.totalRounds, tandaId);
+      for (const { participantId, rotationPosition } of data.assignments) {
+        updateParticipant.run(rotationPosition, participantId);
+      }
+    })();
+
+    const tanda = this.findById(tandaId);
+    if (!tanda) throw new Error(`Failed to retrieve tanda after start: ${tandaId}`);
+    return tanda;
+  }
+
+  /**
+   * Transitions a tanda to CANCELLED status.
+   * @param tandaId - Tanda UUID
+   */
+  cancelTanda(tandaId: string): Tanda {
+    this.db
+      .prepare(`UPDATE tandas SET status = 'cancelled' WHERE id = ?`)
+      .run(tandaId);
+
+    const tanda = this.findById(tandaId);
+    if (!tanda) throw new Error(`Failed to retrieve tanda after cancel: ${tandaId}`);
+    return tanda;
   }
 }
 
