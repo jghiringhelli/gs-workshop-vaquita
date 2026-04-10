@@ -1,6 +1,6 @@
 import type { AppConfig } from "../config/env";
 import type { Contribution, Participant, Tanda } from "../domain/models";
-import { getDatabase } from "../db/database";
+import { runInTransaction } from "../db/database";
 import {
   ConflictError,
   ForbiddenError,
@@ -72,9 +72,7 @@ export class TandaService {
       throw new NotFoundError("Organizer user not found");
     }
 
-    const db = getDatabase();
-
-    const createTransaction = db.transaction(() => {
+    return runInTransaction(() => {
       const tanda = this.tandaRepository.create(input);
 
       this.participantRepository.create({
@@ -88,8 +86,6 @@ export class TandaService {
 
       return this.tandaRepository.findById(tanda.id) as Tanda;
     });
-
-    return createTransaction();
   }
 
   listTandasForUser(userId: number): Tanda[] {
@@ -191,9 +187,7 @@ export class TandaService {
       throw new ValidationError("At least 3 participants are required to start");
     }
 
-    const db = getDatabase();
-
-    const startTransaction = db.transaction(() => {
+    return runInTransaction(() => {
       const shuffled = shuffleParticipants(participants);
 
       this.participantRepository.clearRotationByTanda(input.tandaId);
@@ -207,8 +201,6 @@ export class TandaService {
 
       return this.tandaRepository.findById(input.tandaId) as Tanda;
     });
-
-    return startTransaction();
   }
 
   cancelTanda(input: { tandaId: number; organizerId: number }): Tanda {
@@ -336,9 +328,8 @@ export class TandaService {
     }
 
     const participants = this.participantRepository.listByTanda(input.tandaId);
-    const db = getDatabase();
 
-    const advanceTransaction = db.transaction(() => {
+    return runInTransaction(() => {
       for (const participant of participants) {
         const contribution = this.contributionRepository.findByRoundAndParticipant(
           input.tandaId,
@@ -380,8 +371,6 @@ export class TandaService {
 
       return this.tandaRepository.findById(input.tandaId) as Tanda;
     });
-
-    return advanceTransaction();
   }
 
   getParticipantHistory(input: {

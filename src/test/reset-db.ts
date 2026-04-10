@@ -1,5 +1,4 @@
-import { getDatabase } from "../db/database";
-import { initializeSchema } from "../db/schema";
+import { initializeSchema, resetSchemaData } from "../db/schema";
 
 export function resetDatabaseForTests(): void {
   if (!process.env.JWT_SECRET) {
@@ -7,14 +6,5 @@ export function resetDatabaseForTests(): void {
   }
 
   initializeSchema();
-
-  const db = getDatabase();
-
-  db.exec(`
-    DELETE FROM contributions;
-    DELETE FROM participants;
-    DELETE FROM tandas;
-    DELETE FROM users;
-    DELETE FROM sqlite_sequence;
-  `);
+  resetSchemaData();
 }

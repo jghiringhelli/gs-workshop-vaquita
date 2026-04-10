@@ -52,3 +52,15 @@ export function initializeSchema(): void {
     );
   `);
 }
+
+export function resetSchemaData(): void {
+  const db = getDatabase();
+
+  db.exec(`
+    DELETE FROM contributions;
+    DELETE FROM participants;
+    DELETE FROM tandas;
+    DELETE FROM users;
+    DELETE FROM sqlite_sequence;
+  `);
+}

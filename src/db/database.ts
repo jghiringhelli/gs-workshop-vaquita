@@ -27,3 +27,9 @@ export function getDatabase(): Database.Database {
 
   return connection;
 }
+
+export function runInTransaction<T>(operation: () => T): T {
+  const db = getDatabase();
+  const tx = db.transaction(operation);
+  return tx();
+}
