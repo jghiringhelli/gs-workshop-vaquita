@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "0fa0f94",
+    "commit": "767d536",
     "branch": "participant/P013",
-    "timestamp": "2026-04-10T18:17:21.282Z",
+    "timestamp": "2026-04-10T18:48:35.911Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,18 +13,21 @@
       "details": "README updated by participant (3087 chars)"
     },
     "bounded": {
-      "score": 2,
-      "max": 2,
-      "details": "No direct DB calls in route/service files",
-      "violations": []
-    },
-    "verifiable": {
       "score": 0,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "25 direct DB calls found — repository layer missing",
+      "violations": [
+        "src/tandas/tandas.repository.ts",
+        "src/users/users.repository.ts"
+      ]
+    },
+    "verifiable": {
+      "score": 2,
+      "max": 2,
+      "details": "Tests: 34 passed, 0 failed | Coverage: 87.7%",
+      "testsPassed": 34,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 87.71
     },
     "defended": {
       "score": 1,
@@ -32,11 +35,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 30/31 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.967741935483871,
-      "hasDecisionLog": false
+      "details": "Conventional commits: 32/33 (97%) | Decision log: present",
+      "conventionalPct": 0.9696969696969697,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -49,7 +52,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
@@ -68,13 +71,13 @@
   "external_metrics": {
     "tscErrors": 0,
     "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintWarnings": 1,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
+    "duplicatePct": 9.31,
+    "branchCount": 71,
+    "testCoverage": 87.71,
+    "testCount": 34,
     "depCount": 4
   }
 }
