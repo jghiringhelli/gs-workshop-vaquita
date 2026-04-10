@@ -107,6 +107,11 @@ enum WithdrawalStatus {
   rejected
 }
 
+enum VoteChoice {
+  approve
+  reject
+}
+
 model Pool {
   id            Int                @id @default(autoincrement())
   name          String
@@ -133,6 +138,7 @@ model PoolMember {
   joinedAt      DateTime           @default(now())
   contributions PoolContribution[]
   withdrawals   Withdrawal[]
+  votes         WithdrawalVote[]
 
   @@unique([poolId, userId])
 }
@@ -154,10 +160,26 @@ model Withdrawal {
   poolId      Int
   requestedBy Int
   amountCents Int
-  note        String?
+  reason      String?
+  receiptUrl  String?
   status      WithdrawalStatus @default(pending)
+  resolvedAt  DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   pool        Pool             @relation(fields: [poolId], references: [id])
   requester   PoolMember       @relation(fields: [requestedBy], references: [id])
+  votes       WithdrawalVote[]
+}
+
+model WithdrawalVote {
+  id           Int        @id @default(autoincrement())
+  withdrawalId Int
+  memberId     Int
+  vote         VoteChoice
+  createdAt    DateTime   @default(now())
+  withdrawal   Withdrawal @relation(fields: [withdrawalId], references: [id])
+  member       PoolMember @relation(fields: [memberId], references: [id])
+
+  /// One vote per member per withdrawal
+  @@unique([withdrawalId, memberId])
 }

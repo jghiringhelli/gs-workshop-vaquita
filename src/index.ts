@@ -4,6 +4,7 @@ import { config } from './config';
 import { AppError } from './errors/AppError';
 import { userRouter } from './routes/userRouter';
 import { poolRouter } from './routes/poolRouter';
+import { withdrawalRouter } from './routes/withdrawalRouter';
 
 export const app = express();
 
@@ -15,6 +16,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/users', userRouter);
 app.use('/api/pools', poolRouter);
+app.use('/api/withdrawals', withdrawalRouter);
 
 app.use(
   (

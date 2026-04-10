@@ -329,22 +329,32 @@ describe('GET /api/pools/:id/balance', () => {
 
   it('deducts approved withdrawals from the balance', async () => {
     const alice = await createUser('alice@example.com');
+    const bob = await createUser('bob@example.com');
     const created = await createPool(alice.token, { targetAmount: 1000 });
     const poolId = created.body.id;
+
+    // Add bob so there are 2 members (ceil(2/2)=1 approve needed)
+    await request(app)
+      .post(`/api/pools/${poolId}/invite`)
+      .set('Authorization', `Bearer ${alice.token}`)
+      .send({ userId: bob.id });
 
     await request(app)
       .post(`/api/pools/${poolId}/contributions`)
       .set('Authorization', `Bearer ${alice.token}`)
       .send({ amountCents: 10000 });
 
+    // Alice (organiser) requests withdrawal with receiptUrl
     const wRes = await request(app)
       .post(`/api/pools/${poolId}/withdrawals`)
       .set('Authorization', `Bearer ${alice.token}`)
-      .send({ amountCents: 4000 });
+      .send({ amountCents: 4000, receiptUrl: 'https://example.com/receipt.pdf' });
 
+    // Bob votes approve → triggers automatic approval (1 vote meets ceil(2/2)=1)
     await request(app)
-      .patch(`/api/pools/${poolId}/withdrawals/${wRes.body.id}/approve`)
-      .set('Authorization', `Bearer ${alice.token}`);
+      .post(`/api/withdrawals/${wRes.body.id}/vote`)
+      .set('Authorization', `Bearer ${bob.token}`)
+      .send({ vote: 'approve' });
 
     const balance = await request(app)
       .get(`/api/pools/${poolId}/balance`)
@@ -372,7 +382,7 @@ describe('GET /api/pools/:id/balance', () => {
 // ─── POST /api/pools/:id/withdrawals ──────────────────────────────────────────
 
 describe('POST /api/pools/:id/withdrawals', () => {
-  it('member can request a withdrawal', async () => {
+  it('organiser can request a withdrawal with receiptUrl', async () => {
     const alice = await createUser('alice@example.com');
     const created = await createPool(alice.token, { targetAmount: 1000 });
     const poolId = created.body.id;
@@ -380,18 +390,25 @@ describe('POST /api/pools/:id/withdrawals', () => {
     const res = await request(app)
       .post(`/api/pools/${poolId}/withdrawals`)
       .set('Authorization', `Bearer ${alice.token}`)
-      .send({ amountCents: 500, note: 'Emergency' });
+      .send({ amountCents: 500, reason: 'Equipment', receiptUrl: 'https://example.com/receipt.pdf' });
 
     expect(res.status).toBe(201);
     expect(res.body.amountCents).toBe(500);
     expect(res.body.status).toBe('pending');
+    expect(res.body.reason).toBe('Equipment');
+    expect(res.body.receiptUrl).toBe('https://example.com/receipt.pdf');
   });
 
-  it('returns 403 when the user is not a member', async () => {
+  it('returns 403 when a non-organiser tries to request a withdrawal', async () => {
     const alice = await createUser('alice@example.com');
     const bob = await createUser('bob@example.com');
     const created = await createPool(alice.token);
     const poolId = created.body.id;
+
+    await request(app)
+      .post(`/api/pools/${poolId}/invite`)
+      .set('Authorization', `Bearer ${alice.token}`)
+      .send({ userId: bob.id });
 
     const res = await request(app)
       .post(`/api/pools/${poolId}/withdrawals`)
@@ -399,6 +416,20 @@ describe('POST /api/pools/:id/withdrawals', () => {
       .send({ amountCents: 500 });
 
     expect(res.status).toBe(403);
+  });
+
+  it('returns 400 for an invalid receiptUrl', async () => {
+    const alice = await createUser('alice@example.com');
+    const created = await createPool(alice.token);
+    const poolId = created.body.id;
+
+    const res = await request(app)
+      .post(`/api/pools/${poolId}/withdrawals`)
+      .set('Authorization', `Bearer ${alice.token}`)
+      .send({ amountCents: 500, receiptUrl: 'not-a-url' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 401 without a token', async () => {
@@ -409,52 +440,99 @@ describe('POST /api/pools/:id/withdrawals', () => {
   });
 });
 
-// ─── PATCH /api/pools/:id/withdrawals/:wid/approve ────────────────────────────
+// ─── GET /api/pools/:id/withdrawals ───────────────────────────────────────────
 
-describe('PATCH /api/pools/:id/withdrawals/:wid/approve', () => {
-  it('organiser can approve a pending withdrawal', async () => {
+describe('GET /api/pools/:id/withdrawals', () => {
+  it('returns list of withdrawals with vote counts', async () => {
     const alice = await createUser('alice@example.com');
     const created = await createPool(alice.token, { targetAmount: 1000 });
     const poolId = created.body.id;
 
-    const wRes = await request(app)
+    await request(app)
       .post(`/api/pools/${poolId}/withdrawals`)
       .set('Authorization', `Bearer ${alice.token}`)
-      .send({ amountCents: 200 });
+      .send({ amountCents: 200, reason: 'Office supplies', receiptUrl: 'https://example.com/r.pdf' });
 
     const res = await request(app)
-      .patch(`/api/pools/${poolId}/withdrawals/${wRes.body.id}/approve`)
+      .get(`/api/pools/${poolId}/withdrawals`)
       .set('Authorization', `Bearer ${alice.token}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('approved');
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].amountCents).toBe(200);
+    expect(res.body[0].approveVotes).toBe(0);
+    expect(res.body[0].rejectVotes).toBe(0);
   });
 
-  it('returns 403 when a non-organiser tries to approve', async () => {
+  it('returns 403 when the user is not a member', async () => {
     const alice = await createUser('alice@example.com');
     const bob = await createUser('bob@example.com');
-    const created = await createPool(alice.token, { targetAmount: 1000 });
-    const poolId = created.body.id;
-
-    // Invite bob so he is a member
-    await request(app)
-      .post(`/api/pools/${poolId}/invite`)
-      .set('Authorization', `Bearer ${alice.token}`)
-      .send({ userId: bob.id });
-
-    const wRes = await request(app)
-      .post(`/api/pools/${poolId}/withdrawals`)
-      .set('Authorization', `Bearer ${bob.token}`)
-      .send({ amountCents: 200 });
+    const created = await createPool(alice.token);
 
     const res = await request(app)
-      .patch(`/api/pools/${poolId}/withdrawals/${wRes.body.id}/approve`)
+      .get(`/api/pools/${created.body.id}/withdrawals`)
       .set('Authorization', `Bearer ${bob.token}`);
 
     expect(res.status).toBe(403);
   });
 
-  it('returns 422 when trying to approve an already-approved withdrawal', async () => {
+  it('returns 401 without a token', async () => {
+    const res = await request(app).get('/api/pools/1/withdrawals');
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─── GET /api/pools/:id/ledger ────────────────────────────────────────────────
+
+describe('GET /api/pools/:id/ledger', () => {
+  it('returns contributions and withdrawals interleaved by createdAt', async () => {
+    const alice = await createUser('alice@example.com');
+    const created = await createPool(alice.token, { targetAmount: 1000 });
+    const poolId = created.body.id;
+
+    await request(app)
+      .post(`/api/pools/${poolId}/contributions`)
+      .set('Authorization', `Bearer ${alice.token}`)
+      .send({ amountCents: 3000 });
+
+    await request(app)
+      .post(`/api/pools/${poolId}/withdrawals`)
+      .set('Authorization', `Bearer ${alice.token}`)
+      .send({ amountCents: 500, receiptUrl: 'https://example.com/r.pdf' });
+
+    const res = await request(app)
+      .get(`/api/pools/${poolId}/ledger`)
+      .set('Authorization', `Bearer ${alice.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.entries).toHaveLength(2);
+    expect(res.body.entries[0].type).toBe('contribution');
+    expect(res.body.entries[1].type).toBe('withdrawal');
+    expect(res.body.currency).toBe('MXN');
+  });
+
+  it('returns 403 when the user is not a member', async () => {
+    const alice = await createUser('alice@example.com');
+    const bob = await createUser('bob@example.com');
+    const created = await createPool(alice.token);
+
+    const res = await request(app)
+      .get(`/api/pools/${created.body.id}/ledger`)
+      .set('Authorization', `Bearer ${bob.token}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 401 without a token', async () => {
+    const res = await request(app).get('/api/pools/1/ledger');
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─── POST /api/pools/:id/dissolve ─────────────────────────────────────────────
+
+describe('POST /api/pools/:id/dissolve', () => {
+  it('organiser can dissolve the pool and pending withdrawals are rejected', async () => {
     const alice = await createUser('alice@example.com');
     const created = await createPool(alice.token, { targetAmount: 1000 });
     const poolId = created.body.id;
@@ -463,21 +541,58 @@ describe('PATCH /api/pools/:id/withdrawals/:wid/approve', () => {
       .post(`/api/pools/${poolId}/withdrawals`)
       .set('Authorization', `Bearer ${alice.token}`)
       .send({ amountCents: 200 });
-    const wid = wRes.body.id;
+    expect(wRes.body.status).toBe('pending');
+
+    const res = await request(app)
+      .post(`/api/pools/${poolId}/dissolve`)
+      .set('Authorization', `Bearer ${alice.token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('closed');
+
+    // Pending withdrawal should now be rejected
+    const wList = await request(app)
+      .get(`/api/pools/${poolId}/withdrawals`)
+      .set('Authorization', `Bearer ${alice.token}`);
+    expect(wList.body[0].status).toBe('rejected');
+  });
+
+  it('returns 403 when a non-organiser tries to dissolve', async () => {
+    const alice = await createUser('alice@example.com');
+    const bob = await createUser('bob@example.com');
+    const created = await createPool(alice.token);
+    const poolId = created.body.id;
 
     await request(app)
-      .patch(`/api/pools/${poolId}/withdrawals/${wid}/approve`)
+      .post(`/api/pools/${poolId}/invite`)
+      .set('Authorization', `Bearer ${alice.token}`)
+      .send({ userId: bob.id });
+
+    const res = await request(app)
+      .post(`/api/pools/${poolId}/dissolve`)
+      .set('Authorization', `Bearer ${bob.token}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 422 when pool is already closed', async () => {
+    const alice = await createUser('alice@example.com');
+    const created = await createPool(alice.token);
+    const poolId = created.body.id;
+
+    await request(app)
+      .post(`/api/pools/${poolId}/dissolve`)
       .set('Authorization', `Bearer ${alice.token}`);
 
     const res = await request(app)
-      .patch(`/api/pools/${poolId}/withdrawals/${wid}/approve`)
+      .post(`/api/pools/${poolId}/dissolve`)
       .set('Authorization', `Bearer ${alice.token}`);
 
     expect(res.status).toBe(422);
   });
 
   it('returns 401 without a token', async () => {
-    const res = await request(app).patch('/api/pools/1/withdrawals/1/approve');
+    const res = await request(app).post('/api/pools/1/dissolve');
     expect(res.status).toBe(401);
   });
 });

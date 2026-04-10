@@ -2,7 +2,8 @@ import { prisma } from '../db/client';
 
 /** Delete all rows in dependency-safe reverse order. Call in beforeEach. */
 export async function resetDb(): Promise<void> {
-  // Pool domain
+  // Pool domain (votes first — depend on withdrawal + member)
+  await prisma.withdrawalVote.deleteMany();
   await prisma.withdrawal.deleteMany();
   await prisma.poolContribution.deleteMany();
   await prisma.poolMember.deleteMany();
