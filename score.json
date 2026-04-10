@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "ad3726f",
+    "commit": "38e352d",
     "branch": "participant/P049",
-    "timestamp": "2026-04-10T18:05:59.705Z",
+    "timestamp": "2026-04-10T20:17:36.799Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -19,12 +19,12 @@
       "violations": []
     },
     "verifiable": {
-      "score": 0,
+      "score": 1,
       "max": 2,
-      "details": "Tests: 14 passed, 6 failed | Coverage: not measured",
-      "testsPassed": 14,
-      "testsFailed": 6,
-      "coveragePct": null
+      "details": "Tests: 20 passed, 0 failed | Coverage: 58.7%",
+      "testsPassed": 20,
+      "testsFailed": 0,
+      "coveragePct": 58.66
     },
     "defended": {
       "score": 1,
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 28/39 (72%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.717948717948718,
+      "details": "Conventional commits: 28/49 (57%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.5714285714285714,
       "hasDecisionLog": false
     },
     "composable": {
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 4,
+      "score": 5,
       "max": 8
     },
     "total_with_live_tests": {
@@ -59,11 +59,11 @@
     }
   },
   "intake": {
-    "status": "consent_pending",
+    "status": "complete",
     "consented": true,
-    "q1": null,
-    "q2": null,
-    "q3": null
+    "q1": "6–18 months",
+    "q2": "weekly",
+    "q3": "still figuring it out"
   },
   "external_metrics": {
     "tscErrors": 0,
@@ -71,9 +71,9 @@
     "eslintWarnings": 6,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": 5.46,
+    "duplicatePct": 5.37,
     "branchCount": 98,
-    "testCoverage": null,
+    "testCoverage": 58.66,
     "testCount": 20,
     "depCount": 5
   }
