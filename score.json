@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "01e5af5",
+    "commit": "8feed35",
     "branch": "participant/P024",
-    "timestamp": "2026-04-10T18:20:26.040Z",
+    "timestamp": "2026-04-10T18:26:18.565Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -17,11 +17,11 @@
       "max": 2,
       "details": "7 direct DB calls found — repository layer missing",
       "violations": [
-        "src\\modules\\tandas\\contribution.repository.ts",
-        "src\\modules\\tandas\\participant.repository.ts",
-        "src\\modules\\tandas\\tanda.repository.ts",
-        "src\\modules\\users\\user.repository.ts",
-        "src\\shared\\database\\index.ts"
+        "src/modules/tandas/contribution.repository.ts",
+        "src/modules/tandas/participant.repository.ts",
+        "src/modules/tandas/tanda.repository.ts",
+        "src/modules/users/user.repository.ts",
+        "src/shared/database/index.ts"
       ]
     },
     "verifiable": {
@@ -40,8 +40,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 37/38 (97%) | Decision log: present",
-      "conventionalPct": 0.9736842105263158,
+      "details": "Conventional commits: 38/39 (97%) | Decision log: present",
+      "conventionalPct": 0.9743589743589743,
       "hasDecisionLog": true
     },
     "composable": {
@@ -77,7 +77,7 @@
     "eslintWarnings": 21,
     "auditCritical": 0,
     "auditHigh": 0,
-    "duplicatePct": null,
+    "duplicatePct": 2.63,
     "branchCount": 117,
     "testCoverage": 81.25,
     "testCount": 48,
