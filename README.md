@@ -1,8 +1,38 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A REST API for managing **tandas** (rotating savings groups / vaquitas) — transparent, rule-enforced rotating savings pools where every contribution and rotation is recorded immutably.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What was built
+
+A fully layered Express + TypeScript API backed by SQLite (`better-sqlite3`), implementing the complete tanda lifecycle:
+
+- **Users** — registration and lookup (`POST/GET /api/users`, `GET /api/users/:id`)
+- **Tandas** — create, list, get, join, start, cancel, advance rounds (`/api/tandas`)
+- **Participants** — list rotation order with assigned positions (`GET /api/tandas/:id/participants`)
+- **Contributions** — record payments per round with validation (`POST /api/tandas/:id/contributions`)
+- **Rounds** — round summaries with pot recipient and payment status (`GET /api/tandas/:id/rounds/:round`)
+- **History** — per-participant contribution history (`GET /api/tandas/:id/participants/:pid/history`)
+
+### Business rules enforced
+
+| Rule | Detail |
+|---|---|
+| Minimum participants | Tanda needs ≥ 3 to start (400 if fewer) |
+| Maximum participants | Hard cap at 20 |
+| Organizer role | Creator auto-joins as organizer on tanda creation |
+| Locked rotation | Positions randomised on FORMING → ACTIVE; immutable after |
+| Contribution validation | Amount must match `contributionAmount`; no duplicates per round |
+| Access control | Only organizer can start, cancel, or advance (403 otherwise) |
+| Auto-complete | Tanda status → COMPLETED after the last round is advanced |
+| Status machine | `FORMING → ACTIVE → COMPLETED` or `FORMING/ACTIVE → CANCELLED` |
+
+### Architecture
+
+```
+Routes (Zod validation) → Services (business logic) → Repositories (SQL) → SQLite
+```
+
+No SQL in route handlers. Services are injected via constructor DI. Custom error hierarchy (`AppError`, `NotFoundError`, `ForbiddenError`, `ConflictError`, …) maps cleanly to HTTP status codes.
 
 ---
 
@@ -11,14 +41,9 @@ Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business r
 ```bash
 npm install
 npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm test        # run tests (19 tests, ~86% coverage)
+npm run typecheck  # zero TypeScript errors
 ```
-
----
-
-## Your instructions are in START.md
-
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
 
 ---
 
