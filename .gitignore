@@ -1,7 +1,11 @@
 node_modules/
 dist/
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
 coverage/
 .env
 .env.local
