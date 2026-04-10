@@ -1,16 +1,16 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "874f45b",
+    "commit": "c5c2d6f",
     "branch": "participant/P999-vaquita-a",
-    "timestamp": "2026-04-10T07:02:36.032Z",
+    "timestamp": "2026-04-10T08:14:18.545Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
       "score": 1,
       "max": 1,
-      "details": "README present (2351 chars)"
+      "details": "README updated by participant (4112 chars)"
     },
     "bounded": {
       "score": 2,
@@ -19,12 +19,12 @@
       "violations": []
     },
     "verifiable": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "Tests: 36 passed, 0 failed | Coverage: 97.6%",
+      "testsPassed": 36,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 97.6
     },
     "defended": {
       "score": 1,
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 24/26 (92%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9230769230769231,
+      "details": "Conventional commits: 27/29 (93%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.9310344827586207,
       "hasDecisionLog": false
     },
     "composable": {
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 7,
       "max": 8
     },
     "total_with_live_tests": {
@@ -67,14 +67,14 @@
   },
   "external_metrics": {
     "tscErrors": 0,
-    "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintErrors": 2,
+    "eslintWarnings": 22,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
+    "duplicatePct": 1.01,
+    "branchCount": 52,
+    "testCoverage": 97.6,
+    "testCount": 36,
     "depCount": 4
   }
 }
