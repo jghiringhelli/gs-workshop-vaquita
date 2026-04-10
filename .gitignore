@@ -8,3 +8,6 @@ coverage/
 .env
 .env.local
 *.log
+.score-coverage/
+.score-jscpd/
+.score-test-report.json
