@@ -4,6 +4,19 @@ Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
 
 Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
 
+## Current implementation
+
+This branch implements a TypeScript + Express + SQLite API with:
+
+- User creation and lookup
+- Tanda creation, organizer auto-join, and per-user listing
+- Participant joins with max-cap enforcement
+- Start, cancel, and round advance flows with organizer-only checks
+- Contribution tracking for each round, including late-payment penalty handling
+- Round summaries and participant contribution history
+- Layered architecture: routes -> services -> repositories
+- HTTP tests with `vitest` + `supertest`
+
 ---
 
 ## Setup
