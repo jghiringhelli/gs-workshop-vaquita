@@ -5,16 +5,16 @@ One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The separation of concerns between routes, services, and repositories made the codebase easy to navigate and extend; business rules were clearly enforced in the service layer.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Some error messages and edge cases (like participant uniqueness and round advancement) required careful tracing through multiple layers; initial test data setup was a bit repetitive.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Mixed: some commits were typed manually, others were generated or staged with the help of the AI assistant.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The business logic for enforcing minimum participants and organizer-only actions was robust; also, the test coverage was higher than expected and the error handling was consistent across the API.
