@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  name           String
+  passwordHash   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  tandas         Tanda[]       @relation("OrganizerTandas")
+  participants   Participant[]
+}
+
+model Tanda {
+  id                 Int           @id @default(autoincrement())
+  name               String
+  organizerId        Int
+  contributionAmount Int
+  status             String        @default("forming") // forming, active, completed, cancelled
+  currentRound       Int           @default(0)
+  totalRounds        Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  organizer          User          @relation("OrganizerTandas", fields: [organizerId], references: [id])
+  participants       Participant[]
+  contributions      Contribution[]
+
+  @@index([organizerId])
+  @@index([status])
+}
+
+model Participant {
+  id               Int            @id @default(autoincrement())
+  userId           Int
+  tandaId          Int
+  role             String         // organizer, member
+  rotationPosition Int?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  user             User           @relation(fields: [userId], references: [id])
+  tanda            Tanda          @relation(fields: [tandaId], references: [id])
+  contributions    Contribution[]
+
+  @@unique([userId, tandaId])
+  @@index([tandaId])
+  @@index([userId])
+}
+
+model Contribution {
+  id            Int         @id @default(autoincrement())
+  tandaId       Int
+  participantId Int
+  round         Int
+  amount        Int
+  status        String      @default("pending") // pending, paid, late, missed
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  tanda         Tanda       @relation(fields: [tandaId], references: [id])
+  participant   Participant @relation(fields: [participantId], references: [id])
+
+  @@index([tandaId, round])
+  @@index([participantId])
+}
