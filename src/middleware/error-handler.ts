@@ -60,6 +60,24 @@ export function errorHandler(
     errorCode = 'ALREADY_PARTICIPANT';
     message = err.message;
   }
+  // Handle Contribution domain errors
+  else if (err.name === 'ContributionNotFoundError') {
+    statusCode = 404;
+    errorCode = 'CONTRIBUTION_NOT_FOUND';
+    message = err.message;
+  } else if (err.name === 'InvalidContributionAmountError') {
+    statusCode = 422;
+    errorCode = 'INVALID_AMOUNT';
+    message = err.message;
+  } else if (err.name === 'RoundNotFoundError') {
+    statusCode = 404;
+    errorCode = 'ROUND_NOT_FOUND';
+    message = err.message;
+  } else if (err.name === 'ParticipantNotFoundInTandaError') {
+    statusCode = 404;
+    errorCode = 'PARTICIPANT_NOT_FOUND';
+    message = err.message;
+  }
 
   const response: ApiErrorResponse = {
     error: {

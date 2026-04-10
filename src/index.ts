@@ -3,10 +3,13 @@ import { config } from './config';
 import { getDatabase } from './db';
 import { UserRepository } from './repositories/user-repository';
 import { TandaRepository } from './repositories/tanda-repository';
+import { ContributionRepository } from './repositories/contribution-repository';
 import { UserService } from './services/user.service';
 import { TandaService } from './services/tanda.service';
+import { ContributionService } from './services/contribution.service';
 import { createUserRoutes } from './routes/users';
 import { createTandaRoutes } from './routes/tandas';
+import { createContributionRoutes } from './routes/contributions';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 
 /**
@@ -24,14 +27,21 @@ async function main() {
   // Initialize repositories
   const userRepository = new UserRepository(db);
   const tandaRepository = new TandaRepository(db);
+  const contributionRepository = new ContributionRepository(db);
 
   // Initialize services (dependency injection)
   const userService = new UserService(userRepository);
   const tandaService = new TandaService(tandaRepository, userRepository);
+  const contributionService = new ContributionService(
+    contributionRepository,
+    tandaRepository,
+    userRepository
+  );
 
   // Routes
   app.use('/api/users', createUserRoutes(userService));
   app.use('/api/tandas', createTandaRoutes(tandaService));
+  app.use('/api/tandas', createContributionRoutes(contributionService));
 
   // Health check
   app.get('/health', (_req, res) => {
