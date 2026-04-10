@@ -1,29 +1,31 @@
 /**
  * User service — business logic for users.
  */
-import type { User } from "@prisma/client";
 import { userRepository } from "../repositories/user.repository";
 import { ConflictError, NotFoundError } from "../errors";
+import { toSafeUser, type SafeUser } from "./auth.service";
 
 export const userService = {
-  async createUser(data: { email: string; name: string }): Promise<User> {
+  async createUser(data: { email: string; name: string }): Promise<SafeUser> {
     const existing = await userRepository.findByEmail(data.email);
     if (existing) {
       throw new ConflictError(`User with email ${data.email} already exists`);
     }
-    return userRepository.create(data);
+    const user = await userRepository.create(data);
+    return toSafeUser(user);
   },
 
-  async getUserById(id: number): Promise<User> {
+  async getUserById(id: number): Promise<SafeUser> {
     const user = await userRepository.findById(id);
     if (!user) {
       throw new NotFoundError("User", id);
     }
-    return user;
+    return toSafeUser(user);
   },
 
-  async listUsers(): Promise<User[]> {
-    return userRepository.findAll();
+  async listUsers(): Promise<SafeUser[]> {
+    const users = await userRepository.findAll();
+    return users.map(toSafeUser);
   },
 };
 

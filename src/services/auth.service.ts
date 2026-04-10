@@ -13,7 +13,7 @@ const BCRYPT_ROUNDS = 10;
 
 export type SafeUser = Omit<User, "password">;
 
-function toSafeUser(user: User): SafeUser {
+export function toSafeUser(user: User): SafeUser {
   return {
     id: user.id,
     email: user.email,
