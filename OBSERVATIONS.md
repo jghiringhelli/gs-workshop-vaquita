@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P023
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+Feeding one prompt at a time kept the AI focused and produced clean, layered code with passing tests on every step.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Prompt 2 mentioned Prisma but the spec and package.json already used `better-sqlite3`, requiring a judgment call that cost time.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Typed commands manually.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI added security details I didn't ask for, like identical error messages for wrong-password vs. unknown user to prevent user enumeration.
