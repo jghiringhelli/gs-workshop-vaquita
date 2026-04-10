@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import { getConfig } from "../src/config";
-import { createDatabase } from "../src/lib/database";
+import { createDatabase } from "../src/database/database";
 import { TandaRepository } from "../src/repositories/tandaRepository";
 import { UserRepository } from "../src/repositories/userRepository";
 import { TandaService } from "../src/services/tandaService";

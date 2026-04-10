@@ -1,5 +1,5 @@
 import { getConfig } from "../src/config";
-import { createDatabase } from "../src/lib/database";
+import { createDatabase } from "../src/database/database";
 
 const config = getConfig();
 const db = createDatabase(config.databasePath);

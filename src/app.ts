@@ -1,8 +1,8 @@
 import type Database from "better-sqlite3";
 import express from "express";
 import { AppConfig, getConfig } from "./config";
+import { createDatabase } from "./database/database";
 import { isAppError } from "./errors";
-import { createDatabase } from "./lib/database";
 import { TandaRepository } from "./repositories/tandaRepository";
 import { UserRepository } from "./repositories/userRepository";
 import { createTandaRouter } from "./routes/tandas";
