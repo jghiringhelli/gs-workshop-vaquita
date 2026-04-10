@@ -27,6 +27,14 @@ router.post('/register', async (req: Request, res: Response) => {
       })
     }
 
+    // Handle Prisma unique constraint error
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        error: 'User with this email already exists',
+      })
+    }
+
+    console.error('Register error:', error)
     res.status(500).json({
       error: 'Internal server error',
     })

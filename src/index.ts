@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express'
 import { ZodError } from 'zod'
 import { prisma } from './lib/prisma'
 import usersRouter from './routes/users'
+import tandasRouter from './routes/tandas'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -11,6 +12,7 @@ app.use(express.json())
 
 // Routes
 app.use('/api/users', usersRouter)
+app.use('/api/tandas', tandasRouter)
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -48,16 +50,21 @@ app.get('/health', (req: Request, res: Response) => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...')
   await prisma.$disconnect()
-  server.close(() => {
-    console.log('HTTP server closed')
-    process.exit(0)
-  })
+  if (server) {
+    server.close(() => {
+      console.log('HTTP server closed')
+      process.exit(0)
+    })
+  }
 })
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`🫰 Tanda API listening on http://localhost:${PORT}`)
-})
+// Start server (only in non-test environments)
+let server: any = null
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`🫰 Tanda API listening on http://localhost:${PORT}`)
+  })
+}
 
 export default app
 

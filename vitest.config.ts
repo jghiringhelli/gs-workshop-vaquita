@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    threads: false,
     env: { NODE_ENV: "test" },
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {

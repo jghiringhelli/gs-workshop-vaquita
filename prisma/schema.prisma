@@ -27,14 +27,19 @@ model User {
 model Tanda {
   id                  String   @id @default(cuid())
   name                String
+  purpose             String?  // optional description
   organizerId         String
   organizer           User     @relation("organizer", fields: [organizerId], references: [id], onDelete: Restrict)
   
   // Business state
   status              String   @default("FORMING") // FORMING | ACTIVE | COMPLETED | CANCELLED
   contributionAmount  Int      // fixed amount in cents
-  currentRound        Int      @default(0)
   totalRounds         Int
+  targetAmount        Int?     // optional target total pool size
+  
+  // Current state
+  currentRound        Int      @default(0)
+  totalContributions  Int      @default(0) // total amount contributed so far
   
   // Relations
   participants        Participant[]

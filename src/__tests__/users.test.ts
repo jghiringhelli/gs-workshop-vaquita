@@ -5,13 +5,33 @@ import { prisma } from '../lib/prisma'
 
 describe('User Authentication', () => {
   beforeEach(async () => {
-    // Clean up users before each test
+    // Clean up in order to respect foreign keys
+    // Skip foreign key checks temporarily
+    await prisma.$executeRaw`PRAGMA foreign_keys = OFF`
+    await prisma.tandaAuditLog.deleteMany({})
+    await prisma.contribution.deleteMany({})
+    await prisma.payout.deleteMany({})
+    await prisma.participant.deleteMany({})
+    await prisma.tanda.deleteMany({})
     await prisma.user.deleteMany({})
+    await prisma.$executeRaw`PRAGMA foreign_keys = ON`
   })
 
   afterEach(async () => {
-    // Clean up after tests
-    await prisma.user.deleteMany({})
+    // Clean up after tests (best effort)
+    try {
+      await prisma.$executeRaw`PRAGMA foreign_keys = OFF`
+      await prisma.tandaAuditLog.deleteMany({})
+      await prisma.contribution.deleteMany({})
+      await prisma.payout.deleteMany({})
+      await prisma.participant.deleteMany({})
+      await prisma.tanda.deleteMany({})
+      await prisma.user.deleteMany({})
+      await prisma.$executeRaw`PRAGMA foreign_keys = ON`
+    } catch (e) {
+      // Ignore cleanup errors
+      console.error('Cleanup error:',  e)
+    }
   })
 
   describe('POST /api/users/register', () => {
@@ -31,16 +51,17 @@ describe('User Authentication', () => {
     })
 
     it('should not register user with duplicate email', async () => {
+      const testEmail = `alice-${Date.now()}@example.com`
       // First registration
       await request(app).post('/api/users/register').send({
-        email: 'alice@example.com',
+        email: testEmail,
         name: 'Alice',
         password: 'testpassword123',
       })
 
       // Attempt duplicate
       const response = await request(app).post('/api/users/register').send({
-        email: 'alice@example.com',
+        email: testEmail,
         name: 'Alice Smith',
         password: 'differentpassword123',
       })
@@ -82,8 +103,9 @@ describe('User Authentication', () => {
     })
 
     it('should not return password hash in response', async () => {
+      const testEmail = `test-${Date.now()}@example.com`
       const response = await request(app).post('/api/users/register').send({
-        email: 'alice@example.com',
+        email: testEmail,
         name: 'Alice',
         password: 'testpassword123',
       })
@@ -94,10 +116,14 @@ describe('User Authentication', () => {
   })
 
   describe('POST /api/users/login', () => {
+    let testEmail: string
+
     beforeEach(async () => {
+      // Create unique email for each test
+      testEmail = `alice-${Date.now()}-${Math.random()}@example.com`
       // Register a user for login tests
       await request(app).post('/api/users/register').send({
-        email: 'alice@example.com',
+        email: testEmail,
         name: 'Alice',
         password: 'testpassword123',
       })
@@ -105,20 +131,20 @@ describe('User Authentication', () => {
 
     it('should login user with correct credentials', async () => {
       const response = await request(app).post('/api/users/login').send({
-        email: 'alice@example.com',
+        email: testEmail,
         password: 'testpassword123',
       })
 
       expect(response.status).toBe(200)
       expect(response.body).toHaveProperty('id')
-      expect(response.body).toHaveProperty('email', 'alice@example.com')
+      expect(response.body).toHaveProperty('email', testEmail)
       expect(response.body).toHaveProperty('token')
       expect(response.body).not.toHaveProperty('password')
     })
 
     it('should not login with wrong password', async () => {
       const response = await request(app).post('/api/users/login').send({
-        email: 'alice@example.com',
+        email: testEmail,
         password: 'wrongpassword',
       })
 

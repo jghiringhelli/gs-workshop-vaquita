@@ -71,6 +71,8 @@ Enforce the business rules from docs/spec.md:
 
 Route handlers must not contain direct Prisma calls — use a service or repository layer.
 Write at least one test per endpoint.
+
+Commit after finalize prompt: `git commit -m "prompt-N: brief description"`
 ```
 
 ---
