@@ -57,6 +57,25 @@ export class ContributionService {
   ) {}
 
   /**
+   * Resolve either a participant ID or a user ID to the participant row for a tanda.
+   * @param tandaId - Tanda ID that scopes the lookup
+   * @param participantOrUserId - Participant ID or user ID supplied by the API caller
+   * @returns Participant row for the tanda
+   * @throws ParticipantNotFoundInTandaError if no participant matches
+   */
+  private resolveParticipant(tandaId: string, participantOrUserId: string) {
+    const participant = this.tandaRepository
+      .getParticipants(tandaId)
+      .find((p) => p.id === participantOrUserId || p.userId === participantOrUserId);
+
+    if (!participant) {
+      throw new ParticipantNotFoundInTandaError(participantOrUserId);
+    }
+
+    return participant;
+  }
+
+  /**
    * Record a contribution for current round
    * Calculates late fees if needed
    */
@@ -71,11 +90,8 @@ export class ContributionService {
       throw new Error(`Tanda ${tandaId} not found`);
     }
 
-    // Verify participant exists in this tanda
-    const participant = this.tandaRepository.getParticipants(tandaId).find((p) => p.id === participantId);
-    if (!participant) {
-      throw new ParticipantNotFoundInTandaError(participantId);
-    }
+    // Accept either the participant row ID or the underlying user ID at the API boundary.
+    const participant = this.resolveParticipant(tandaId, participantId);
 
     // Amount must match tanda contribution amount or contribution + late fee
     const lateFeeAmount = tanda.contributionAmount * (1 + config.lateFeePct / 100);
@@ -91,7 +107,7 @@ export class ContributionService {
 
     return this.contributionRepository.recordContribution(
       tandaId,
-      participantId,
+      participant.id,
       tanda.currentRound,
       amount,
       status
@@ -142,8 +158,9 @@ export class ContributionService {
   /**
    * Get participant contribution history
    */
-  getParticipantHistory(participantId: string): Contribution[] {
-    return this.contributionRepository.getParticipantHistory(participantId);
+  getParticipantHistory(tandaId: string, participantId: string): Contribution[] {
+    const participant = this.resolveParticipant(tandaId, participantId);
+    return this.contributionRepository.getParticipantHistory(participant.id);
   }
 
   /**

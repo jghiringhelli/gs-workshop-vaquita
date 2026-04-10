@@ -69,9 +69,9 @@ export function createContributionRoutes(contributionService: ContributionServic
    */
   router.get('/:id/participants/:pid/history', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { pid } = req.params as { id: string; pid: string };
+      const { id, pid } = req.params as { id: string; pid: string };
 
-      const history = contributionService.getParticipantHistory(pid);
+      const history = contributionService.getParticipantHistory(id, pid);
 
       res.status(200).json(history);
     } catch (error) {
