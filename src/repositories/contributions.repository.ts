@@ -1,3 +1,4 @@
+import db from '../db';
 import { Contribution, ContributionStatus } from '../types';
 
 interface ContributionRow {
