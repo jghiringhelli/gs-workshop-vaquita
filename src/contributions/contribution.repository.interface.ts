@@ -29,4 +29,12 @@ export interface IContributionRepository {
    * @returns Array of Contribution entities (may be empty)
    */
   findByTandaAndRound(tandaId: string, round: number): Contribution[];
+
+  /**
+   * Returns all contributions for a participant, ordered by round ascending.
+   * Used for the contribution history endpoint.
+   * @param participantId - Participant UUID
+   * @returns Array of Contribution entities (may be empty)
+   */
+  findByParticipantId(participantId: string): Contribution[];
 }

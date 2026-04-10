@@ -56,6 +56,17 @@ export class ContributionRepository implements IContributionRepository {
       .all(tandaId, round) as ContributionRow[];
     return rows.map(rowToContribution);
   }
+
+  /**
+   * Returns all contributions for a participant ordered by round ascending.
+   * @param participantId - Participant UUID
+   */
+  findByParticipantId(participantId: string): Contribution[] {
+    const rows = this.db
+      .prepare('SELECT * FROM contributions WHERE participant_id = ? ORDER BY round ASC')
+      .all(participantId) as ContributionRow[];
+    return rows.map(rowToContribution);
+  }
 }
 
 /**
