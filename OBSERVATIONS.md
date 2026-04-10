@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P027
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The AI quickly identified and resolved environment configuration issues (missing JWT_SECRET, ESM vs CommonJS), and verified compliance with all 4 project requirements without manual review.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Runtime environment setup required several iterations: first the `.env` file was missing, then ESM module resolution failed in production without explicit extensions, requiring a switch from `Bundler` to `CommonJS` in tsconfig.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Told the AI
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI automatically detected that port 3000 was already in use by the dev server when trying to start production, and resolved it by stopping the previous process before relaunching.
