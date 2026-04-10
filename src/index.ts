@@ -1,12 +1,16 @@
 import express, { Request, Response, NextFunction } from 'express'
 import { ZodError } from 'zod'
 import { prisma } from './lib/prisma'
+import usersRouter from './routes/users'
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
 // Middleware
 app.use(express.json())
+
+// Routes
+app.use('/api/users', usersRouter)
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
