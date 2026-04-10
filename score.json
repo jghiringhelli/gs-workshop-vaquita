@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "629c9d3",
+    "commit": "352f8f6",
     "branch": "participant/P055",
-    "timestamp": "2026-04-10T19:03:16.926Z",
+    "timestamp": "2026-04-10T20:14:07.109Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,12 +13,10 @@
       "details": "README updated by participant (9308 chars)"
     },
     "bounded": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "1 direct DB call(s) outside repository layer",
-      "violations": [
-        "src/services.ts"
-      ]
+      "details": "No direct DB calls in route/service files",
+      "violations": []
     },
     "verifiable": {
       "score": 0,
@@ -36,8 +34,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 33/36 (92%) | Decision log: present",
-      "conventionalPct": 0.9166666666666666,
+      "details": "Conventional commits: 35/38 (92%) | Decision log: present",
+      "conventionalPct": 0.9210526315789473,
       "hasDecisionLog": true
     },
     "composable": {
@@ -51,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
@@ -73,7 +71,7 @@
     "eslintWarnings": 12,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": 4.84,
+    "duplicatePct": 4.83,
     "branchCount": 85,
     "testCoverage": null,
     "testCount": 0,
