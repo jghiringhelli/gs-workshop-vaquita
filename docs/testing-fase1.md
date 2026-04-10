@@ -1,26 +1,26 @@
-# Pruebas Funcionales — Fase 1: Infraestructura Base
+# Functional Tests — Phase 1: Base Infrastructure
 
-## Pre-requisitos
+## Prerequisites
 
-- Node.js instalado
-- Dependencias instaladas (`npm install`)
-- Dos terminales abiertas
+- Node.js installed
+- Dependencies installed (`npm install`)
+- Two terminals open
 
 ---
 
-## 1. Arranque del servidor
+## 1. Server startup
 
-**Terminal 1 — levantar el servidor:**
+**Terminal 1 — start the server:**
 ```bash
 npm run dev
 ```
 
-**Resultado esperado:**
+**Expected result:**
 ```
 Tanda API running on http://localhost:3000
 ```
 
-Si el servidor no arranca, revisar que el puerto 3000 esté libre:
+If the server doesn't start, check that port 3000 is free:
 ```bash
 # Windows
 netstat -ano | findstr :3000
@@ -28,47 +28,47 @@ netstat -ano | findstr :3000
 
 ---
 
-## 2. Verificar que el servidor responde
+## 2. Verify the server responds
 
 ```bash
 curl -s http://localhost:3000
 ```
 
-**Resultado esperado:** cualquier respuesta HTTP (incluso 404), lo que confirma que Express está corriendo.
+**Expected result:** any HTTP response (even 404), confirming Express is running.
 
 ---
 
-## 3. Manejo de rutas no existentes (404)
+## 3. Non-existent route handling (404)
 
 ```bash
-curl -s -o - -w "\nHTTP Status: %{http_code}\n" http://localhost:3000/ruta-inexistente
+curl -s -o - -w "\nHTTP Status: %{http_code}\n" http://localhost:3000/non-existent-route
 ```
 
-**Resultado esperado:**
+**Expected result:**
 ```
 HTTP Status: 404
 ```
 
 ---
 
-## 4. Manejo global de errores (errorHandler middleware)
+## 4. Global error handling (errorHandler middleware)
 
-El middleware `errorHandler` mapea `AppError` → JSON con `{ error: "..." }` y el `statusCode` correcto. Se verificará completamente cuando los servicios estén implementados (Fase 3), pero la estructura ya está activa.
+The `errorHandler` middleware maps `AppError` → JSON with `{ error: "..." }` and the correct `statusCode`. It will be fully verified when services are implemented (Phase 3), but the structure is already active.
 
 ---
 
-## 5. Variables de entorno (config)
+## 5. Environment variables (config)
 
-### 5.1 Puerto personalizado
+### 5.1 Custom port
 
-**Terminal 1 — detener el servidor (Ctrl+C) y relanzar con puerto diferente:**
+**Terminal 1 — stop the server (Ctrl+C) and relaunch with a different port:**
 ```bash
 PORT=4000 npm run dev
 # Windows PowerShell:
 $env:PORT="4000"; npm run dev
 ```
 
-**Resultado esperado:**
+**Expected result:**
 ```
 Tanda API running on http://localhost:4000
 ```
@@ -77,18 +77,18 @@ Tanda API running on http://localhost:4000
 curl -s -o - -w "\nHTTP Status: %{http_code}\n" http://localhost:4000
 ```
 
-### 5.2 Máximo de participantes y penalización (validación visual)
+### 5.2 Max participants and penalty (visual validation)
 
-Estas constantes se leen de env vars. Valores por defecto:
+These constants are read from env vars. Default values:
 
-| Variable | Default | Descripción |
+| Variable | Default | Description |
 |---|---|---|
-| `MAX_PARTICIPANTS` | `20` | Máximo de miembros por tanda |
-| `PENALTY_PCT` | `0.05` | 5% de penalización por pago tardío |
-| `JWT_SECRET` | `dev-secret-change-me` | Secreto JWT (cambiar en producción) |
-| `DB_PATH` | `tanda.db` | Ruta del archivo SQLite (prod) |
+| `MAX_PARTICIPANTS` | `20` | Maximum members per tanda |
+| `PENALTY_PCT` | `0.05` | 5% penalty for late payments |
+| `JWT_SECRET` | `dev-secret-change-me` | JWT secret (change in production) |
+| `DB_PATH` | `tanda.db` | SQLite database file path (prod) |
 
-Para verificar que se leen correctamente:
+To verify they are read correctly:
 ```bash
 MAX_PARTICIPANTS=5 PENALTY_PCT=0.10 npm run dev
 # Windows PowerShell:
@@ -97,29 +97,29 @@ $env:MAX_PARTICIPANTS="5"; $env:PENALTY_PCT="0.10"; npm run dev
 
 ---
 
-## 6. Base de datos SQLite
+## 6. SQLite Database
 
-### 6.1 Verificar creación del archivo (modo producción)
+### 6.1 Verify file creation (production mode)
 
-Al arrancar el servidor en modo no-test, se crea `tanda.db` en la raíz del proyecto:
+When starting the server in non-test mode, `tanda.db` is created in the project root:
 
 ```bash
-# Después de npm run dev (sin NODE_ENV=test):
+# After npm run dev (without NODE_ENV=test):
 ls tanda.db
-# o en PowerShell:
+# or in PowerShell:
 Test-Path tanda.db
 ```
 
-**Resultado esperado:** `True` / archivo visible.
+**Expected result:** `True` / file visible.
 
-### 6.2 Verificar schema creado
+### 6.2 Verify schema created
 
 ```bash
-# Requiere sqlite3 CLI instalado
+# Requires sqlite3 CLI installed
 sqlite3 tanda.db ".tables"
 ```
 
-**Resultado esperado:**
+**Expected result:**
 ```
 contributions  participants  tandas  users
 ```
@@ -128,7 +128,7 @@ contributions  participants  tandas  users
 sqlite3 tanda.db ".schema users"
 ```
 
-**Resultado esperado:**
+**Expected result:**
 ```sql
 CREATE TABLE users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,31 +138,31 @@ CREATE TABLE users (
 );
 ```
 
-### 6.3 Verificar modo in-memory en tests
+### 6.3 Verify in-memory mode for tests
 
 ```bash
 NODE_ENV=test npm run dev
 ```
 
-No debe crearse ni modificarse el archivo `tanda.db`. Cada vez que se reinicia con `NODE_ENV=test`, la base de datos empieza vacía.
+The `tanda.db` file should not be created or modified. Each restart with `NODE_ENV=test` starts with an empty database.
 
 ---
 
-## 7. Verificación de tipos TypeScript
+## 7. TypeScript type checking
 
 ```bash
 npm run typecheck
 ```
 
-**Resultado esperado:** sin output (cero errores).
+**Expected result:** no output (zero errors).
 
 ---
 
-## 8. Limpieza
+## 8. Cleanup
 
-Detener el servidor con `Ctrl+C` en Terminal 1.
+Stop the server with `Ctrl+C` in Terminal 1.
 
-Opcional — eliminar la base de datos de prueba:
+Optional — delete the test database:
 ```bash
 # PowerShell
 Remove-Item tanda.db -ErrorAction SilentlyContinue
@@ -170,11 +170,11 @@ Remove-Item tanda.db -ErrorAction SilentlyContinue
 
 ---
 
-## Checklist resumen
+## Summary Checklist
 
-- [ ] `npm run dev` arranca sin errores
-- [ ] Servidor responde en `http://localhost:3000`
-- [ ] Puerto configurable vía `PORT` env var
-- [ ] `tanda.db` se crea con las 4 tablas en modo producción
-- [ ] `NODE_ENV=test` usa base de datos in-memory (sin archivo)
-- [ ] `npm run typecheck` → 0 errores
+- [ ] `npm run dev` starts without errors
+- [ ] Server responds at `http://localhost:3000`
+- [ ] Port configurable via `PORT` env var
+- [ ] `tanda.db` is created with 4 tables in production mode
+- [ ] `NODE_ENV=test` uses in-memory database (no file)
+- [ ] `npm run typecheck` → 0 errors
