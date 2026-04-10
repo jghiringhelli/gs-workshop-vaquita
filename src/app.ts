@@ -1,6 +1,6 @@
 import express, { type Express, Router } from "express"
 import { loadConfig, type AppConfig } from "./config/env"
-import { initializeDatabase } from "./infrastructure/database"
+import { initializeDatabase } from "./database"
 import { createTandasRouter, SqliteTandaRepository, TandaService } from "./modules/tandas"
 import { createUsersRouter, SqliteUserRepository, UserService } from "./modules/users"
 import {
