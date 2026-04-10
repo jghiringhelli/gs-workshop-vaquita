@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "1f38e30",
+    "commit": "b037f30",
     "branch": "participant/P009",
-    "timestamp": "2026-04-10T17:50:18.762Z",
+    "timestamp": "2026-04-10T17:54:56.744Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -32,11 +32,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 36/37 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.972972972972973,
-      "hasDecisionLog": false
+      "details": "Conventional commits: 38/39 (97%) | Decision log: present",
+      "conventionalPct": 0.9743589743589743,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 7,
+      "score": 8,
       "max": 8
     },
     "total_with_live_tests": {
