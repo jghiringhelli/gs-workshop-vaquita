@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { IContributionRepository } from './contribution.repository.interface';
-import { Contribution, ContributionRow, CreateContributionDTO } from './contribution.types';
+import { IContributionRepository } from '../contributions/contribution.repository.interface';
+import { Contribution, ContributionRow, CreateContributionDTO } from '../contributions/contribution.types';
 
 /**
  * SQLite implementation of IContributionRepository.

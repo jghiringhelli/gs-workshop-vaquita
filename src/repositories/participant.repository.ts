@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { IParticipantRepository } from './participant.repository.interface';
-import { Participant, ParticipantRow, CreateParticipantDTO } from './participant.types';
+import { IParticipantRepository } from '../participants/participant.repository.interface';
+import { Participant, ParticipantRow, CreateParticipantDTO } from '../participants/participant.types';
 
 /**
  * SQLite implementation of IParticipantRepository.

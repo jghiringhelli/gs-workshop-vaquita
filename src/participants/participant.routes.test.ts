@@ -4,13 +4,13 @@ import type { Application } from 'express';
 import Database from 'better-sqlite3';
 import { createApp } from '../app';
 import { createDatabase } from '../db/database';
-import { UserRepository } from '../users/user.repository';
+import { UserRepository } from '../repositories/user.repository';
 import { UserService } from '../users/user.service';
 import { createUserRouter } from '../users/user.routes';
-import { TandaRepository } from '../tandas/tanda.repository';
+import { TandaRepository } from '../repositories/tanda.repository';
 import { TandaService } from '../tandas/tanda.service';
 import { createTandaRouter } from '../tandas/tanda.routes';
-import { ParticipantRepository } from './participant.repository';
+import { ParticipantRepository } from '../repositories/participant.repository';
 import { ParticipantService } from './participant.service';
 import { createParticipantRouter } from './participant.routes';
 

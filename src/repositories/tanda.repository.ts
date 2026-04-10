@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { ITandaRepository, StartTandaData } from './tanda.repository.interface';
-import { Tanda, TandaStatus, TandaRow, CreateTandaDTO } from './tanda.types';
+import { ITandaRepository, StartTandaData } from '../tandas/tanda.repository.interface';
+import { Tanda, TandaStatus, TandaRow, CreateTandaDTO } from '../tandas/tanda.types';
 
 /**
  * SQLite implementation of ITandaRepository.

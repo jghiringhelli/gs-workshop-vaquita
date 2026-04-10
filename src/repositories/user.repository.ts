@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import { IUserRepository } from './user.repository.interface';
-import { User, UserRow, CreateUserDTO } from './user.types';
+import { IUserRepository } from '../users/user.repository.interface';
+import { User, UserRow, CreateUserDTO } from '../users/user.types';
 
 /**
  * SQLite implementation of IUserRepository.

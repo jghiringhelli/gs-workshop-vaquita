@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app';
 import { createDatabase } from '../db/database';
-import { UserRepository } from './user.repository';
+import { UserRepository } from '../repositories/user.repository';
 import { UserService } from './user.service';
 import { createUserRouter } from './user.routes';
 import type { Application } from 'express';
