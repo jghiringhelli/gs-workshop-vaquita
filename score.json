@@ -1,16 +1,16 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "139bc6d",
+    "commit": "292d984",
     "branch": "participant/P025",
-    "timestamp": "2026-04-10T18:08:37.341Z",
+    "timestamp": "2026-04-10T18:18:44.710Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
       "score": 1,
       "max": 1,
-      "details": "README updated by participant (3131 chars)"
+      "details": "README updated by participant (3206 chars)"
     },
     "bounded": {
       "score": 2,
@@ -21,10 +21,10 @@
     "verifiable": {
       "score": 2,
       "max": 2,
-      "details": "Tests: 54 passed, 0 failed | Coverage: 92.0%",
-      "testsPassed": 54,
+      "details": "Tests: 62 passed, 0 failed | Coverage: 95.7%",
+      "testsPassed": 62,
       "testsFailed": 0,
-      "coveragePct": 92.05
+      "coveragePct": 95.72
     },
     "defended": {
       "score": 1,
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 43/44 (98%) | Decision log: present",
-      "conventionalPct": 0.9772727272727273,
+      "details": "Conventional commits: 45/46 (98%) | Decision log: present",
+      "conventionalPct": 0.9782608695652174,
       "hasDecisionLog": true
     },
     "composable": {
@@ -71,10 +71,10 @@
     "eslintWarnings": 0,
     "auditCritical": 0,
     "auditHigh": 0,
-    "duplicatePct": 7.1,
+    "duplicatePct": null,
     "branchCount": 64,
-    "testCoverage": 92.05,
-    "testCount": 54,
+    "testCoverage": 95.72,
+    "testCount": 62,
     "depCount": 4
   }
 }
