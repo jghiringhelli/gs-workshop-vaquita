@@ -5,6 +5,7 @@ import { getConfig } from "../config/env";
 import { UserRepository } from "../repositories/user-repository";
 import { TandaRepository } from "../repositories/tanda-repository";
 import { ParticipantRepository } from "../repositories/participant-repository";
+import { ContributionRepository } from "../repositories/contribution-repository";
 import { HealthRepository } from "../repositories/health-repository";
 import { HealthService } from "../services/health-service";
 import { UserService } from "../services/user-service";
@@ -19,12 +20,14 @@ const healthService = new HealthService(healthRepository, config);
 const userRepository = new UserRepository();
 const tandaRepository = new TandaRepository();
 const participantRepository = new ParticipantRepository();
+const contributionRepository = new ContributionRepository();
 
 const userService = new UserService(userRepository);
 const tandaService = new TandaService(
   tandaRepository,
   userRepository,
   participantRepository,
+  contributionRepository,
   config
 );
 
@@ -57,6 +60,20 @@ const joinTandaSchema = z.object({
 
 const organizerActionSchema = z.object({
   organizerId: z.number().int().positive(),
+});
+
+const recordContributionSchema = z.object({
+  participantId: z.number().int().positive(),
+  isLate: z.boolean().optional(),
+});
+
+const roundParamSchema = z.object({
+  round: z.coerce.number().int().positive(),
+});
+
+const participantHistoryParamSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  pid: z.coerce.number().int().positive(),
 });
 
 router.get("/health", (_req, res) => {
@@ -170,6 +187,62 @@ router.post("/tandas/:id/cancel", (req, res, next) => {
       organizerId: body.organizerId,
     });
     res.status(200).json(tanda);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/tandas/:id/contributions", (req, res, next) => {
+  try {
+    const params = parseSchema(tandaIdParamSchema, req.params);
+    const body = parseSchema(recordContributionSchema, req.body);
+    const contribution = tandaService.recordContribution({
+      tandaId: params.id,
+      participantId: body.participantId,
+      isLate: body.isLate,
+    });
+    res.status(201).json(contribution);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/tandas/:id/rounds/:round", (req, res, next) => {
+  try {
+    const tandaParams = parseSchema(tandaIdParamSchema, req.params);
+    const roundParams = parseSchema(roundParamSchema, req.params);
+    const summary = tandaService.getRoundSummary({
+      tandaId: tandaParams.id,
+      round: roundParams.round,
+    });
+    res.status(200).json(summary);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/tandas/:id/advance", (req, res, next) => {
+  try {
+    const params = parseSchema(tandaIdParamSchema, req.params);
+    const body = parseSchema(organizerActionSchema, req.body);
+    const tanda = tandaService.advanceRound({
+      tandaId: params.id,
+      organizerId: body.organizerId,
+    });
+    res.status(200).json(tanda);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/tandas/:id/participants/:pid/history", (req, res, next) => {
+  try {
+    const params = parseSchema(participantHistoryParamSchema, req.params);
+    const history = tandaService.getParticipantHistory({
+      tandaId: params.id,
+      participantId: params.pid,
+    });
+    res.status(200).json(history);
   } catch (error) {
     next(error);
   }

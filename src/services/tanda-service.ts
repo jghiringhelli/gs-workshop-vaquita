@@ -1,5 +1,5 @@
 import type { AppConfig } from "../config/env";
-import type { Participant, Tanda } from "../domain/models";
+import type { Contribution, Participant, Tanda } from "../domain/models";
 import { getDatabase } from "../db/database";
 import {
   ConflictError,
@@ -7,6 +7,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../errors/app-error";
+import { ContributionRepository } from "../repositories/contribution-repository";
 import { ParticipantRepository } from "../repositories/participant-repository";
 import { TandaRepository } from "../repositories/tanda-repository";
 import { UserRepository } from "../repositories/user-repository";
@@ -26,11 +27,37 @@ function shuffleParticipants(participants: Participant[]): Participant[] {
   return clone;
 }
 
+function hasTwoConsecutiveMissed(contributions: Contribution[]): boolean {
+  if (contributions.length < 2) {
+    return false;
+  }
+
+  const sorted = [...contributions].sort((a, b) => a.round - b.round);
+  const last = sorted[sorted.length - 1];
+  const previous = sorted[sorted.length - 2];
+
+  return (
+    last.status === "missed" &&
+    previous.status === "missed" &&
+    last.round === previous.round + 1
+  );
+}
+
+export interface RoundSummary {
+  tandaId: number;
+  round: number;
+  recipientParticipantId: number | null;
+  expectedPotAmount: number;
+  collectedAmount: number;
+  contributions: Contribution[];
+}
+
 export class TandaService {
   constructor(
     private readonly tandaRepository: TandaRepository,
     private readonly userRepository: UserRepository,
     private readonly participantRepository: ParticipantRepository,
+    private readonly contributionRepository: ContributionRepository,
     private readonly config: AppConfig
   ) {}
 
@@ -201,5 +228,174 @@ export class TandaService {
 
     this.tandaRepository.updateStatus(input.tandaId, "cancelled");
     return this.tandaRepository.findById(input.tandaId) as Tanda;
+  }
+
+  recordContribution(input: {
+    tandaId: number;
+    participantId: number;
+    isLate?: boolean;
+  }): Contribution {
+    const tanda = this.tandaRepository.findById(input.tandaId);
+
+    if (!tanda) {
+      throw new NotFoundError("Tanda not found");
+    }
+
+    if (tanda.status !== "active") {
+      throw new ValidationError("Contributions can only be recorded for active tandas");
+    }
+
+    const participant = this.participantRepository.findById(input.participantId);
+
+    if (!participant || participant.tandaId !== input.tandaId) {
+      throw new NotFoundError("Participant not found in this tanda");
+    }
+
+    const existing = this.contributionRepository.findByRoundAndParticipant(
+      input.tandaId,
+      input.participantId,
+      tanda.currentRound
+    );
+
+    if (existing) {
+      throw new ConflictError(
+        "Contribution already recorded for this participant in current round"
+      );
+    }
+
+    const isLate = input.isLate ?? false;
+    const penaltyAmount = isLate
+      ? Math.round((tanda.contributionAmount * this.config.latePenaltyPercent) / 100)
+      : 0;
+
+    return this.contributionRepository.create({
+      tandaId: input.tandaId,
+      participantId: input.participantId,
+      round: tanda.currentRound,
+      amount: tanda.contributionAmount,
+      status: isLate ? "late" : "paid",
+      penaltyAmount,
+    });
+  }
+
+  getRoundSummary(input: { tandaId: number; round: number }): RoundSummary {
+    const tanda = this.tandaRepository.findById(input.tandaId);
+
+    if (!tanda) {
+      throw new NotFoundError("Tanda not found");
+    }
+
+    if (input.round <= 0 || input.round > tanda.totalRounds) {
+      throw new ValidationError("Round is outside configured tanda rounds");
+    }
+
+    const participants = this.participantRepository.listByTanda(input.tandaId);
+    const contributions = this.contributionRepository.listByRound(
+      input.tandaId,
+      input.round
+    );
+    const recipient = participants.find(
+      (participant) => participant.rotationPosition === input.round
+    );
+
+    const collectedAmount = contributions.reduce(
+      (total, contribution) => total + contribution.amount + contribution.penaltyAmount,
+      0
+    );
+
+    return {
+      tandaId: input.tandaId,
+      round: input.round,
+      recipientParticipantId: recipient?.id ?? null,
+      expectedPotAmount: tanda.contributionAmount * participants.length,
+      collectedAmount,
+      contributions,
+    };
+  }
+
+  advanceRound(input: { tandaId: number; organizerId: number }): Tanda {
+    const tanda = this.tandaRepository.findById(input.tandaId);
+
+    if (!tanda) {
+      throw new NotFoundError("Tanda not found");
+    }
+
+    if (tanda.status !== "active") {
+      throw new ValidationError("Only active tandas can advance rounds");
+    }
+
+    if (tanda.organizerId !== input.organizerId) {
+      throw new ForbiddenError("Only the organizer can advance rounds");
+    }
+
+    const participants = this.participantRepository.listByTanda(input.tandaId);
+    const db = getDatabase();
+
+    const advanceTransaction = db.transaction(() => {
+      for (const participant of participants) {
+        const contribution = this.contributionRepository.findByRoundAndParticipant(
+          input.tandaId,
+          participant.id,
+          tanda.currentRound
+        );
+
+        if (!contribution) {
+          this.contributionRepository.create({
+            tandaId: input.tandaId,
+            participantId: participant.id,
+            round: tanda.currentRound,
+            amount: tanda.contributionAmount,
+            status: "missed",
+            penaltyAmount: 0,
+          });
+        }
+
+        const history = this.contributionRepository.listByParticipant(
+          input.tandaId,
+          participant.id
+        );
+
+        if (hasTwoConsecutiveMissed(history)) {
+          this.participantRepository.setDefaulter(participant.id, true);
+        }
+      }
+
+      if (tanda.currentRound >= tanda.totalRounds) {
+        this.tandaRepository.updateStatus(input.tandaId, "completed");
+        return this.tandaRepository.findById(input.tandaId) as Tanda;
+      }
+
+      this.tandaRepository.updateRoundState(
+        input.tandaId,
+        tanda.currentRound + 1,
+        tanda.totalRounds
+      );
+
+      return this.tandaRepository.findById(input.tandaId) as Tanda;
+    });
+
+    return advanceTransaction();
+  }
+
+  getParticipantHistory(input: {
+    tandaId: number;
+    participantId: number;
+  }): Contribution[] {
+    const tanda = this.tandaRepository.findById(input.tandaId);
+
+    if (!tanda) {
+      throw new NotFoundError("Tanda not found");
+    }
+
+    const participant = this.participantRepository.findById(input.participantId);
+
+    if (!participant || participant.tandaId !== input.tandaId) {
+      throw new NotFoundError("Participant not found in this tanda");
+    }
+
+    return this.contributionRepository.listByParticipant(
+      input.tandaId,
+      input.participantId
+    );
   }
 }

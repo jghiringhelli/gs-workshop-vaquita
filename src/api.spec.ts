@@ -381,4 +381,288 @@ describe("Tandas API", () => {
     expect(response.status).toBe(403);
     expect(response.body.error.code).toBe("FORBIDDEN");
   });
+
+  it("records contribution for current round", async () => {
+    const app = createApp();
+
+    const organizer = await request(app).post("/api/users").send({
+      email: "organizer@example.com",
+      name: "Organizer",
+    });
+    const memberA = await request(app).post("/api/users").send({
+      email: "membera@example.com",
+      name: "Member A",
+    });
+    const memberB = await request(app).post("/api/users").send({
+      email: "memberb@example.com",
+      name: "Member B",
+    });
+
+    const tanda = await request(app).post("/api/tandas").send({
+      name: "Tanda Contributions",
+      organizerId: organizer.body.id,
+      contributionAmount: 1000,
+    });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberA.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberB.body.id });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/start`)
+      .send({ organizerId: organizer.body.id });
+
+    const participants = await request(app).get(
+      `/api/tandas/${tanda.body.id}/participants`
+    );
+
+    const response = await request(app)
+      .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .send({ participantId: participants.body[0].id, isLate: true });
+
+    expect(response.status).toBe(201);
+    expect(response.body.status).toBe("late");
+    expect(response.body.penaltyAmount).toBe(50);
+  });
+
+  it("returns 409 for duplicate contribution in same round", async () => {
+    const app = createApp();
+
+    const organizer = await request(app).post("/api/users").send({
+      email: "organizer@example.com",
+      name: "Organizer",
+    });
+    const memberA = await request(app).post("/api/users").send({
+      email: "membera@example.com",
+      name: "Member A",
+    });
+    const memberB = await request(app).post("/api/users").send({
+      email: "memberb@example.com",
+      name: "Member B",
+    });
+
+    const tanda = await request(app).post("/api/tandas").send({
+      name: "Tanda Contributions",
+      organizerId: organizer.body.id,
+      contributionAmount: 1000,
+    });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberA.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberB.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/start`)
+      .send({ organizerId: organizer.body.id });
+
+    const participants = await request(app).get(
+      `/api/tandas/${tanda.body.id}/participants`
+    );
+    const participantId = participants.body[0].id;
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .send({ participantId });
+
+    const response = await request(app)
+      .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .send({ participantId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
+  it("returns round summary", async () => {
+    const app = createApp();
+
+    const organizer = await request(app).post("/api/users").send({
+      email: "organizer@example.com",
+      name: "Organizer",
+    });
+    const memberA = await request(app).post("/api/users").send({
+      email: "membera@example.com",
+      name: "Member A",
+    });
+    const memberB = await request(app).post("/api/users").send({
+      email: "memberb@example.com",
+      name: "Member B",
+    });
+
+    const tanda = await request(app).post("/api/tandas").send({
+      name: "Tanda Summary",
+      organizerId: organizer.body.id,
+      contributionAmount: 700,
+    });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberA.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberB.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/start`)
+      .send({ organizerId: organizer.body.id });
+
+    const participants = await request(app).get(
+      `/api/tandas/${tanda.body.id}/participants`
+    );
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .send({ participantId: participants.body[0].id });
+
+    const response = await request(app).get(`/api/tandas/${tanda.body.id}/rounds/1`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.round).toBe(1);
+    expect(response.body.expectedPotAmount).toBe(2100);
+    expect(response.body.contributions).toHaveLength(1);
+  });
+
+  it("advances round and auto-completes after last round", async () => {
+    const app = createApp();
+
+    const organizer = await request(app).post("/api/users").send({
+      email: "organizer@example.com",
+      name: "Organizer",
+    });
+    const memberA = await request(app).post("/api/users").send({
+      email: "membera@example.com",
+      name: "Member A",
+    });
+    const memberB = await request(app).post("/api/users").send({
+      email: "memberb@example.com",
+      name: "Member B",
+    });
+
+    const tanda = await request(app).post("/api/tandas").send({
+      name: "Tanda Advance",
+      organizerId: organizer.body.id,
+      contributionAmount: 1000,
+    });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberA.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberB.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/start`)
+      .send({ organizerId: organizer.body.id });
+
+    const advance1 = await request(app)
+      .post(`/api/tandas/${tanda.body.id}/advance`)
+      .send({ organizerId: organizer.body.id });
+    expect(advance1.status).toBe(200);
+    expect(advance1.body.currentRound).toBe(2);
+
+    const advance2 = await request(app)
+      .post(`/api/tandas/${tanda.body.id}/advance`)
+      .send({ organizerId: organizer.body.id });
+    expect(advance2.status).toBe(200);
+    expect(advance2.body.currentRound).toBe(3);
+
+    const advance3 = await request(app)
+      .post(`/api/tandas/${tanda.body.id}/advance`)
+      .send({ organizerId: organizer.body.id });
+    expect(advance3.status).toBe(200);
+    expect(advance3.body.status).toBe("completed");
+  });
+
+  it("returns 403 when non-organizer tries to advance", async () => {
+    const app = createApp();
+
+    const organizer = await request(app).post("/api/users").send({
+      email: "organizer@example.com",
+      name: "Organizer",
+    });
+    const memberA = await request(app).post("/api/users").send({
+      email: "membera@example.com",
+      name: "Member A",
+    });
+    const memberB = await request(app).post("/api/users").send({
+      email: "memberb@example.com",
+      name: "Member B",
+    });
+
+    const tanda = await request(app).post("/api/tandas").send({
+      name: "Tanda Advance",
+      organizerId: organizer.body.id,
+      contributionAmount: 1000,
+    });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberA.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberB.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/start`)
+      .send({ organizerId: organizer.body.id });
+
+    const response = await request(app)
+      .post(`/api/tandas/${tanda.body.id}/advance`)
+      .send({ organizerId: memberA.body.id });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("returns participant contribution history", async () => {
+    const app = createApp();
+
+    const organizer = await request(app).post("/api/users").send({
+      email: "organizer@example.com",
+      name: "Organizer",
+    });
+    const memberA = await request(app).post("/api/users").send({
+      email: "membera@example.com",
+      name: "Member A",
+    });
+    const memberB = await request(app).post("/api/users").send({
+      email: "memberb@example.com",
+      name: "Member B",
+    });
+
+    const tanda = await request(app).post("/api/tandas").send({
+      name: "Tanda History",
+      organizerId: organizer.body.id,
+      contributionAmount: 1000,
+    });
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberA.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/join`)
+      .send({ userId: memberB.body.id });
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/start`)
+      .send({ organizerId: organizer.body.id });
+
+    const participants = await request(app).get(
+      `/api/tandas/${tanda.body.id}/participants`
+    );
+    const targetParticipantId = participants.body[0].id;
+
+    await request(app)
+      .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .send({ participantId: targetParticipantId });
+
+    const historyResponse = await request(app).get(
+      `/api/tandas/${tanda.body.id}/participants/${targetParticipantId}/history`
+    );
+
+    expect(historyResponse.status).toBe(200);
+    expect(historyResponse.body).toHaveLength(1);
+    expect(historyResponse.body[0].status).toBe("paid");
+  });
 });
