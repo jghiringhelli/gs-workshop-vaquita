@@ -19,7 +19,9 @@ const userService = new UserService(userRepository);
 
 const participantRepository = new ParticipantRepository(db);
 const tandaRepository = new TandaRepository(db);
-const tandaService = new TandaService(tandaRepository, participantRepository, userRepository);
+const tandaService = new TandaService(tandaRepository, participantRepository, userRepository, {
+  minParticipantsToStart: config.minParticipantsToStart,
+});
 const participantService = new ParticipantService(
   tandaRepository,
   participantRepository,

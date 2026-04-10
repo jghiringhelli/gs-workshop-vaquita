@@ -10,8 +10,10 @@ import { TandaRepository } from './tanda.repository';
 import { TandaService } from './tanda.service';
 import { createTandaRouter } from './tanda.routes';
 import { ParticipantRepository } from '../participants/participant.repository';
+import { ParticipantService } from '../participants/participant.service';
+import { createParticipantRouter } from '../participants/participant.routes';
 
-function buildTestApp(): Application {
+function buildTestApp(opts: { minParticipantsToStart?: number } = {}): Application {
   const db = createDatabase(':memory:');
 
   const userRepo = new UserRepository(db);
@@ -19,11 +21,17 @@ function buildTestApp(): Application {
 
   const participantRepo = new ParticipantRepository(db);
   const tandaRepo = new TandaRepository(db);
-  const tandaService = new TandaService(tandaRepo, participantRepo, userRepo);
+  const tandaService = new TandaService(tandaRepo, participantRepo, userRepo, {
+    minParticipantsToStart: opts.minParticipantsToStart ?? 3,
+  });
+  const participantService = new ParticipantService(tandaRepo, participantRepo, userRepo, {
+    maxParticipants: 20,
+  });
 
   return createApp([
     { path: '/api/users', router: createUserRouter(userService) },
     { path: '/api/tandas', router: createTandaRouter(tandaService) },
+    { path: '/api/tandas', router: createParticipantRouter(participantService) },
   ]);
 }
 
