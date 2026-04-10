@@ -4,23 +4,27 @@ import type { TandaService } from '../services/TandaService.js';
 
 const idParamsSchema = z.object({ id: z.string().min(1) });
 
+/** Accepts UUID strings or legacy numeric IDs (coerced to string). */
+const idField = (label: string) =>
+  z.union([z.string().min(1, label + ' is required'), z.number().int().positive().transform(String)]);
+
 const createTandaSchema = z.object({
   name: z.string().min(1, 'name is required'),
-  organizerId: z.string().min(1, 'organizerId is required'),
-  contributionAmount: z.number().int().positive('contributionAmount must be a positive integer'),
+  organizerId: idField('organizerId'),
+  contributionAmount: z.coerce.number().int().positive('contributionAmount must be a positive integer'),
 });
 
 const joinSchema = z.object({
-  userId: z.string().min(1, 'userId is required'),
+  userId: idField('userId'),
 });
 
 const requesterSchema = z.object({
-  requesterId: z.string().min(1, 'requesterId is required'),
+  requesterId: idField('requesterId'),
 });
 
 const contributionSchema = z.object({
-  participantId: z.string().min(1, 'participantId is required'),
-  amount: z.number().int().positive('amount must be a positive integer'),
+  participantId: idField('participantId'),
+  amount: z.coerce.number().int().positive('amount must be a positive integer'),
 });
 
 const roundParamsSchema = z.object({
