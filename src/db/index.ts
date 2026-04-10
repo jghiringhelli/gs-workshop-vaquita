@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { config } from '../config';
 
-let db: Database.Database;
+let db: Database.Database | undefined;
 
 export function getDb(): Database.Database {
   if (!db) {
@@ -13,13 +13,19 @@ export function getDb(): Database.Database {
   return db;
 }
 
+/** Inject a specific database instance (used by tests). */
+export function setDb(database: Database.Database): void {
+  db = database;
+}
+
 function applySchema(database: Database.Database): void {
   database.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id        INTEGER PRIMARY KEY AUTOINCREMENT,
-      email     TEXT    NOT NULL UNIQUE,
-      name      TEXT    NOT NULL,
-      createdAt TEXT    NOT NULL DEFAULT (datetime('now'))
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      email        TEXT    NOT NULL UNIQUE,
+      username     TEXT    NOT NULL UNIQUE,
+      passwordHash TEXT    NOT NULL,
+      createdAt    TEXT    NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS tandas (
