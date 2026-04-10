@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "b645f76",
+    "commit": "1613ac0",
     "branch": "participant/P019",
-    "timestamp": "2026-04-10T18:38:04.940Z",
+    "timestamp": "2026-04-10T18:41:40.036Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,12 +13,10 @@
       "details": "README updated by participant (3040 chars)"
     },
     "bounded": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "2 direct DB call(s) outside repository layer",
-      "violations": [
-        "src/lib/database.ts"
-      ]
+      "details": "No direct DB calls in route/service files",
+      "violations": []
     },
     "verifiable": {
       "score": 2,
@@ -36,8 +34,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 32/33 (97%) | Decision log: present",
-      "conventionalPct": 0.9696969696969697,
+      "details": "Conventional commits: 34/35 (97%) | Decision log: present",
+      "conventionalPct": 0.9714285714285714,
       "hasDecisionLog": true
     },
     "composable": {
@@ -51,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 7,
+      "score": 8,
       "max": 8
     },
     "total_with_live_tests": {
