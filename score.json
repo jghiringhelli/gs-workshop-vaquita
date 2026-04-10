@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "f924d01",
+    "commit": "73c397a",
     "branch": "participant/P015",
-    "timestamp": "2026-04-10T18:25:12.973Z",
+    "timestamp": "2026-04-10T18:26:14.079Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -19,12 +19,12 @@
       "violations": []
     },
     "verifiable": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "Tests: 29 passed, 0 failed | Coverage: 93.0%",
+      "testsPassed": 29,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 93
     },
     "defended": {
       "score": 1,
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 28/29 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9655172413793104,
+      "details": "Conventional commits: 29/32 (91%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.90625,
       "hasDecisionLog": false
     },
     "composable": {
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 4,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
@@ -66,15 +66,15 @@
     "q3": null
   },
   "external_metrics": {
-    "tscErrors": 0,
-    "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "tscErrors": 10,
+    "eslintErrors": 4,
+    "eslintWarnings": 4,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "duplicatePct": 0,
+    "branchCount": 49,
+    "testCoverage": 93,
+    "testCount": 29,
+    "depCount": 6
   }
 }
