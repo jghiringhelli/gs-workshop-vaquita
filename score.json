@@ -1,30 +1,35 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "061d7ce",
-    "branch": "condition-a",
-    "timestamp": "2026-03-30T15:45:01.740Z",
+    "commit": "ad85dfc",
+    "branch": "participant/P007",
+    "timestamp": "2026-04-10T17:49:04.259Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
-      "score": 1,
+      "score": 0,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README not modified from template — update it to describe what you built"
     },
     "bounded": {
-      "score": 2,
-      "max": 2,
-      "details": "No direct DB calls in source files",
-      "violations": []
-    },
-    "verifiable": {
       "score": 0,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "28 direct DB calls found — repository layer missing",
+      "violations": [
+        "src/modules/contributions/contribution.repository.ts",
+        "src/modules/participants/participant.repository.ts",
+        "src/modules/tandas/tanda.repository.ts",
+        "src/modules/users/user.repository.ts"
+      ]
+    },
+    "verifiable": {
+      "score": 2,
+      "max": 2,
+      "details": "Tests: 22 passed, 0 failed | Coverage: 90.8%",
+      "testsPassed": 22,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 90.84
     },
     "defended": {
       "score": 1,
@@ -34,9 +39,9 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 8/9 (89%) | ADR/decision doc: missing",
-      "conventionalPct": 0.8888888888888888,
-      "hasAdr": false
+      "details": "Conventional commits: 28/30 (93%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.9333333333333333,
+      "hasDecisionLog": false
     },
     "composable": {
       "score": null,
@@ -49,7 +54,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 4,
       "max": 8
     },
     "total_with_live_tests": {
@@ -58,16 +63,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "consent_pending",
+    "consented": false,
+    "q1": null,
+    "q2": null,
+    "q3": null
+  },
   "external_metrics": {
     "tscErrors": 0,
     "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintWarnings": 23,
     "auditCritical": 0,
     "auditHigh": 0,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "duplicatePct": 5.84,
+    "branchCount": 52,
+    "testCoverage": 90.84,
+    "testCount": 22,
+    "depCount": 5
   }
 }
