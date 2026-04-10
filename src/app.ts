@@ -3,12 +3,14 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { AppError } from "./errors";
 import { userRoutes } from "./routes/user.routes";
 import { tandaRoutes } from "./routes/tanda.routes";
+import { poolRoutes } from "./routes/pool.routes";
 
 const app = new Hono();
 
 // --- Mount route groups ---
 app.route("/api/users", userRoutes);
 app.route("/api/tandas", tandaRoutes);
+app.route("/api/pools", poolRoutes);
 
 // --- Health check ---
 app.get("/health", (c) => c.json({ status: "ok" }));

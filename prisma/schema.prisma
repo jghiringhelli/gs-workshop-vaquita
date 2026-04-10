@@ -17,6 +17,10 @@ model User {
   organizedTandas Tanda[]       @relation("TandaOrganizer")
   // Participations across tandas
   participants    Participant[]
+  // Pools this user organizes
+  organizedPools  Pool[]        @relation("PoolOrganizer")
+  // Pool memberships
+  poolMemberships PoolMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,3 +82,55 @@ model Contribution {
   @@unique([participantId, tandaId, round])
 }
 
+
+model Pool {
+  id           Int               @id @default(autoincrement())
+  name         String
+  purpose      String?
+  targetAmount Int               // in smallest currency unit (cents/centavos)
+  currency     String            @default("MXN")
+  status       String            @default("open") // open | funded | closed
+  organizerId  Int
+  organizer    User              @relation("PoolOrganizer", fields: [organizerId], references: [id])
+  members      PoolMember[]
+  contributions PoolContribution[]
+  withdrawals  PoolWithdrawal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PoolMember {
+  id            Int                @id @default(autoincrement())
+  poolId        Int
+  pool          Pool               @relation(fields: [poolId], references: [id])
+  userId        Int
+  user          User               @relation(fields: [userId], references: [id])
+  contributions PoolContribution[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([poolId, userId])
+}
+
+model PoolContribution {
+  id          Int        @id @default(autoincrement())
+  poolId      Int
+  pool        Pool       @relation(fields: [poolId], references: [id])
+  memberId    Int
+  member      PoolMember @relation(fields: [memberId], references: [id])
+  amountCents Int
+  note        String?
+
+  createdAt DateTime @default(now())
+}
+
+model PoolWithdrawal {
+  id          Int      @id @default(autoincrement())
+  poolId      Int
+  pool        Pool     @relation(fields: [poolId], references: [id])
+  amountCents Int
+  status      String   @default("pending") // pending | approved | rejected
+
+  createdAt DateTime @default(now())
+}
