@@ -301,6 +301,200 @@ describe("tandas feature", () => {
     expect(response.status).toBe(409);
     expect(response.body.error.code).toBe("CONFLICT");
   });
+
+  it("starts a tanda and locks randomized rotation", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberOneId = await createUser(app, "bob@example.com", "Bob");
+    const memberTwoId = await createUser(app, "carol@example.com", "Carol");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberOneId });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberTwoId });
+
+    const response = await request(app).post("/api/tandas/1/start").send({ organizerId });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 1,
+      status: "active",
+      currentRound: 1,
+      totalRounds: 3,
+    });
+
+    const participantsResponse = await request(app).get("/api/tandas/1/participants");
+    expect(participantsResponse.status).toBe(200);
+    const assignedPositions = participantsResponse.body
+      .map((participant: { rotationPosition: number | null }) => participant.rotationPosition)
+      .sort((left: number, right: number) => left - right);
+
+    expect(assignedPositions).toEqual([1, 2, 3]);
+  });
+
+  it("rejects invalid start payloads", async () => {
+    const app = createApp(context);
+
+    const response = await request(app).post("/api/tandas/1/start").send({ organizerId: 0, extra: true });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 400 when starting with fewer than 3 participants", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberId = await createUser(app, "bob@example.com", "Bob");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberId });
+
+    const response = await request(app).post("/api/tandas/1/start").send({ organizerId });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("BAD_REQUEST");
+  });
+
+  it("returns 403 when a non-organizer starts a tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberOneId = await createUser(app, "bob@example.com", "Bob");
+    const memberTwoId = await createUser(app, "carol@example.com", "Carol");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberOneId });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberTwoId });
+
+    const response = await request(app).post("/api/tandas/1/start").send({ organizerId: memberOneId });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("returns 409 when starting a tanda that is not forming", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberOneId = await createUser(app, "bob@example.com", "Bob");
+    const memberTwoId = await createUser(app, "carol@example.com", "Carol");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberOneId });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberTwoId });
+    await request(app).post("/api/tandas/1/start").send({ organizerId });
+
+    const response = await request(app).post("/api/tandas/1/start").send({ organizerId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
+  it("advances an active tanda to the next round", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+
+    await createStartedTanda(app, organizerId);
+
+    const response = await request(app).post("/api/tandas/1/advance").send({ organizerId });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 1,
+      status: "active",
+      currentRound: 2,
+      totalRounds: 3,
+    });
+  });
+
+  it("completes a tanda after the last round advances", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+
+    await createStartedTanda(app, organizerId);
+    await request(app).post("/api/tandas/1/advance").send({ organizerId });
+    await request(app).post("/api/tandas/1/advance").send({ organizerId });
+
+    const response = await request(app).post("/api/tandas/1/advance").send({ organizerId });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: 1,
+      status: "completed",
+      currentRound: 3,
+      totalRounds: 3,
+    });
+  });
+
+  it("rejects invalid advance payloads", async () => {
+    const app = createApp(context);
+
+    const response = await request(app).post("/api/tandas/1/advance").send({ organizerId: 0, extra: true });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 403 when a non-organizer advances a tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const outsiderId = await createUser(app, "dan@example.com", "Dan");
+
+    await createStartedTanda(app, organizerId);
+
+    const response = await request(app).post("/api/tandas/1/advance").send({ organizerId: outsiderId });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("returns 409 when advancing a tanda that is not active", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberOneId = await createUser(app, "bob@example.com", "Bob");
+    const memberTwoId = await createUser(app, "carol@example.com", "Carol");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberOneId });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberTwoId });
+
+    const response = await request(app).post("/api/tandas/1/advance").send({ organizerId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
+  it("returns 409 when advancing a completed tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+
+    await createStartedTanda(app, organizerId);
+    await request(app).post("/api/tandas/1/advance").send({ organizerId });
+    await request(app).post("/api/tandas/1/advance").send({ organizerId });
+    await request(app).post("/api/tandas/1/advance").send({ organizerId });
+
+    const response = await request(app).post("/api/tandas/1/advance").send({ organizerId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
 });
 
 async function createUser(
@@ -310,4 +504,21 @@ async function createUser(
 ): Promise<number> {
   const response = await request(app).post("/api/users").send({ email, name });
   return response.body.id as number;
+}
+
+async function createStartedTanda(
+  app: ReturnType<typeof createApp>,
+  organizerId: number,
+): Promise<void> {
+  const memberOneId = await createUser(app, `${organizerId}-bob@example.com`, "Bob");
+  const memberTwoId = await createUser(app, `${organizerId}-carol@example.com`, "Carol");
+
+  await request(app).post("/api/tandas").send({
+    name: `Tanda ${organizerId}`,
+    organizerId,
+    contributionAmount: 1000,
+  });
+  await request(app).post("/api/tandas/1/join").send({ userId: memberOneId });
+  await request(app).post("/api/tandas/1/join").send({ userId: memberTwoId });
+  await request(app).post("/api/tandas/1/start").send({ organizerId });
 }

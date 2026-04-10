@@ -24,6 +24,18 @@ export class NotFoundError extends AppError {
   }
 }
 
+export class BadRequestError extends AppError {
+  public constructor(message: string, context: ErrorContext = {}) {
+    super(message, 400, "BAD_REQUEST", context);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  public constructor(message: string, context: ErrorContext = {}) {
+    super(message, 403, "FORBIDDEN", context);
+  }
+}
+
 export class ValidationAppError extends AppError {
   public constructor(message: string, context: ErrorContext = {}) {
     super(message, 422, "VALIDATION_ERROR", context);

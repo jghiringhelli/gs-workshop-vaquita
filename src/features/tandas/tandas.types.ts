@@ -33,6 +33,16 @@ export interface JoinTandaInput {
   readonly userId: number;
 }
 
+export interface StartTandaInput {
+  readonly tandaId: number;
+  readonly organizerId: number;
+}
+
+export interface AdvanceTandaInput {
+  readonly tandaId: number;
+  readonly organizerId: number;
+}
+
 export interface RecordContributionInput {
   readonly tandaId: number;
   readonly participantId: number;

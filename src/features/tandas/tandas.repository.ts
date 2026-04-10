@@ -2,9 +2,11 @@ import type Database from "better-sqlite3";
 
 import { AppError, NotImplementedAppError } from "../../lib/errors";
 import type {
+  AdvanceTandaInput,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
+  StartTandaInput,
   Tanda,
   TandaParticipant,
 } from "./tandas.types";
@@ -35,6 +37,8 @@ export interface TandaRepository {
   listByUserId(userId: number): ReadonlyArray<Tanda>;
   listParticipants(tandaId: number): ReadonlyArray<TandaParticipant>;
   join(input: JoinTandaInput): TandaParticipant;
+  start(input: StartTandaInput, orderedParticipantIds: ReadonlyArray<number>): Tanda;
+  advance(input: AdvanceTandaInput): Tanda;
   recordContribution(input: RecordContributionInput): void;
 }
 
@@ -169,6 +173,90 @@ export class SqliteTandaRepository implements TandaRepository {
     }
 
     return mapParticipantRow(participant);
+  }
+
+  /**
+   * Activates a tanda and locks randomized rotation positions.
+   * @param input Start request payload.
+   * @param orderedParticipantIds Participant ids in their final rotation order.
+   * @returns Updated tanda projection.
+   */
+  public start(input: StartTandaInput, orderedParticipantIds: ReadonlyArray<number>): Tanda {
+    const transaction = this.database.transaction(
+      (payload: StartTandaInput, participantIds: ReadonlyArray<number>): Tanda => {
+        this.database
+          .prepare("UPDATE participants SET rotation_position = NULL WHERE tanda_id = ?")
+          .run(payload.tandaId);
+
+        const updateParticipantStatement = this.database.prepare(
+          `UPDATE participants
+           SET rotation_position = ?
+           WHERE id = ? AND tanda_id = ?`,
+        );
+
+        participantIds.forEach((participantId, index) => {
+          updateParticipantStatement.run(index + 1, participantId, payload.tandaId);
+        });
+
+        this.database
+          .prepare(
+            `UPDATE tandas
+             SET status = 'active', current_round = 1, total_rounds = ?
+             WHERE id = ? AND organizer_id = ?`,
+          )
+          .run(participantIds.length, payload.tandaId, payload.organizerId);
+
+        const tanda = this.findById(payload.tandaId);
+        if (!tanda) {
+          throw new AppError("Failed to reload started tanda.", 500, "PERSISTENCE_ERROR");
+        }
+
+        return tanda;
+      },
+    );
+
+    return transaction(input, orderedParticipantIds);
+  }
+
+  /**
+   * Advances a tanda to the next round or completes it when the last round finishes.
+   * @param input Advance request payload.
+   * @returns Updated tanda projection.
+   */
+  public advance(input: AdvanceTandaInput): Tanda {
+    const transaction = this.database.transaction((payload: AdvanceTandaInput): Tanda => {
+      const tanda = this.findById(payload.tandaId);
+      if (!tanda) {
+        throw new AppError("Failed to load tanda during advance.", 500, "PERSISTENCE_ERROR");
+      }
+
+      if (tanda.currentRound >= tanda.totalRounds) {
+        this.database
+          .prepare(
+            `UPDATE tandas
+             SET status = 'completed'
+             WHERE id = ? AND organizer_id = ?`,
+          )
+          .run(payload.tandaId, payload.organizerId);
+      } else {
+        this.database
+          .prepare(
+            `UPDATE tandas
+             SET current_round = current_round + 1
+             WHERE id = ? AND organizer_id = ?`,
+          )
+          .run(payload.tandaId, payload.organizerId);
+      }
+
+      const updatedTanda = this.findById(payload.tandaId);
+      if (!updatedTanda) {
+        throw new AppError("Failed to reload advanced tanda.", 500, "PERSISTENCE_ERROR");
+      }
+
+      return updatedTanda;
+    });
+
+    return transaction(input);
   }
 
   /**

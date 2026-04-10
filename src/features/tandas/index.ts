@@ -8,9 +8,11 @@ export {
   type TandaRepository,
 } from "./tandas.repository";
 export type {
+  AdvanceTandaInput,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
+  StartTandaInput,
   Tanda,
   TandaParticipant,
   TandaStatus,

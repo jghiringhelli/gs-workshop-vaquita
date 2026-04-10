@@ -1,11 +1,19 @@
-import { ConflictError, NotFoundError, NotImplementedAppError } from "../../lib/errors";
+import {
+  BadRequestError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  NotImplementedAppError,
+} from "../../lib/errors";
 
 import type { TandaRepository } from "./tandas.repository";
 import type { UserRepository } from "../users";
 import type {
+  AdvanceTandaInput,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
+  StartTandaInput,
   Tanda,
   TandaParticipant,
 } from "./tandas.types";
@@ -16,11 +24,14 @@ export interface TandasService {
   listTandasForUser(userId: number): ReadonlyArray<Tanda>;
   listParticipants(tandaId: number): ReadonlyArray<TandaParticipant>;
   joinTanda(input: JoinTandaInput): TandaParticipant;
+  startTanda(input: StartTandaInput): Tanda;
+  advanceTanda(input: AdvanceTandaInput): Tanda;
   recordContribution(input: RecordContributionInput): void;
 }
 
 export interface TandasServiceConfig {
   readonly maxParticipants: number;
+  readonly minParticipantsToStart: number;
 }
 
 export class DefaultTandasService implements TandasService {
@@ -127,6 +138,70 @@ export class DefaultTandasService implements TandasService {
   }
 
   /**
+   * Starts a tanda and locks randomized participant rotation.
+   * @param input Start request payload.
+   * @returns Updated tanda projection.
+   */
+  public startTanda(input: StartTandaInput): Tanda {
+    const tanda = this.getTandaById(input.tandaId);
+    this.assertOrganizerActionAllowed(tanda, input.organizerId);
+
+    if (tanda.status !== "forming") {
+      throw new ConflictError("Only tandas in forming status can be started.", {
+        details: { tandaId: input.tandaId, status: tanda.status },
+      });
+    }
+
+    const participants = this.tandaRepository.listParticipants(input.tandaId);
+    if (participants.length < this.config.minParticipantsToStart) {
+      throw new BadRequestError("At least 3 participants are required to start a tanda.", {
+        details: {
+          tandaId: input.tandaId,
+          participantCount: participants.length,
+          minParticipants: this.config.minParticipantsToStart,
+        },
+      });
+    }
+
+    if (participants.length > this.config.maxParticipants) {
+      throw new ConflictError("Tanda exceeds the configured participant limit.", {
+        details: {
+          tandaId: input.tandaId,
+          participantCount: participants.length,
+          maxParticipants: this.config.maxParticipants,
+        },
+      });
+    }
+
+    const orderedParticipantIds = shuffleParticipantIds(participants.map((participant) => participant.id));
+    return this.tandaRepository.start(input, orderedParticipantIds);
+  }
+
+  /**
+   * Advances the active tanda to the next round or completes it.
+   * @param input Advance request payload.
+   * @returns Updated tanda projection.
+   */
+  public advanceTanda(input: AdvanceTandaInput): Tanda {
+    const tanda = this.getTandaById(input.tandaId);
+    this.assertOrganizerActionAllowed(tanda, input.organizerId);
+
+    if (tanda.status === "completed" || tanda.status === "cancelled") {
+      throw new ConflictError("Completed or cancelled tandas cannot be advanced.", {
+        details: { tandaId: input.tandaId, status: tanda.status },
+      });
+    }
+
+    if (tanda.status !== "active") {
+      throw new ConflictError("Only active tandas can be advanced.", {
+        details: { tandaId: input.tandaId, status: tanda.status },
+      });
+    }
+
+    return this.tandaRepository.advance(input);
+  }
+
+  /**
    * Records a contribution for the active round.
    * @param _input Contribution payload.
    * @returns Nothing.
@@ -136,4 +211,31 @@ export class DefaultTandasService implements TandasService {
       "DefaultTandasService.recordContribution is not implemented yet.",
     );
   }
+
+  private assertOrganizerActionAllowed(tanda: Tanda, organizerId: number): void {
+    if (tanda.organizerId !== organizerId) {
+      throw new ForbiddenError("Only the organizer can perform this action.", {
+        details: { tandaId: tanda.id, organizerId },
+      });
+    }
+  }
+}
+
+function shuffleParticipantIds(participantIds: ReadonlyArray<number>): ReadonlyArray<number> {
+  const shuffledParticipantIds = [...participantIds];
+
+  for (let index = shuffledParticipantIds.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const currentValue = shuffledParticipantIds[index];
+    const swapValue = shuffledParticipantIds[swapIndex];
+
+    if (currentValue === undefined || swapValue === undefined) {
+      throw new Error("Participant shuffle failed due to an invalid index.");
+    }
+
+    shuffledParticipantIds[index] = swapValue;
+    shuffledParticipantIds[swapIndex] = currentValue;
+  }
+
+  return shuffledParticipantIds;
 }

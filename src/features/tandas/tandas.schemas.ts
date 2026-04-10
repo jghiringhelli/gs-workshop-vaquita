@@ -28,6 +28,10 @@ export const joinTandaBodySchema = z.object({
   userId: z.coerce.number().int().positive(),
 }).strict();
 
+export const organizerActionBodySchema = z.object({
+  organizerId: z.coerce.number().int().positive(),
+}).strict();
+
 export const recordContributionBodySchema = z.object({
   participantId: z.coerce.number().int().positive(),
   amount: z.coerce.number().int().positive(),

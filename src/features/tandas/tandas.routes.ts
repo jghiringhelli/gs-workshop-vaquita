@@ -5,6 +5,7 @@ import {
   createTandaBodySchema,
   joinTandaBodySchema,
   listTandasQuerySchema,
+  organizerActionBodySchema,
   tandaIdParamsSchema,
 } from "./tandas.schemas";
 
@@ -20,6 +21,8 @@ export function createTandasRouter(tandasService: TandasService): ExpressRouter 
   router.get("/", listTandasHandler(tandasService));
   router.get("/:id", getTandaByIdHandler(tandasService));
   router.post("/:id/join", joinTandaHandler(tandasService));
+  router.post("/:id/start", startTandaHandler(tandasService));
+  router.post("/:id/advance", advanceTandaHandler(tandasService));
   router.get("/:id/participants", listParticipantsHandler(tandasService));
 
   return router;
@@ -71,6 +74,38 @@ function joinTandaHandler(tandasService: TandasService): RequestHandler {
         userId: body.userId,
       });
       response.status(201).json(participant);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function startTandaHandler(tandasService: TandasService): RequestHandler {
+  return (request, response, next): void => {
+    try {
+      const params = tandaIdParamsSchema.parse(request.params);
+      const body = organizerActionBodySchema.parse(request.body);
+      const tanda = tandasService.startTanda({
+        tandaId: params.id,
+        organizerId: body.organizerId,
+      });
+      response.status(200).json(tanda);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function advanceTandaHandler(tandasService: TandasService): RequestHandler {
+  return (request, response, next): void => {
+    try {
+      const params = tandaIdParamsSchema.parse(request.params);
+      const body = organizerActionBodySchema.parse(request.body);
+      const tanda = tandasService.advanceTanda({
+        tandaId: params.id,
+        organizerId: body.organizerId,
+      });
+      response.status(200).json(tanda);
     } catch (error) {
       next(error);
     }
