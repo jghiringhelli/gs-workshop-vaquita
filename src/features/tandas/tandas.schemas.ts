@@ -7,7 +7,7 @@ export const tandaIdParamsSchema = z.object({
 export const participantHistoryParamsSchema = z.object({
   id: z.coerce.number().int().positive(),
   pid: z.coerce.number().int().positive(),
-});
+}).strict();
 
 export const roundSummaryParamsSchema = z.object({
   id: z.coerce.number().int().positive(),
@@ -35,4 +35,4 @@ export const organizerActionBodySchema = z.object({
 export const recordContributionBodySchema = z.object({
   participantId: z.coerce.number().int().positive(),
   amount: z.coerce.number().int().positive(),
-});
+}).strict();

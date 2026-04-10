@@ -10,6 +10,7 @@ import type { TandaRepository } from "./tandas.repository";
 import type { UserRepository } from "../users";
 import type {
   AdvanceTandaInput,
+  ContributionRecord,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
@@ -26,7 +27,8 @@ export interface TandasService {
   joinTanda(input: JoinTandaInput): TandaParticipant;
   startTanda(input: StartTandaInput): Tanda;
   advanceTanda(input: AdvanceTandaInput): Tanda;
-  recordContribution(input: RecordContributionInput): void;
+  recordContribution(input: Omit<RecordContributionInput, "round" | "status">): ContributionRecord;
+  getParticipantHistory(tandaId: number, participantId: number): ReadonlyArray<ContributionRecord>;
 }
 
 export interface TandasServiceConfig {
@@ -203,13 +205,69 @@ export class DefaultTandasService implements TandasService {
 
   /**
    * Records a contribution for the active round.
-   * @param _input Contribution payload.
-   * @returns Nothing.
+   * @param input Contribution payload without derived round metadata.
+   * @returns Persisted contribution record.
    */
-  public recordContribution(_input: RecordContributionInput): void {
-    throw new NotImplementedAppError(
-      "DefaultTandasService.recordContribution is not implemented yet.",
-    );
+  public recordContribution(
+    input: Omit<RecordContributionInput, "round" | "status">,
+  ): ContributionRecord {
+    const tanda = this.getTandaById(input.tandaId);
+    if (tanda.status !== "active") {
+      throw new ConflictError("Contributions can only be recorded for active tandas.", {
+        details: { tandaId: input.tandaId, status: tanda.status },
+      });
+    }
+
+    const participant = this.getParticipantOrThrow(input.tandaId, input.participantId);
+    if (participant.tandaId !== input.tandaId) {
+      throw new NotFoundError("Participant not found in this tanda.", {
+        details: { tandaId: input.tandaId, participantId: input.participantId },
+      });
+    }
+
+    if (input.amount !== tanda.contributionAmount) {
+      throw new BadRequestError("Contribution amount must match the tanda contribution amount.", {
+        details: {
+          tandaId: input.tandaId,
+          expectedAmount: tanda.contributionAmount,
+          amount: input.amount,
+        },
+      });
+    }
+
+    const history = this.tandaRepository.listContributionHistory(input.tandaId, input.participantId);
+    if (history.some((contribution) => contribution.round === tanda.currentRound)) {
+      throw new ConflictError("Participant has already contributed in the current round.", {
+        details: {
+          tandaId: input.tandaId,
+          participantId: input.participantId,
+          round: tanda.currentRound,
+        },
+      });
+    }
+
+    return this.tandaRepository.recordContribution({
+      tandaId: input.tandaId,
+      participantId: input.participantId,
+      amount: input.amount,
+      round: tanda.currentRound,
+      status: "paid",
+    });
+  }
+
+  /**
+   * Returns the contribution history for a participant in a tanda.
+   * @param tandaId Tanda identifier.
+   * @param participantId Participant identifier.
+   * @returns Ordered contribution records.
+   */
+  public getParticipantHistory(
+    tandaId: number,
+    participantId: number,
+  ): ReadonlyArray<ContributionRecord> {
+    this.getTandaById(tandaId);
+    this.getParticipantOrThrow(tandaId, participantId);
+    return this.tandaRepository.listContributionHistory(tandaId, participantId);
   }
 
   private assertOrganizerActionAllowed(tanda: Tanda, organizerId: number): void {
@@ -218,6 +276,20 @@ export class DefaultTandasService implements TandasService {
         details: { tandaId: tanda.id, organizerId },
       });
     }
+  }
+
+  private getParticipantOrThrow(tandaId: number, participantId: number): TandaParticipant {
+    const participant = this.tandaRepository
+      .listParticipants(tandaId)
+      .find((candidate) => candidate.id === participantId);
+
+    if (!participant) {
+      throw new NotFoundError("Participant not found in this tanda.", {
+        details: { tandaId, participantId },
+      });
+    }
+
+    return participant;
   }
 }
 

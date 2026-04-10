@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import { AppError, NotImplementedAppError } from "../../lib/errors";
 import type {
   AdvanceTandaInput,
+  ContributionRecord,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
@@ -31,6 +32,17 @@ interface ParticipantRow {
   readonly created_at: string;
 }
 
+interface ContributionRow {
+  readonly id: number;
+  readonly tanda_id: number;
+  readonly participant_id: number;
+  readonly round: number;
+  readonly amount: number;
+  readonly penalty_amount: number;
+  readonly status: "pending" | "paid" | "late" | "missed";
+  readonly recorded_at: string;
+}
+
 export interface TandaRepository {
   create(input: CreateTandaInput): Tanda;
   findById(id: number): Tanda | null;
@@ -39,7 +51,8 @@ export interface TandaRepository {
   join(input: JoinTandaInput): TandaParticipant;
   start(input: StartTandaInput, orderedParticipantIds: ReadonlyArray<number>): Tanda;
   advance(input: AdvanceTandaInput): Tanda;
-  recordContribution(input: RecordContributionInput): void;
+  recordContribution(input: RecordContributionInput): ContributionRecord;
+  listContributionHistory(tandaId: number, participantId: number): ReadonlyArray<ContributionRecord>;
 }
 
 export class SqliteTandaRepository implements TandaRepository {
@@ -261,13 +274,58 @@ export class SqliteTandaRepository implements TandaRepository {
 
   /**
    * Records a contribution for a participant in the active round.
-   * @param _input Contribution payload.
-   * @returns Nothing.
+   * @param input Contribution payload.
+   * @returns Persisted contribution record.
    */
-  public recordContribution(_input: RecordContributionInput): void {
-    throw new NotImplementedAppError(
-      "SqliteTandaRepository.recordContribution is not implemented yet.",
-    );
+  public recordContribution(input: RecordContributionInput): ContributionRecord {
+    const result = this.database
+      .prepare(
+        `INSERT INTO contributions (
+          tanda_id,
+          participant_id,
+          round,
+          amount,
+          penalty_amount,
+          status
+        ) VALUES (?, ?, ?, ?, 0, ?)`,
+      )
+      .run(input.tandaId, input.participantId, input.round, input.amount, input.status);
+
+    const contribution = this.database
+      .prepare(
+        `SELECT id, tanda_id, participant_id, round, amount, penalty_amount, status, recorded_at
+         FROM contributions
+         WHERE id = ?`,
+      )
+      .get(Number(result.lastInsertRowid)) as ContributionRow | undefined;
+
+    if (!contribution) {
+      throw new AppError("Failed to reload persisted contribution.", 500, "PERSISTENCE_ERROR");
+    }
+
+    return mapContributionRow(contribution);
+  }
+
+  /**
+   * Lists the contribution history for a participant in a tanda.
+   * @param tandaId Tanda identifier.
+   * @param participantId Participant identifier.
+   * @returns Contribution records ordered by round.
+   */
+  public listContributionHistory(
+    tandaId: number,
+    participantId: number,
+  ): ReadonlyArray<ContributionRecord> {
+    const rows = this.database
+      .prepare(
+        `SELECT id, tanda_id, participant_id, round, amount, penalty_amount, status, recorded_at
+         FROM contributions
+         WHERE tanda_id = ? AND participant_id = ?
+         ORDER BY round ASC, id ASC`,
+      )
+      .all(tandaId, participantId) as ReadonlyArray<ContributionRow>;
+
+    return rows.map(mapContributionRow);
   }
 }
 
@@ -292,5 +350,18 @@ function mapParticipantRow(row: ParticipantRow): TandaParticipant {
     role: row.role,
     rotationPosition: row.rotation_position,
     createdAt: row.created_at,
+  };
+}
+
+function mapContributionRow(row: ContributionRow): ContributionRecord {
+  return {
+    id: row.id,
+    tandaId: row.tanda_id,
+    participantId: row.participant_id,
+    round: row.round,
+    amount: row.amount,
+    penaltyAmount: row.penalty_amount,
+    status: row.status,
+    recordedAt: row.recorded_at,
   };
 }

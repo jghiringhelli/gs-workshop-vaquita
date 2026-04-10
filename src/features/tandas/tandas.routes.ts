@@ -6,6 +6,8 @@ import {
   joinTandaBodySchema,
   listTandasQuerySchema,
   organizerActionBodySchema,
+  participantHistoryParamsSchema,
+  recordContributionBodySchema,
   tandaIdParamsSchema,
 } from "./tandas.schemas";
 
@@ -23,7 +25,9 @@ export function createTandasRouter(tandasService: TandasService): ExpressRouter 
   router.post("/:id/join", joinTandaHandler(tandasService));
   router.post("/:id/start", startTandaHandler(tandasService));
   router.post("/:id/advance", advanceTandaHandler(tandasService));
+  router.post("/:id/contributions", recordContributionHandler(tandasService));
   router.get("/:id/participants", listParticipantsHandler(tandasService));
+  router.get("/:id/participants/:pid/history", getParticipantHistoryHandler(tandasService));
 
   return router;
 }
@@ -112,12 +116,41 @@ function advanceTandaHandler(tandasService: TandasService): RequestHandler {
   };
 }
 
+function recordContributionHandler(tandasService: TandasService): RequestHandler {
+  return (request, response, next): void => {
+    try {
+      const params = tandaIdParamsSchema.parse(request.params);
+      const body = recordContributionBodySchema.parse(request.body);
+      const contribution = tandasService.recordContribution({
+        tandaId: params.id,
+        participantId: body.participantId,
+        amount: body.amount,
+      });
+      response.status(201).json(contribution);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
 function listParticipantsHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
       const params = tandaIdParamsSchema.parse(request.params);
       const participants = tandasService.listParticipants(params.id);
       response.status(200).json(participants);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function getParticipantHistoryHandler(tandasService: TandasService): RequestHandler {
+  return (request, response, next): void => {
+    try {
+      const params = participantHistoryParamsSchema.parse(request.params);
+      const history = tandasService.getParticipantHistory(params.id, params.pid);
+      response.status(200).json(history);
     } catch (error) {
       next(error);
     }

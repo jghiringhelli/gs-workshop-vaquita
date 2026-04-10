@@ -22,6 +22,17 @@ export interface TandaParticipant {
   readonly createdAt: string;
 }
 
+export interface ContributionRecord {
+  readonly id: number;
+  readonly tandaId: number;
+  readonly participantId: number;
+  readonly round: number;
+  readonly amount: number;
+  readonly penaltyAmount: number;
+  readonly status: ContributionStatus;
+  readonly recordedAt: string;
+}
+
 export interface CreateTandaInput {
   readonly name: string;
   readonly organizerId: number;
