@@ -37,6 +37,7 @@ export function initializeSchema(database: Database.Database): void {
       current_round INTEGER NOT NULL,
       total_rounds INTEGER NOT NULL,
       started_at TEXT,
+      current_round_started_at TEXT NOT NULL,
       cancelled_at TEXT,
       completed_at TEXT,
       created_at TEXT NOT NULL,

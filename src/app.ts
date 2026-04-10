@@ -1,11 +1,14 @@
+import { createDatabase } from "./database/createDatabase";
 import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import { ZodError } from "zod";
 
 import { createUserRouter } from "./features/users/userRoutes";
 import { SqliteUserRepository } from "./features/users/sqliteUserRepository";
 import { UserService } from "./features/users/userService";
+import { createTandaRouter } from "./features/tandas/tandaRoutes";
+import { SqliteTandaRepository } from "./features/tandas/sqliteTandaRepository";
+import { TandaService } from "./features/tandas/tandaService";
 import { loadAppConfig, type ConfigOverrides } from "./shared/config";
-import { createDatabase } from "./shared/database";
 import { AppError } from "./shared/errors";
 
 /**
@@ -18,11 +21,19 @@ export function createApp(overrides: ConfigOverrides = {}): Express {
   const config = loadAppConfig(overrides);
   const database = createDatabase(config.databaseFilePath);
   const userRepository = new SqliteUserRepository(database);
+  const tandaRepository = new SqliteTandaRepository(database);
   const userService = new UserService(userRepository);
+  const tandaService = new TandaService(tandaRepository, userRepository, {
+    minParticipantsToStart: config.minParticipantsToStart,
+    maxParticipantsPerTanda: config.maxParticipantsPerTanda,
+    latePenaltyPercent: config.latePenaltyPercent,
+    contributionWindowHours: config.contributionWindowHours,
+  });
 
   const app = express();
   app.use(express.json());
   app.use(createUserRouter(userService));
+  app.use(createTandaRouter(tandaService));
   app.use(handleErrors);
   return app;
 }

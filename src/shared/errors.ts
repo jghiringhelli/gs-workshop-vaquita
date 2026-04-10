@@ -74,3 +74,17 @@ export class UnprocessableEntityError extends AppError {
     super(422, "unprocessable_entity", message);
   }
 }
+
+/**
+ * Error raised when request data violates a business rule.
+ */
+export class ValidationError extends AppError {
+  /**
+   * Create a validation error.
+   *
+   * @param message Human-readable error message.
+   */
+  public constructor(message: string) {
+    super(400, "validation_error", message);
+  }
+}
