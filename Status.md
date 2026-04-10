@@ -24,7 +24,7 @@ src/
 | Tandas lifecycle | ✓ Done | current | Create, join, start, cancel, advance |
 | Contributions | ✓ Done | current | Record paid/late/missed contributions |
 | Participant history | ✓ Done | current | History endpoint implemented |
-| Automated tests | ⬚ Not Started | current | Deferred by request for MVP-first delivery |
+| Automated tests | ✓ Done | current | 29 Vitest + Supertest endpoint tests passing |
 
 ## Known Bugs
 | ID | Description | Severity | Status |
@@ -34,15 +34,14 @@ src/
 ## Technical Debt
 | Item | Impact | Effort | Priority |
 |------|--------|--------|----------|
-| Add Vitest + supertest coverage for every endpoint | High | Medium | High |
 | Fill the generated diagram placeholders with real architecture diagrams | Medium | Medium | Medium |
 | Add stronger audit logging for state transitions | Medium | Medium | Medium |
 
 ## Current Context
-- Working on: MVP backend implementation is complete
-- Blocked by: native SQLite module mismatch in the current local runtime environment
+- Working on: MVP API and endpoint test suite are complete
+- Blocked by: no product blockers currently identified
 - Decisions pending: whether to keep dual auth compatibility or move fully to bearer token flows later
-- Next steps: rebuild dependencies in the target runtime, run manual endpoint checks, then add tests
+- Next steps: fill diagrams, add audit logging depth, and extend tests to smoke/coverage gates in CI
 
 ## Architecture Decision Log
 | Date | Decision | Rationale | Status |

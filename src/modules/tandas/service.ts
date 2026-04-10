@@ -310,6 +310,9 @@ export class TandaService {
     const contributionParticipantIds = new Set(contributions.map((item) => item.participantId))
     const recipient =
       participants.find((participant) => participant.rotationPosition === round) ?? null
+    const collectedContributions = contributions.filter(
+      (contribution) => contribution.status !== "missed",
+    )
 
     return {
       tandaId: tanda.id,
@@ -318,7 +321,10 @@ export class TandaService {
       recipient: recipient ? mapParticipantView(recipient) : null,
       totalExpectedAmount: fromMinorUnits(tanda.contributionAmountMinor * participants.length),
       totalCollectedAmount: fromMinorUnits(
-        contributions.reduce((total, contribution) => total + contribution.amountMinor, 0),
+        collectedContributions.reduce(
+          (total, contribution) => total + contribution.amountMinor,
+          0,
+        ),
       ),
       totalPenaltyAmount: fromMinorUnits(
         contributions.reduce((total, contribution) => total + contribution.penaltyMinor, 0),

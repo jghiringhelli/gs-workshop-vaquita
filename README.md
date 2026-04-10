@@ -48,6 +48,18 @@ npm start
 
 Default server URL: `http://localhost:3000`
 
+## Verification
+
+```bash
+npm test
+npm run test:coverage
+npm run typecheck
+```
+
+Current automated API coverage is exercised with Vitest + Supertest using endpoint-level
+happy-path and 4xx cases named with the
+`MethodName_StateUnderTest_ExpectedBehavior` convention.
+
 ## Environment
 
 Supported environment variables:
