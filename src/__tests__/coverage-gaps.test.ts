@@ -79,13 +79,65 @@ describe('Coverage gap tests', () => {
 
   describe('getDb() lazy initialization fallback', () => {
     it('should auto-initialize database if getDb called without prior init', async () => {
-      // Dynamically import a fresh module to test the lazy init path
       vi.resetModules();
       const freshDb = await import('../db/database');
       const db = freshDb.getDb();
       expect(db).toBeDefined();
-      // Restore the original database for subsequent tests
       freshDb.initializeDatabase();
+    });
+  });
+
+  describe('Route error branches — GET /api/tandas with tanda not found', () => {
+    it('should return 404 for GET /api/tandas/:id/participants on nonexistent tanda', async () => {
+      const res = await request(app).get('/api/tandas/999/participants');
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('Route error branches — POST /api/tandas without auth or organizerId', () => {
+    it('should return 401 when no token and no organizerId', async () => {
+      const res = await request(app)
+        .post('/api/tandas')
+        .send({ name: 'No Auth', contributionAmount: 500 });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('Route error branches — GET /api/tandas with NaN userId', () => {
+    it('should handle non-numeric userId query gracefully', async () => {
+      const res = await request(app).get('/api/tandas?userId=notanumber');
+      // NaN gets passed to the service, which handles it
+      expect(res.status).toBe(200);
+    });
+  });
+
+  describe('Round summary — recipient is null when no matching rotation position', () => {
+    it('should return null recipient for round with no matching rotation', async () => {
+      const org = await createUser('org@test.com', 'Org');
+      const m1 = await createUser('m1@test.com', 'M1');
+      const m2 = await createUser('m2@test.com', 'M2');
+
+      // Create tanda with totalRounds=5 (more rounds than participants)
+      const tandaRes = await request(app)
+        .post('/api/tandas')
+        .set('Authorization', `Bearer ${org.token}`)
+        .send({ name: 'Many Rounds', contributionAmount: 100, totalRounds: 5 });
+
+      await request(app).post(`/api/tandas/${tandaRes.body.id}/join`).set('Authorization', `Bearer ${m1.token}`);
+      await request(app).post(`/api/tandas/${tandaRes.body.id}/join`).set('Authorization', `Bearer ${m2.token}`);
+
+      await request(app)
+        .post(`/api/tandas/${tandaRes.body.id}/start`)
+        .set('Authorization', `Bearer ${org.token}`);
+
+      // Round 5 has no participant with rotation_position=5 (only 3 participants, positions 1-3)
+      const res = await request(app)
+        .get(`/api/tandas/${tandaRes.body.id}/rounds/5`)
+        .set('Authorization', `Bearer ${org.token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.recipient).toBeNull();
     });
   });
 });
