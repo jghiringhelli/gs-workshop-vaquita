@@ -118,4 +118,29 @@ export class ContributionService {
       pending,
     };
   }
+
+  /**
+   * Returns all contributions for a specific participant in a tanda, ordered by round.
+   *
+   * Guards (in order):
+   * 1. Tanda must exist.
+   * 2. Participant must exist AND belong to that tanda.
+   *
+   * @param tandaId       - Tanda UUID from the route param
+   * @param participantId - Participant UUID from the route param
+   * @returns Array of ContributionResponseDTO ordered by round ascending (may be empty)
+   * @throws NotFoundError if the tanda or the participant-in-tanda is not found
+   */
+  getParticipantHistory(tandaId: string, participantId: string): ContributionResponseDTO[] {
+    const tanda = this.tandaRepository.findById(tandaId);
+    if (!tanda) throw new NotFoundError('Tanda', tandaId);
+
+    const participants = this.participantRepository.findByTandaId(tandaId);
+    const belongs = participants.some((p) => p.id === participantId);
+    if (!belongs) throw new NotFoundError('Participant', participantId);
+
+    return this.contributionRepository
+      .findByParticipantId(participantId)
+      .map(toContributionResponseDTO);
+  }
 }
