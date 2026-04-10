@@ -1,4 +1,5 @@
 // Tanda API — Entry point
+import 'dotenv/config';
 import express from 'express';
 import { getDatabase } from './db';
 import { ServiceFactory } from './services';
