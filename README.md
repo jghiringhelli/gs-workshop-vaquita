@@ -1,67 +1,75 @@
-# 🫰 Tanda API — Workshop
+# Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A REST API for managing **tandas** (rotating savings groups / vaquitas). A tanda is an informal rotating savings group where N participants each contribute a fixed amount every round, and one participant receives the full pot each round. After N rounds, everyone has received exactly once.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What was built
 
----
+A fully functional API with 14 endpoints covering the complete tanda lifecycle:
+
+- **User management**: create, list, get users (JWT token issued on creation)
+- **Tanda CRUD**: create tandas, list by user, get details with participants
+- **Participation**: join tandas, list participants, enforce max capacity
+- **Lifecycle**: start (randomizes rotation), cancel, advance rounds, auto-complete
+- **Contributions**: record payments, track round summaries, participant history
+
+### Architecture
+
+Layered architecture with strict separation of concerns:
+
+```
+Routes (HTTP) -> Services (business logic) -> Repositories (SQL)
+```
+
+- **No SQL in route handlers** — all database access through repository layer
+- **Custom error hierarchy** — AppError, NotFoundError, ValidationError, ForbiddenError, etc.
+- **Zod validation** on all inputs
+- **JWT auth** via HMAC-SHA256 (built with Node crypto, no external dependency)
+- **Config from env vars** — JWT_SECRET, MAX_PARTICIPANTS, LATE_PENALTY_PERCENT
+
+### Business rules enforced
+
+1. Minimum 3 participants to start a tanda
+2. Maximum 20 participants (configurable)
+3. Organizer auto-joins as first participant on creation
+4. Rotation order randomized when tanda starts (FORMING -> ACTIVE)
+5. Late contributions incur 5% penalty (configurable)
+6. 2 consecutive missed contributions flags participant as defaulter
+7. Only the organizer can start, cancel, or advance rounds
+8. Tanda auto-completes after the last round
+
+### Tech stack
+
+- TypeScript (strict mode) + Express
+- SQLite via better-sqlite3
+- Zod for input validation
+- Vitest + supertest for testing
+- JWT for auth (secret from env var only)
 
 ## Setup
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+cp .env.example .env    # configure JWT_SECRET
+npm run dev             # starts on http://localhost:3000
+npm test                # run tests
+npm run typecheck       # check types
 ```
 
----
+## API Endpoints
 
-## Your instructions are in START.md
-
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
-
----
-
-## How scoring works
-
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
-
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
-
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
-
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | /api/users | No | Create user (returns JWT token) |
+| GET | /api/users | No | List users |
+| GET | /api/users/:id | No | Get user |
+| POST | /api/tandas | Yes | Create tanda |
+| GET | /api/tandas | Optional | List tandas (?userId=) |
+| GET | /api/tandas/:id | Optional | Get tanda with participants |
+| POST | /api/tandas/:id/join | Yes | Join tanda |
+| POST | /api/tandas/:id/start | Yes | Start tanda (organizer) |
+| POST | /api/tandas/:id/cancel | Yes | Cancel tanda (organizer) |
+| GET | /api/tandas/:id/participants | Optional | List participants |
+| POST | /api/tandas/:id/contributions | Yes | Record contribution |
+| GET | /api/tandas/:id/rounds/:round | Optional | Round summary |
+| POST | /api/tandas/:id/advance | Yes | Advance round (organizer) |
+| GET | /api/tandas/:id/participants/:pid/history | Optional | Contribution history |
