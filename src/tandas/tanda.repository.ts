@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { ITandaRepository, StartTandaData } from './tanda.repository.interface';
-import { Tanda, TandaRow, CreateTandaDTO } from './tanda.types';
+import { Tanda, TandaStatus, TandaRow, CreateTandaDTO } from './tanda.types';
 
 /**
  * SQLite implementation of ITandaRepository.
@@ -101,6 +101,28 @@ export class TandaRepository implements ITandaRepository {
 
     const tanda = this.findById(tandaId);
     if (!tanda) throw new Error(`Failed to retrieve tanda after cancel: ${tandaId}`);
+    return tanda;
+  }
+
+  /**
+   * Atomically increments currentRound and optionally flips status to 'completed'
+   * — both in a single SQL UPDATE statement, which is inherently atomic in SQLite.
+   *
+   * The service computes newRound and newStatus before calling this method so
+   * the auto-complete decision (newRound > totalRounds) stays in the business layer,
+   * while the write guarantee stays in the persistence layer.
+   *
+   * @param tandaId   - Tanda UUID
+   * @param newRound  - Incremented round number
+   * @param newStatus - 'active' or 'completed' as determined by the service
+   */
+  advanceTanda(tandaId: string, newRound: number, newStatus: TandaStatus): Tanda {
+    this.db
+      .prepare(`UPDATE tandas SET current_round = ?, status = ? WHERE id = ?`)
+      .run(newRound, newStatus, tandaId);
+
+    const tanda = this.findById(tandaId);
+    if (!tanda) throw new Error(`Failed to retrieve tanda after advance: ${tandaId}`);
     return tanda;
   }
 }
