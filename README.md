@@ -1,10 +1,54 @@
-# 🫰 Tanda API — Workshop
+# Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A REST API for managing **tandas** (rotating savings groups / vaquitas). N participants each contribute a fixed amount every round; one participant receives the full pot per round. After N rounds, everyone has received exactly once.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What was built
 
----
+Full implementation of the Tanda API spec including:
+
+- **Users** — create, list, get by ID
+- **Tandas** — create, list (by user), get details, start, cancel, advance rounds
+- **Participants** — join a tanda, list participants, contribution history
+- **Contributions** — record per-round contributions, round summary
+
+### Architecture
+
+```
+src/
+  config.ts                   — env-driven constants (MAX_PARTICIPANTS, LATE_PENALTY_PCT, etc.)
+  errors.ts                   — typed error hierarchy (NotFoundError, ForbiddenError, …)
+  db.ts                       — SQLite singleton via better-sqlite3
+  types.ts                    — shared TypeScript interfaces
+  repositories/               — all SQL lives here, nowhere else
+    users.repository.ts
+    tandas.repository.ts
+    participants.repository.ts
+    contributions.repository.ts
+  services/                   — business logic; calls repositories, throws domain errors
+    users.service.ts
+    tandas.service.ts
+  routes/                     — HTTP translation only; no SQL, no business logic
+    users.routes.ts
+    tandas.routes.ts
+  middleware/
+    errorHandler.ts           — maps AppError / ZodError to HTTP responses
+  __tests__/
+    users.test.ts
+    tandas.test.ts
+```
+
+### Business rules enforced
+
+1. Minimum 3 participants to start a tanda
+2. Maximum 20 participants (configurable via `MAX_PARTICIPANTS` env var)
+3. Organizer auto-joins as first participant on tanda creation
+4. Rotation order randomised (Fisher-Yates) when tanda starts
+5. Contributions recorded per-round; late payments (below contribution amount) flagged as `late`
+6. Unpaid contributions become `missed` when a round is advanced
+7. Participant flagged as defaulter after 2 consecutive missed contributions
+8. Only organizer can start, cancel, or advance rounds
+9. Tanda auto-completes after the final round is advanced
+10. Status transitions: `forming → active → completed` or `forming/active → cancelled`
 
 ## Setup
 
@@ -12,56 +56,33 @@ Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business r
 npm install
 npm run dev     # starts on http://localhost:3000
 npm test        # run tests
+npm run typecheck  # TypeScript check
 ```
 
----
+## Acceptance check
 
-## Your instructions are in START.md
+```bash
+# Create a user
+curl -s -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","name":"Alice"}'
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+# Create a tanda
+curl -s -X POST http://localhost:3000/api/tandas \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Tanda Enero","organizerId":1,"contributionAmount":1000}'
 
----
+# List tandas for a user
+curl -s "http://localhost:3000/api/tandas?userId=1"
+```
 
-## How scoring works
+## Tech stack
 
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
+- TypeScript + Node.js + Express
+- SQLite via `better-sqlite3`
+- Zod for input validation
+- Vitest + supertest for testing
 
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
+## Scoring
 
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
-
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+Every push to `participant/PXXX` triggers automated scoring via GitHub Actions. See `HOW_IT_WORKS.md` for details.
