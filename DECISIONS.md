@@ -42,7 +42,15 @@
 
 ---
 
-### 5. Duplicate-join detection before INSERT
+### 6. Advance + auto-complete in one atomic write
+
+**Decision:** `TandaRepository.advanceTanda()` issues a single `UPDATE tandas SET current_round = ?, status = ? WHERE id = ?`. The service pre-computes `newRound` and `newStatus` before calling the repo.  
+**Why this matters:**  
+The auto-complete rule (BR-6) is: once all rounds are done, no more contributions can be recorded. The danger is a window where `current_round` has been incremented past `total_rounds` but `status` is still `active` — any contribution arriving in that window would pass the "tanda is active" guard and be written for a round that should no longer exist.  
+**How it's prevented:**  
+A single SQL `UPDATE` is inherently atomic in SQLite (serialized writes, WAL mode). Both fields change in one statement — there is no observable intermediate state where round and status are inconsistent. The service computes `newStatus = newRound > totalRounds ? 'completed' : 'active'` before the call so the business rule stays in the service layer, while the atomicity guarantee stays in the repository.  
+**Alternative considered:** Two separate UPDATE statements (`current_round` then `status`). Rejected because even with SQLite's serialized writes, a reader between the two statements would see an inconsistent state. A single statement eliminates that window entirely.
+
 
 **Decision:** `ParticipantService.joinTanda()` calls `findByTandaAndUser()` _before_ attempting the INSERT. If a row exists, it throws `ConflictError`.  
 **Rationale:**
