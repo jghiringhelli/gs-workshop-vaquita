@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "f07abfb",
+    "commit": "2ba3014",
     "branch": "participant/P007",
-    "timestamp": "2026-04-10T18:01:01.891Z",
+    "timestamp": "2026-04-10T19:13:02.263Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,23 +13,18 @@
       "details": "README updated by participant (5400 chars)"
     },
     "bounded": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "28 direct DB calls found — repository layer missing",
-      "violations": [
-        "src/modules/contributions/contribution.repository.ts",
-        "src/modules/participants/participant.repository.ts",
-        "src/modules/tandas/tanda.repository.ts",
-        "src/modules/users/user.repository.ts"
-      ]
+      "details": "No direct DB calls in route/service files",
+      "violations": []
     },
     "verifiable": {
       "score": 2,
       "max": 2,
-      "details": "Tests: 22 passed, 0 failed | Coverage: 90.8%",
+      "details": "Tests: 22 passed, 0 failed | Coverage: 90.9%",
       "testsPassed": 22,
       "testsFailed": 0,
-      "coveragePct": 90.84
+      "coveragePct": 90.9
     },
     "defended": {
       "score": 1,
@@ -37,11 +32,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 30/33 (91%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9090909090909091,
-      "hasDecisionLog": false
+      "details": "Conventional commits: 33/37 (89%) | Decision log: present",
+      "conventionalPct": 0.8918918918918919,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -54,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 8,
       "max": 8
     },
     "total_with_live_tests": {
@@ -64,11 +59,11 @@
     }
   },
   "intake": {
-    "status": "consent_pending",
-    "consented": false,
-    "q1": null,
-    "q2": null,
-    "q3": null
+    "status": "complete",
+    "consented": true,
+    "q1": "6–18 months",
+    "q2": "occasionally",
+    "q3": "still figuring it out"
   },
   "external_metrics": {
     "tscErrors": 0,
@@ -78,7 +73,7 @@
     "auditHigh": 0,
     "duplicatePct": 5.84,
     "branchCount": 52,
-    "testCoverage": 90.84,
+    "testCoverage": 90.9,
     "testCount": 22,
     "depCount": 5
   }
