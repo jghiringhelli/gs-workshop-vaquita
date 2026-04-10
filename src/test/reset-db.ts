@@ -2,6 +2,10 @@ import { getDatabase } from "../db/database";
 import { initializeSchema } from "../db/schema";
 
 export function resetDatabaseForTests(): void {
+  if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = "test-secret";
+  }
+
   initializeSchema();
 
   const db = getDatabase();

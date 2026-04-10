@@ -43,3 +43,10 @@ export class ConflictError extends AppError {
     this.name = "ConflictError";
   }
 }
+
+export class ConfigurationError extends AppError {
+  constructor(message: string) {
+    super(message, 500, "CONFIGURATION_ERROR");
+    this.name = "ConfigurationError";
+  }
+}

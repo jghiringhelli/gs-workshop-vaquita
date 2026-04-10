@@ -233,6 +233,7 @@ export class TandaService {
   recordContribution(input: {
     tandaId: number;
     participantId: number;
+    actorUserId: number;
     isLate?: boolean;
   }): Contribution {
     const tanda = this.tandaRepository.findById(input.tandaId);
@@ -249,6 +250,12 @@ export class TandaService {
 
     if (!participant || participant.tandaId !== input.tandaId) {
       throw new NotFoundError("Participant not found in this tanda");
+    }
+
+    if (participant.userId !== input.actorUserId) {
+      throw new ForbiddenError(
+        "Authenticated user cannot record contribution for another participant"
+      );
     }
 
     const existing = this.contributionRepository.findByRoundAndParticipant(

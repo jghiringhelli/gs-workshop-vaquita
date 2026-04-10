@@ -78,9 +78,34 @@ describe("Users API", () => {
   });
 });
 
+async function issueToken(
+  app: ReturnType<typeof createApp>,
+  userId: number
+): Promise<string> {
+  const response = await request(app).post("/api/auth/token").send({ userId });
+  return response.body.token as string;
+}
+
+function authHeader(token: string): { authorization: string } {
+  return { authorization: `Bearer ${token}` };
+}
+
 describe("Tandas API", () => {
   beforeEach(() => {
     resetDatabaseForTests();
+  });
+
+  it("returns 401 when protected endpoint has no token", async () => {
+    const app = createApp();
+
+    const response = await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId: 1,
+      contributionAmount: 1000,
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error.code).toBe("UNAUTHORIZED");
   });
 
   it("creates tanda and auto-joins organizer with POST /api/tandas", async () => {
@@ -90,12 +115,16 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, user.body.id);
 
-    const response = await request(app).post("/api/tandas").send({
-      name: "Tanda Enero",
-      organizerId: user.body.id,
-      contributionAmount: 1000,
-    });
+    const response = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Enero",
+        organizerId: user.body.id,
+        contributionAmount: 1000,
+      });
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual(
@@ -110,17 +139,26 @@ describe("Tandas API", () => {
     );
   });
 
-  it("returns 404 when organizer does not exist", async () => {
+  it("returns 403 when organizerId differs from authenticated user", async () => {
     const app = createApp();
 
-    const response = await request(app).post("/api/tandas").send({
-      name: "Tanda Enero",
-      organizerId: 999,
-      contributionAmount: 1000,
+    const user = await request(app).post("/api/users").send({
+      email: "auth-user@example.com",
+      name: "Auth User",
     });
+    const token = await issueToken(app, user.body.id);
 
-    expect(response.status).toBe(404);
-    expect(response.body.error.code).toBe("NOT_FOUND");
+    const response = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(token))
+      .send({
+        name: "Tanda Enero",
+        organizerId: 999,
+        contributionAmount: 1000,
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
   });
 
   it("lists tandas by user with GET /api/tandas?userId=", async () => {
@@ -130,12 +168,16 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, user.body.id);
 
-    await request(app).post("/api/tandas").send({
-      name: "Tanda Enero",
-      organizerId: user.body.id,
-      contributionAmount: 1000,
-    });
+    await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Enero",
+        organizerId: user.body.id,
+        contributionAmount: 1000,
+      });
 
     const response = await request(app).get(`/api/tandas?userId=${user.body.id}`);
 
@@ -151,12 +193,16 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, user.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Enero",
-      organizerId: user.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Enero",
+        organizerId: user.body.id,
+        contributionAmount: 1000,
+      });
 
     const response = await request(app).get(`/api/tandas/${tanda.body.id}`);
 
@@ -180,18 +226,24 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const member = await request(app).post("/api/users").send({
       email: "member@example.com",
       name: "Member",
     });
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Join",
-      organizerId: organizer.body.id,
-      contributionAmount: 500,
-    });
+    const memberToken = await issueToken(app, member.body.id);
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Join",
+        organizerId: organizer.body.id,
+        contributionAmount: 500,
+      });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberToken))
       .send({ userId: member.body.id });
 
     expect(response.status).toBe(201);
@@ -205,22 +257,29 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const member = await request(app).post("/api/users").send({
       email: "member@example.com",
       name: "Member",
     });
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Join",
-      organizerId: organizer.body.id,
-      contributionAmount: 500,
-    });
+    const memberToken = await issueToken(app, member.body.id);
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Join",
+        organizerId: organizer.body.id,
+        contributionAmount: 500,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberToken))
       .send({ userId: member.body.id });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberToken))
       .send({ userId: member.body.id });
 
     expect(response.status).toBe(409);
@@ -234,18 +293,24 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const member = await request(app).post("/api/users").send({
       email: "member@example.com",
       name: "Member",
     });
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Members",
-      organizerId: organizer.body.id,
-      contributionAmount: 900,
-    });
+    const memberToken = await issueToken(app, member.body.id);
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Members",
+        organizerId: organizer.body.id,
+        contributionAmount: 900,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberToken))
       .send({ userId: member.body.id });
 
     const response = await request(app).get(
@@ -272,30 +337,39 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Start",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Start",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     expect(response.status).toBe(200);
@@ -319,15 +393,20 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Start",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Start",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     expect(response.status).toBe(400);
@@ -341,15 +420,20 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Cancel",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Cancel",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/cancel`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     expect(response.status).toBe(200);
@@ -363,19 +447,25 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const member = await request(app).post("/api/users").send({
       email: "member@example.com",
       name: "Member",
     });
+    const memberToken = await issueToken(app, member.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Cancel",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Cancel",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/cancel`)
+      .set(authHeader(memberToken))
       .send({ organizerId: member.body.id });
 
     expect(response.status).toBe(403);
@@ -389,39 +479,53 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Contributions",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Contributions",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     const participants = await request(app).get(
       `/api/tandas/${tanda.body.id}/participants`
     );
 
+    const organizerParticipant = participants.body.find(
+      (participant: { userId: number }) => participant.userId === organizer.body.id
+    );
+
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/contributions`)
-      .send({ participantId: participants.body[0].id, isLate: true });
+      .set(authHeader(organizerToken))
+      .send({ participantId: organizerParticipant.id, isLate: true });
 
     expect(response.status).toBe(201);
     expect(response.body.status).toBe("late");
@@ -435,42 +539,56 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Contributions",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Contributions",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     const participants = await request(app).get(
       `/api/tandas/${tanda.body.id}/participants`
     );
-    const participantId = participants.body[0].id;
+    const organizerParticipant = participants.body.find(
+      (participant: { userId: number }) => participant.userId === organizer.body.id
+    );
+    const participantId = organizerParticipant.id;
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .set(authHeader(organizerToken))
       .send({ participantId });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .set(authHeader(organizerToken))
       .send({ participantId });
 
     expect(response.status).toBe(409);
@@ -484,38 +602,52 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Summary",
-      organizerId: organizer.body.id,
-      contributionAmount: 700,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Summary",
+        organizerId: organizer.body.id,
+        contributionAmount: 700,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     const participants = await request(app).get(
       `/api/tandas/${tanda.body.id}/participants`
     );
 
+    const organizerParticipant = participants.body.find(
+      (participant: { userId: number }) => participant.userId === organizer.body.id
+    );
+
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/contributions`)
-      .send({ participantId: participants.body[0].id });
+      .set(authHeader(organizerToken))
+      .send({ participantId: organizerParticipant.id });
 
     const response = await request(app).get(`/api/tandas/${tanda.body.id}/rounds/1`);
 
@@ -532,45 +664,57 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Advance",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Advance",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     const advance1 = await request(app)
       .post(`/api/tandas/${tanda.body.id}/advance`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
     expect(advance1.status).toBe(200);
     expect(advance1.body.currentRound).toBe(2);
 
     const advance2 = await request(app)
       .post(`/api/tandas/${tanda.body.id}/advance`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
     expect(advance2.status).toBe(200);
     expect(advance2.body.currentRound).toBe(3);
 
     const advance3 = await request(app)
       .post(`/api/tandas/${tanda.body.id}/advance`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
     expect(advance3.status).toBe(200);
     expect(advance3.body.status).toBe("completed");
@@ -583,33 +727,43 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda Advance",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda Advance",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     const response = await request(app)
       .post(`/api/tandas/${tanda.body.id}/advance`)
+      .set(authHeader(memberAToken))
       .send({ organizerId: memberA.body.id });
 
     expect(response.status).toBe(403);
@@ -623,38 +777,51 @@ describe("Tandas API", () => {
       email: "organizer@example.com",
       name: "Organizer",
     });
+    const organizerToken = await issueToken(app, organizer.body.id);
     const memberA = await request(app).post("/api/users").send({
       email: "membera@example.com",
       name: "Member A",
     });
+    const memberAToken = await issueToken(app, memberA.body.id);
     const memberB = await request(app).post("/api/users").send({
       email: "memberb@example.com",
       name: "Member B",
     });
+    const memberBToken = await issueToken(app, memberB.body.id);
 
-    const tanda = await request(app).post("/api/tandas").send({
-      name: "Tanda History",
-      organizerId: organizer.body.id,
-      contributionAmount: 1000,
-    });
+    const tanda = await request(app)
+      .post("/api/tandas")
+      .set(authHeader(organizerToken))
+      .send({
+        name: "Tanda History",
+        organizerId: organizer.body.id,
+        contributionAmount: 1000,
+      });
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberAToken))
       .send({ userId: memberA.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/join`)
+      .set(authHeader(memberBToken))
       .send({ userId: memberB.body.id });
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/start`)
+      .set(authHeader(organizerToken))
       .send({ organizerId: organizer.body.id });
 
     const participants = await request(app).get(
       `/api/tandas/${tanda.body.id}/participants`
     );
-    const targetParticipantId = participants.body[0].id;
+    const organizerParticipant = participants.body.find(
+      (participant: { userId: number }) => participant.userId === organizer.body.id
+    );
+    const targetParticipantId = organizerParticipant.id;
 
     await request(app)
       .post(`/api/tandas/${tanda.body.id}/contributions`)
+      .set(authHeader(organizerToken))
       .send({ participantId: targetParticipantId });
 
     const historyResponse = await request(app).get(
