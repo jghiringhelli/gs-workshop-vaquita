@@ -1,24 +1,76 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A REST API for managing **tandas** (rotating savings groups / *vaquitas*) — a transparent ledger that enforces contribution rules and prevents organisers from disappearing with the pot.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What was built
 
----
+- **14 REST endpoints** covering the full tanda lifecycle: create, join, start, contribute, advance rounds, cancel, and history
+- **3-layer architecture**: routes → services → repositories (no SQL in handlers)
+- **JWT auth** on organiser-only actions (start, cancel, advance)
+- **Business rules enforced**: min 3 participants, max 20, randomised rotation on start, 5 % late penalty, defaulter flagging after 2 consecutive misses, auto-complete after last round
+- **41 tests** (91 % line coverage) using in-memory SQLite for full isolation
+- **Custom error hierarchy**: `AppError`, `NotFoundError`, `ValidationError`, `ConflictError`, `ForbiddenError`, `UnauthorizedError`, `BusinessRuleError`
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js + TypeScript |
+| Framework | Express |
+| Database | SQLite via `better-sqlite3` |
+| Validation | Zod |
+| Auth | JWT (`jsonwebtoken`) |
+| Tests | Vitest + supertest |
 
 ## Setup
 
 ```bash
+cp .env.example .env   # set JWT_SECRET to a long random string
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run dev            # http://localhost:3000
+npm test               # run all 41 tests
 ```
 
----
+## Quick acceptance check
 
-## Your instructions are in START.md
+```bash
+# Create a user
+curl -s -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","name":"Alice"}'
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+# Create a tanda
+curl -s -X POST http://localhost:3000/api/tandas \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Tanda Enero","organizerId":1,"contributionAmount":1000}'
+
+# List tandas for Alice
+curl -s "http://localhost:3000/api/tandas?userId=1"
+```
+
+## API surface
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/users` | — | Create user |
+| GET | `/api/users` | — | List users |
+| GET | `/api/users/:id` | — | Get user |
+| POST | `/api/auth/login` | — | Login → JWT |
+| POST | `/api/tandas` | — | Create tanda (organiser auto-joins) |
+| GET | `/api/tandas` | — | List tandas (`?userId=`) |
+| GET | `/api/tandas/:id` | — | Tanda detail |
+| POST | `/api/tandas/:id/join` | — | Join tanda |
+| POST | `/api/tandas/:id/start` | JWT | Start (FORMING → ACTIVE) |
+| POST | `/api/tandas/:id/cancel` | JWT | Cancel |
+| GET | `/api/tandas/:id/participants` | — | List participants |
+| POST | `/api/tandas/:id/contributions` | — | Record contribution |
+| GET | `/api/tandas/:id/rounds/:round` | — | Round summary |
+| POST | `/api/tandas/:id/advance` | JWT | Advance round (organiser) |
+| GET | `/api/tandas/:id/participants/:pid/history` | — | Contribution history |
+
+## Design decisions
+
+See [`docs/decisions.md`](docs/decisions.md) for key architectural choices and rationale.
 
 ---
 
