@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { TandaService } from './tanda.service';
 import { validate } from '../middleware/validate';
-import { createTandaSchema, listTandasQuerySchema } from './tanda.schemas';
+import { createTandaSchema, listTandasQuerySchema, startTandaSchema, cancelTandaSchema } from './tanda.schemas';
 
 /**
  * Creates the Express router for /api/tandas (CRUD only).
@@ -39,6 +39,28 @@ export function createTandaRouter(tandaService: TandaService): Router {
   router.get('/:id', (req: Request<{ id: string }>, res: Response, next: NextFunction): void => {
     try {
       const tanda = tandaService.getTandaById(req.params.id);
+      res.json({ data: tanda });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  /** POST /api/tandas/:id/start — organizer starts the tanda (assigns rotation) */
+  router.post('/:id/start', validate(startTandaSchema), (req: Request<{ id: string }>, res: Response, next: NextFunction): void => {
+    try {
+      const { requesterId } = req.body as { requesterId: string };
+      const tanda = tandaService.startTanda(req.params.id, requesterId);
+      res.json({ data: tanda });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  /** POST /api/tandas/:id/cancel — organizer cancels the tanda */
+  router.post('/:id/cancel', validate(cancelTandaSchema), (req: Request<{ id: string }>, res: Response, next: NextFunction): void => {
+    try {
+      const { requesterId } = req.body as { requesterId: string };
+      const tanda = tandaService.cancelTanda(req.params.id, requesterId);
       res.json({ data: tanda });
     } catch (err) {
       next(err);

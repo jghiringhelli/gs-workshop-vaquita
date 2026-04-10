@@ -216,3 +216,176 @@ describe('GET /api/tandas/:id', () => {
     expect(res.body.errors[0].code).toBe('NOT_FOUND');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Helper: build a tanda with N extra participants (organizer + N members)
+// ---------------------------------------------------------------------------
+async function buildTandaWithParticipants(
+  app: Application,
+  extraCount: number,
+): Promise<{ tandaId: string; organizerId: string }> {
+  const organizerId = await createUser(app, 'org@example.com', 'Organizer');
+  const res = await request(app).post('/api/tandas').send({
+    name: 'Test Tanda',
+    organizerId,
+    contributionAmount: 500,
+  });
+  const tandaId = (res.body.data as { id: string }).id;
+
+  for (let i = 0; i < extraCount; i++) {
+    const memberId = await createUser(app, `member${i}@example.com`, `Member${i}`);
+    await request(app)
+      .post(`/api/tandas/${tandaId}/join`)
+      .send({ userId: memberId });
+  }
+
+  return { tandaId, organizerId };
+}
+
+describe('POST /api/tandas/:id/start', () => {
+  it('returns 404 when tanda does not exist', async () => {
+    const app = buildTestApp();
+    const organizerId = await createUser(app);
+    const res = await request(app)
+      .post('/api/tandas/00000000-0000-0000-0000-000000000000/start')
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(404);
+    expect(res.body.errors[0].code).toBe('NOT_FOUND');
+  });
+
+  it('returns 403 when requester is not the organizer', async () => {
+    const app = buildTestApp();
+    const { tandaId } = await buildTandaWithParticipants(app, 2);
+    const otherId = await createUser(app, 'other@example.com', 'Other');
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/start`)
+      .send({ requesterId: otherId });
+
+    expect(res.status).toBe(403);
+    expect(res.body.errors[0].code).toBe('FORBIDDEN');
+  });
+
+  it('returns 409 when tanda is not in forming status', async () => {
+    const app = buildTestApp();
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 2);
+    // Force non-forming via a first start, then try again
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/start`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(409);
+    expect(res.body.errors[0].code).toBe('CONFLICT');
+  });
+
+  it('returns 409 when there are fewer than minParticipants', async () => {
+    // minParticipantsToStart=4 but tanda has only 3 (organizer + 2 members)
+    const app = buildTestApp({ minParticipantsToStart: 4 });
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 2);
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/start`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(409);
+    expect(res.body.errors[0].code).toBe('CONFLICT');
+  });
+
+  it('returns 200 and active tanda on success', async () => {
+    const app = buildTestApp();
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 2);
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/start`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('active');
+    expect(res.body.data.totalRounds).toBe(3); // organizer + 2 members
+  });
+
+  it('assigns each participant a unique rotationPosition from 1 to N', async () => {
+    const app = buildTestApp();
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 4); // 5 total
+
+    await request(app)
+      .post(`/api/tandas/${tandaId}/start`)
+      .send({ requesterId: organizerId });
+
+    const partRes = await request(app).get(`/api/tandas/${tandaId}/participants`);
+    const positions = (partRes.body.data as Array<{ rotationPosition: number }>)
+      .map((p) => p.rotationPosition)
+      .sort((a, b) => a - b);
+
+    expect(positions).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe('POST /api/tandas/:id/cancel', () => {
+  it('returns 404 when tanda does not exist', async () => {
+    const app = buildTestApp();
+    const userId = await createUser(app);
+    const res = await request(app)
+      .post('/api/tandas/00000000-0000-0000-0000-000000000000/cancel')
+      .send({ requesterId: userId });
+
+    expect(res.status).toBe(404);
+    expect(res.body.errors[0].code).toBe('NOT_FOUND');
+  });
+
+  it('returns 403 when requester is not the organizer', async () => {
+    const app = buildTestApp();
+    const { tandaId } = await buildTandaWithParticipants(app, 0);
+    const otherId = await createUser(app, 'intruder@example.com', 'Intruder');
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/cancel`)
+      .send({ requesterId: otherId });
+
+    expect(res.status).toBe(403);
+    expect(res.body.errors[0].code).toBe('FORBIDDEN');
+  });
+
+  it('returns 409 when tanda is already cancelled', async () => {
+    const app = buildTestApp();
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 0);
+    await request(app).post(`/api/tandas/${tandaId}/cancel`).send({ requesterId: organizerId });
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/cancel`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(409);
+    expect(res.body.errors[0].code).toBe('CONFLICT');
+  });
+
+  it('returns 200 and cancelled status when tanda is forming', async () => {
+    const app = buildTestApp();
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 0);
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/cancel`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('cancelled');
+  });
+
+  it('returns 200 and cancelled status when tanda is active', async () => {
+    const app = buildTestApp();
+    const { tandaId, organizerId } = await buildTandaWithParticipants(app, 2);
+    // Start first so it's active
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/cancel`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('cancelled');
+  });
+});
+
