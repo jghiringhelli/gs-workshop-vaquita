@@ -1,30 +1,30 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "061d7ce",
-    "branch": "condition-a",
-    "timestamp": "2026-03-30T15:45:01.740Z",
+    "commit": "ec733b9",
+    "branch": "participant/P043",
+    "timestamp": "2026-04-10T19:58:54.370Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
       "score": 1,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README updated by participant (4861 chars)"
     },
     "bounded": {
       "score": 2,
       "max": 2,
-      "details": "No direct DB calls in source files",
+      "details": "No direct DB calls in route/service files",
       "violations": []
     },
     "verifiable": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "Tests: 41 passed, 0 failed | Coverage: 91.1%",
+      "testsPassed": 41,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 91.07
     },
     "defended": {
       "score": 1,
@@ -32,11 +32,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 8/9 (89%) | ADR/decision doc: missing",
-      "conventionalPct": 0.8888888888888888,
-      "hasAdr": false
+      "details": "Conventional commits: 30/36 (83%) | Decision log: present",
+      "conventionalPct": 0.8333333333333334,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 8,
       "max": 8
     },
     "total_with_live_tests": {
@@ -58,16 +58,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "complete",
+    "consented": true,
+    "q1": "less than 6 months",
+    "q2": "on daily basis",
+    "q3": "still figuring it out"
+  },
   "external_metrics": {
     "tscErrors": 0,
-    "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintErrors": 2,
+    "eslintWarnings": 30,
     "auditCritical": 0,
-    "auditHigh": 0,
+    "auditHigh": 1,
     "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "branchCount": 52,
+    "testCoverage": 91.07,
+    "testCount": 41,
+    "depCount": 6
   }
 }
