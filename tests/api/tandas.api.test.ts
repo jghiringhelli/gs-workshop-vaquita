@@ -76,6 +76,76 @@ describe("Tandas API", () => {
     })
   })
 
+  it("GETApiTandas_AuthenticatedWithoutQuery_UsesAuthenticatedMembership", async () => {
+    const { client } = createTestApiContext()
+    const organizer = await createUserFixture(client)
+    const outsider = await createUserFixture(client)
+
+    await client
+      .post("/api/tandas")
+      .set("Authorization", authorizationHeader(organizer.token))
+      .send(
+        new CreateTandaRequestBuilder()
+          .withOrganizerId(organizer.user.id)
+          .withName("Organizer tanda")
+          .build(),
+      )
+    await client
+      .post("/api/tandas")
+      .set("Authorization", authorizationHeader(outsider.token))
+      .send(
+        new CreateTandaRequestBuilder()
+          .withOrganizerId(outsider.user.id)
+          .withName("Outsider tanda")
+          .build(),
+      )
+
+    const response = await client
+      .get("/api/tandas")
+      .set("Authorization", authorizationHeader(organizer.token))
+
+    expect(response.status).toBe(200)
+    expect(response.body.data).toHaveLength(1)
+    expect(response.body.data[0]).toMatchObject({
+      organizerId: organizer.user.id,
+      name: "Organizer tanda",
+    })
+  })
+
+  it("GETApiTandas_NoQueryAndNoAuthentication_ReturnsAllTandas", async () => {
+    const { client } = createTestApiContext()
+    const organizer = await createUserFixture(client)
+    const outsider = await createUserFixture(client)
+
+    await client
+      .post("/api/tandas")
+      .set("Authorization", authorizationHeader(organizer.token))
+      .send(
+        new CreateTandaRequestBuilder()
+          .withOrganizerId(organizer.user.id)
+          .withName("Organizer tanda")
+          .build(),
+      )
+    await client
+      .post("/api/tandas")
+      .set("Authorization", authorizationHeader(outsider.token))
+      .send(
+        new CreateTandaRequestBuilder()
+          .withOrganizerId(outsider.user.id)
+          .withName("Outsider tanda")
+          .build(),
+      )
+
+    const response = await client.get("/api/tandas")
+
+    expect(response.status).toBe(200)
+    expect(response.body.data).toHaveLength(2)
+    expect(response.body.data.map((item: { name: string }) => item.name)).toEqual([
+      "Outsider tanda",
+      "Organizer tanda",
+    ])
+  })
+
   it("GETApiTandas_AuthenticatedForDifferentUser_ReturnsForbidden", async () => {
     const { client } = createTestApiContext()
     const alice = await createUserFixture(client)

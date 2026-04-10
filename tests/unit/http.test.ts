@@ -201,6 +201,15 @@ describe("Shared HTTP helpers", () => {
     expect(secondResponse.status).toBe(200)
   })
 
+  it("CreateRateLimitMiddleware_RequestIpMissing_UsesUnknownBucketKey", () => {
+    const next = vi.fn()
+    const middleware = createRateLimitMiddleware(createTestConfig())
+
+    middleware({} as Request, {} as Response, next)
+
+    expect(next).toHaveBeenCalledOnce()
+  })
+
   it("CreateNotFoundHandler_UnmatchedRoute_ReturnsNotFoundEnvelope", async () => {
     const app = express()
     app.use(createNotFoundHandler())
