@@ -25,6 +25,7 @@ export function initializeDatabase(): Database.Database {
       status TEXT DEFAULT 'forming' CHECK (status IN ('forming', 'active', 'completed', 'cancelled')),
       current_round INTEGER DEFAULT 0,
       total_rounds INTEGER NOT NULL,
+      is_deleted INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (organizer_id) REFERENCES users(id)
     );
