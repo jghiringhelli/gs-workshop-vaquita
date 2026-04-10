@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P026
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The AI scaffolded the full layered architecture (repositories, services, routes) very quickly, and the test-first approach with in-memory SQLite made iteration smooth.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Environment issues early on — the `ERR_REQUIRE_ESM` error with vitest and the `JWT_SECRET` missing at startup — required several back-and-forth debugging rounds before the root causes were found.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Told the AI.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI proactively suggested and implemented missed-contribution tracking and the `isDefaulter` flag without being asked for the full design — it derived the field at query time rather than storing it, which was a smart tradeoff.
