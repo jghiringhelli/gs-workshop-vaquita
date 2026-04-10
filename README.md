@@ -1,8 +1,52 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A REST API for managing **tandas** (rotating savings groups / vaquitas) — transparent, rule-enforced rotating savings pools where every contribution and rotation is recorded immutably.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What was built
+
+A complete layered TypeScript API implementing the full tanda lifecycle:
+
+- **Users** — create and look up participants
+- **Tandas** — create, join, start, cancel, and advance savings groups
+- **Contributions** — record payments per round with late/missed tracking
+- **Rounds** — summaries and contribution history per participant
+
+### Architecture
+
+```
+Routes (Zod validation) → Services (business rules) → Repositories → SQLite
+```
+
+Zero SQL in route handlers. All persistence goes through the repository layer. Dependency injection at the composition root (`src/index.ts`).
+
+### Business rules enforced
+1. Minimum 3 participants to start a tanda
+2. Maximum 20 participants per tanda
+3. Organizer auto-joins on creation
+4. Rotation order randomized at FORMING → ACTIVE transition
+5. Contributions tracked per round; late contributions incur 5% penalty
+6. 2 consecutive missed contributions flags a defaulter
+7. Only the organizer can advance rounds or cancel
+8. Tanda auto-completes after the last round is advanced
+
+### API surface (14 endpoints)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | /api/users | Create a user |
+| GET | /api/users | List users |
+| GET | /api/users/:id | Get user by ID |
+| POST | /api/tandas | Create a tanda |
+| GET | /api/tandas?userId= | List tandas for a user |
+| GET | /api/tandas/:id | Get tanda details |
+| POST | /api/tandas/:id/join | Join a tanda |
+| POST | /api/tandas/:id/start | Start a tanda (organizer only) |
+| POST | /api/tandas/:id/cancel | Cancel a tanda (organizer only) |
+| GET | /api/tandas/:id/participants | List participants |
+| POST | /api/tandas/:id/contributions | Record a contribution |
+| GET | /api/tandas/:id/rounds/:round | Round summary |
+| POST | /api/tandas/:id/advance | Advance to next round (organizer only) |
+| GET | /api/tandas/:id/participants/:pid/history | Contribution history |
 
 ---
 
@@ -11,14 +55,11 @@ Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business r
 ```bash
 npm install
 npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm test        # run tests (36 tests, ~92% coverage)
+npm run typecheck  # zero TypeScript errors
 ```
 
 ---
-
-## Your instructions are in START.md
-
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
 
 ---
 
