@@ -31,6 +31,31 @@ export class ParticipantRepository implements IParticipantRepository {
     if (!created) throw new Error(`Failed to retrieve participant after insert: ${id}`);
     return rowToParticipant(created);
   }
+
+  /**
+   * Returns all participants for a given tanda, ordered by creation date ascending.
+   * Used for listing and for counting against the max-participant limit.
+   * @param tandaId - Tanda UUID
+   */
+  findByTandaId(tandaId: string): Participant[] {
+    const rows = this.db
+      .prepare('SELECT * FROM participants WHERE tanda_id = ? ORDER BY created_at ASC')
+      .all(tandaId) as ParticipantRow[];
+    return rows.map(rowToParticipant);
+  }
+
+  /**
+   * Finds a participant by tanda + user combination.
+   * Returns null if the user is not in that tanda — used for duplicate-join detection.
+   * @param tandaId - Tanda UUID
+   * @param userId - User UUID
+   */
+  findByTandaAndUser(tandaId: string, userId: string): Participant | null {
+    const row = this.db
+      .prepare('SELECT * FROM participants WHERE tanda_id = ? AND user_id = ?')
+      .get(tandaId, userId) as ParticipantRow | undefined;
+    return row ? rowToParticipant(row) : null;
+  }
 }
 
 /**
