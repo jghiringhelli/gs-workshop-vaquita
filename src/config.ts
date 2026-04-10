@@ -6,6 +6,7 @@ const envSchema = z.object({
   DATABASE_PATH: z.string().default('./tanda.db'),
   MAX_PARTICIPANTS: z.coerce.number().int().positive().default(20),
   LATE_PENALTY_RATE: z.coerce.number().positive().default(0.05),
+  MIN_PARTICIPANTS_TO_START: z.coerce.number().int().min(2).default(3),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -28,4 +29,6 @@ export const config = {
   maxParticipants: parsed.data.MAX_PARTICIPANTS,
   /** Late contribution penalty as a decimal fraction, e.g. 0.05 = 5% (BR-6). */
   latePenaltyRate: parsed.data.LATE_PENALTY_RATE,
+  /** Minimum participants required before a tanda can be started (BR-1). */
+  minParticipantsToStart: parsed.data.MIN_PARTICIPANTS_TO_START,
 } as const;
