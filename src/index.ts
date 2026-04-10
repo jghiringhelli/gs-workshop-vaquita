@@ -3,6 +3,7 @@ import express from 'express';
 import { config } from './config';
 import { AppError } from './errors/AppError';
 import { userRouter } from './routes/userRouter';
+import { poolRouter } from './routes/poolRouter';
 
 export const app = express();
 
@@ -13,8 +14,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api/users', userRouter);
-
-// Route mounts for remaining endpoints will be added here
+app.use('/api/pools', poolRouter);
 
 app.use(
   (

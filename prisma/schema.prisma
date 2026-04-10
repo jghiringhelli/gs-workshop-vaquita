@@ -35,6 +35,8 @@ model User {
   updatedAt       DateTime      @updatedAt
   organizedTandas Tanda[]       @relation("TandaOrganizer")
   participations  Participant[]
+  organizedPools  Pool[]        @relation("PoolOrganizer")
+  poolMemberships PoolMember[]  @relation("PoolMemberships")
 }
 
 model Tanda {
@@ -89,4 +91,73 @@ model Contribution {
 
   /// One contribution slot per participant per round
   @@unique([participantId, round])
+}
+
+// ─── Pool (group savings jar) ─────────────────────────────────────────────────
+
+enum PoolStatus {
+  open
+  funded
+  closed
+}
+
+enum WithdrawalStatus {
+  pending
+  approved
+  rejected
+}
+
+model Pool {
+  id            Int                @id @default(autoincrement())
+  name          String
+  purpose       String?
+  /// In the pool's currency unit (e.g. 1000 for 1000 MXN)
+  targetAmount  Float
+  currency      String             @default("MXN")
+  status        PoolStatus         @default(open)
+  organizerId   Int
+  organizer     User               @relation("PoolOrganizer", fields: [organizerId], references: [id])
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  members       PoolMember[]
+  contributions PoolContribution[]
+  withdrawals   Withdrawal[]
+}
+
+model PoolMember {
+  id            Int                @id @default(autoincrement())
+  poolId        Int
+  userId        Int
+  pool          Pool               @relation(fields: [poolId], references: [id])
+  user          User               @relation("PoolMemberships", fields: [userId], references: [id])
+  joinedAt      DateTime           @default(now())
+  contributions PoolContribution[]
+  withdrawals   Withdrawal[]
+
+  @@unique([poolId, userId])
+}
+
+model PoolContribution {
+  id          Int        @id @default(autoincrement())
+  poolId      Int
+  memberId    Int
+  /// Amount in smallest currency unit (cents / centavos)
+  amountCents Int
+  note        String?
+  createdAt   DateTime   @default(now())
+  pool        Pool       @relation(fields: [poolId], references: [id])
+  member      PoolMember @relation(fields: [memberId], references: [id])
+}
+
+model Withdrawal {
+  id          Int              @id @default(autoincrement())
+  poolId      Int
+  requestedBy Int
+  amountCents Int
+  note        String?
+  status      WithdrawalStatus @default(pending)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  pool        Pool             @relation(fields: [poolId], references: [id])
+  requester   PoolMember       @relation(fields: [requestedBy], references: [id])
 }

@@ -6,6 +6,8 @@ export default defineConfig({
     environment: "node",
     env: { NODE_ENV: "test", DATABASE_URL: "file:./test.db" },
     globalSetup: "./src/test/globalSetup.ts",
+    // Run test files serially — prevents SQLite lock contention on the shared test.db
+    fileParallelism: false,
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {
       provider: "v8",
