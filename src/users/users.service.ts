@@ -1,0 +1,31 @@
+import { ConflictError, NotFoundError } from "../errors/app-error";
+import type { CreateUserInput, User } from "./user.types";
+import { UsersRepository } from "./users.repository";
+
+export class UsersService {
+  constructor(private readonly usersRepository: UsersRepository) {}
+
+  createUser(input: CreateUserInput): User {
+    const existing = this.usersRepository.findByEmail(input.email);
+
+    if (existing) {
+      throw new ConflictError(`A user with email ${input.email} already exists`);
+    }
+
+    return this.usersRepository.create(input);
+  }
+
+  listUsers(): User[] {
+    return this.usersRepository.list();
+  }
+
+  getUserById(id: number): User {
+    const user = this.usersRepository.findById(id);
+
+    if (!user) {
+      throw new NotFoundError(`User ${id} was not found`);
+    }
+
+    return user;
+  }
+}
