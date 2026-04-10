@@ -15,7 +15,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, basename } from 'path';
 
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
@@ -151,7 +151,7 @@ function checkAuditable(): { score: number; max: number; details: string; conven
     existsSync(join(ROOT, 'docs', 'adr')) ||
     existsSync(join(ROOT, 'docs', 'decisions')) ||
     collectFiles(ROOT, f =>
-      /\b(adr|decision|design-log|design-notes|rationale|choices)\b/i.test(path.basename(f)) &&
+      /\b(adr|decision|design-log|design-notes|rationale|choices)\b/i.test(basename(f)) &&
       f.endsWith('.md') && !f.includes('node_modules')
     ).length > 0;
 
