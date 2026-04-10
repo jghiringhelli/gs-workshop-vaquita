@@ -49,5 +49,21 @@ export function createContributionRouter(contributionService: ContributionServic
     },
   );
 
+  /** GET /api/tandas/:id/participants/:pid/history — contribution history for a participant */
+  router.get(
+    '/:id/participants/:pid/history',
+    (req: Request<{ id: string; pid: string }>, res: Response, next: NextFunction): void => {
+      try {
+        const history = contributionService.getParticipantHistory(
+          req.params.id,
+          req.params.pid,
+        );
+        res.json({ data: history });
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
+
   return router;
 }

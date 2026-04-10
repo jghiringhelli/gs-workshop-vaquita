@@ -16,7 +16,7 @@ import { ContributionRepository } from './contribution.repository';
 import { ContributionService } from './contribution.service';
 import { createContributionRouter } from './contribution.routes';
 
-function buildTestApp(): Application {
+function buildTestApp(opts: { minParticipantsToStart?: number } = {}): Application {
   const db = createDatabase(':memory:');
 
   const userRepo = new UserRepository(db);
@@ -25,7 +25,7 @@ function buildTestApp(): Application {
   const participantRepo = new ParticipantRepository(db);
   const tandaRepo = new TandaRepository(db);
   const tandaService = new TandaService(tandaRepo, participantRepo, userRepo, {
-    minParticipantsToStart: 3,
+    minParticipantsToStart: opts.minParticipantsToStart ?? 3,
   });
   const participantService = new ParticipantService(tandaRepo, participantRepo, userRepo, {
     maxParticipants: 20,
@@ -51,23 +51,29 @@ async function createUser(
   return (res.body.data as { id: string }).id;
 }
 
+/** Monotonically increasing counter for unique emails within a test run. */
+let _seq = 0;
+
 /**
  * Creates a tanda with `extraMembers` additional participants (beyond the organizer),
  * then starts it. Returns tandaId, organizerId, and all memberIds.
+ * Uses a sequence counter so each call gets unique email addresses — safe to call
+ * multiple times on the same app instance.
  */
 async function buildActiveTanda(
   app: Application,
   extraMembers = 2,
 ): Promise<{ tandaId: string; organizerId: string; memberIds: string[] }> {
-  const organizerId = await createUser(app, 'organizer@example.com', 'Organizer');
+  const seq = ++_seq;
+  const organizerId = await createUser(app, `organizer${seq}@example.com`, `Organizer${seq}`);
   const res = await request(app)
     .post('/api/tandas')
-    .send({ name: 'Test Tanda', organizerId, contributionAmount: 500 });
+    .send({ name: `Test Tanda ${seq}`, organizerId, contributionAmount: 500 });
   const tandaId = (res.body.data as { id: string }).id;
 
   const memberIds: string[] = [];
   for (let i = 0; i < extraMembers; i++) {
-    const memberId = await createUser(app, `member${i}@example.com`, `Member${i}`);
+    const memberId = await createUser(app, `member${seq}_${i}@example.com`, `Member${seq}_${i}`);
     await request(app).post(`/api/tandas/${tandaId}/join`).send({ userId: memberId });
     memberIds.push(memberId);
   }
@@ -259,3 +265,88 @@ describe('GET /api/tandas/:id/rounds/:round', () => {
     expect(res.body.data.pending).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// GET /api/tandas/:id/participants/:pid/history
+// ---------------------------------------------------------------------------
+
+describe('GET /api/tandas/:id/participants/:pid/history', () => {
+  it('returns 404 when tanda does not exist', async () => {
+    const app = buildTestApp();
+    const res = await request(app).get(
+      '/api/tandas/00000000-0000-0000-0000-000000000000/participants/00000000-0000-0000-0000-000000000001/history',
+    );
+
+    expect(res.status).toBe(404);
+    expect(res.body.errors[0].code).toBe('NOT_FOUND');
+  });
+
+  it('returns 404 when participant belongs to a different tanda', async () => {
+    const app = buildTestApp();
+    // Build two separate active tandas
+    const { tandaId: tandaA } = await buildActiveTanda(app, 2);
+    const { tandaId: tandaB } = await buildActiveTanda(app, 2);
+
+    // Get a participant from tanda B
+    const partBRes = await request(app).get(`/api/tandas/${tandaB}/participants`);
+    const pidFromB = (partBRes.body.data as Array<{ id: string }>)[0]!.id;
+
+    // Try to look up that participant under tanda A
+    const res = await request(app).get(
+      `/api/tandas/${tandaA}/participants/${pidFromB}/history`,
+    );
+
+    expect(res.status).toBe(404);
+    expect(res.body.errors[0].code).toBe('NOT_FOUND');
+  });
+
+  it('returns empty array when participant has no contributions yet', async () => {
+    const app = buildTestApp();
+    const { tandaId } = await buildActiveTanda(app, 2);
+    const partRes = await request(app).get(`/api/tandas/${tandaId}/participants`);
+    const pid = (partRes.body.data as Array<{ id: string }>)[0]!.id;
+
+    const res = await request(app).get(`/api/tandas/${tandaId}/participants/${pid}/history`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual([]);
+  });
+
+  it('returns contributions ordered by round for a participant with multiple contributions', async () => {
+    const app = buildTestApp({ minParticipantsToStart: 2 });
+    // 2 participants so we can advance through 2 rounds
+    const { tandaId, organizerId } = await buildActiveTanda(app, 1);
+
+    // Get the organizer's participantId
+    const partRes = await request(app).get(`/api/tandas/${tandaId}/participants`);
+    const orgParticipant = (partRes.body.data as Array<{ id: string; userId: string }>).find(
+      (p) => p.userId === organizerId,
+    )!;
+
+    // Round 1: organizer pays
+    await request(app)
+      .post(`/api/tandas/${tandaId}/contributions`)
+      .send({ userId: organizerId, amount: 500 });
+
+    // Advance to round 2
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ requesterId: organizerId });
+
+    // Round 2: organizer pays again
+    await request(app)
+      .post(`/api/tandas/${tandaId}/contributions`)
+      .send({ userId: organizerId, amount: 500 });
+
+    const res = await request(app).get(
+      `/api/tandas/${tandaId}/participants/${orgParticipant.id}/history`,
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(2);
+    expect(res.body.data[0].round).toBe(1);
+    expect(res.body.data[1].round).toBe(2);
+    expect(res.body.data[0].status).toBe('paid');
+    expect(res.body.data[1].status).toBe('paid');
+    expect(res.body.data[0].participantId).toBe(orgParticipant.id);
+  });
+});
+
