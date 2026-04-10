@@ -1,7 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { UserService } from '../service/UserService';
-import { ZodError } from 'zod';
-import { ValidationError } from '../../../shared/exceptions/AppError';
+import { handleZodError } from '../../../shared/middleware/handleZodError';
 
 /**
  * Mounts user routes onto the given router.
@@ -16,11 +15,7 @@ export function createUserRouter(userService: UserService): Router {
       const user = userService.createUser(req.body);
       res.status(201).json(user);
     } catch (err) {
-      if (err instanceof ZodError) {
-        next(new ValidationError(err.errors[0]?.message ?? 'Invalid input'));
-      } else {
-        next(err);
-      }
+      handleZodError(err, next);
     }
   });
 
