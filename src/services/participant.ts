@@ -1,5 +1,5 @@
 import { ParticipantRepository, Participant } from '../repositories/participant';
-import { ContributionRepository } from '../repositories/contribution';
+import { ContributionRepository, Contribution } from '../repositories/contribution';
 import { TandaRepository } from '../repositories/tanda';
 
 export class ParticipantService {
@@ -13,7 +13,7 @@ export class ParticipantService {
     return this.participantRepo.getByTanda(tandaId);
   }
 
-  getHistory(participantId: string): any[] {
+  getHistory(participantId: string): Contribution[] {
     const contributions = this.contributionRepo.getHistory(participantId);
     return contributions;
   }

@@ -4,7 +4,7 @@ import { ContributionRepository } from '../repositories/contribution';
 import { UserRepository } from '../repositories/user';
 import { CreateTandaInput } from '../schemas';
 import { config } from '../config';
-import { BusinessRuleError, ValidationError, NotFoundError, ForbiddenError } from '../errors';
+import { BusinessRuleError, ForbiddenError } from '../errors';
 
 export class TandaService {
   constructor(

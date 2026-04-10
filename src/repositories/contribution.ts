@@ -52,8 +52,9 @@ export class ContributionRepository {
         paidAt: null,
         created_at: now,
       };
-    } catch (error: any) {
-      if (error.message?.includes('UNIQUE constraint failed')) {
+    } catch (error: unknown) {
+      const err = error as Record<string, unknown>;
+      if ((err.message as string)?.includes('UNIQUE constraint failed')) {
         throw new ValidationError(
           `Contribution already exists for round ${round}`,
           'DUPLICATE_CONTRIBUTION'
@@ -72,7 +73,7 @@ export class ContributionRepository {
         WHERE id = ?
       `
       )
-      .get(id) as any;
+      .get(id) as Record<string, unknown>;
 
     if (!row) {
       throw new NotFoundError('Contribution', id);
@@ -91,7 +92,7 @@ export class ContributionRepository {
         ORDER BY created_at ASC
       `
       )
-      .all(tandaId, round) as any[];
+      .all(tandaId, round) as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeContribution(row));
   }
@@ -106,7 +107,7 @@ export class ContributionRepository {
         ORDER BY created_at DESC
       `
       )
-      .all(participantId) as any[];
+      .all(participantId) as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeContribution(row));
   }
@@ -125,7 +126,7 @@ export class ContributionRepository {
         WHERE tanda_id = ? AND participant_id = ? AND round = ?
       `
       )
-      .get(tandaId, participantId, round) as any;
+      .get(tandaId, participantId, round) as Record<string, unknown>;
 
     if (existing) {
       return this.normalizeContribution(existing);
@@ -140,7 +141,7 @@ export class ContributionRepository {
     paidAt?: string,
     penaltyApplied: number = 0
   ): Contribution {
-    const params: any[] = [status, penaltyApplied];
+    const params: (string | number)[] = [status, penaltyApplied];
 
     if (paidAt) {
       params.push(paidAt);
@@ -180,7 +181,7 @@ export class ContributionRepository {
         ORDER BY created_at ASC
       `
       )
-      .all(tandaId, round) as any[];
+      .all(tandaId, round) as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeContribution(row));
   }
@@ -196,22 +197,22 @@ export class ContributionRepository {
         LIMIT ?
       `
       )
-      .all(participantId, limit) as any[];
+      .all(participantId, limit) as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeContribution(row));
   }
 
-  private normalizeContribution(row: any): Contribution {
+  private normalizeContribution(row: Record<string, unknown>): Contribution {
     return {
-      id: row.id,
-      tandaId: row.tanda_id,
-      participantId: row.participant_id,
-      round: row.round,
-      amount: row.amount,
-      status: row.status,
-      penaltyApplied: row.penalty_applied,
-      paidAt: row.paid_at,
-      created_at: row.created_at,
+      id: row.id as string,
+      tandaId: row.tanda_id as string,
+      participantId: row.participant_id as string,
+      round: row.round as number,
+      amount: row.amount as number,
+      status: row.status as 'pending' | 'paid' | 'late' | 'missed',
+      penaltyApplied: row.penalty_applied as number,
+      paidAt: row.paid_at as string | null,
+      created_at: row.created_at as string,
     };
   }
 }

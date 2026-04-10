@@ -54,7 +54,7 @@ export class TandaRepository {
         WHERE id = ? AND is_deleted = 0
       `
       )
-      .get(id) as any;
+      .get(id) as Record<string, unknown>;
 
     if (!row) {
       throw new NotFoundError('Tanda', id);
@@ -78,7 +78,7 @@ export class TandaRepository {
 
     const rows = (
       organizerId ? this.db.prepare(query).all(organizerId) : this.db.prepare(query).all()
-    ) as any[];
+    ) as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeTanda(row));
   }
@@ -87,7 +87,7 @@ export class TandaRepository {
     const current = this.getById(id);
 
     const setClauses: string[] = [];
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (updates.status !== undefined) {
       setClauses.push('status = ?');
@@ -136,16 +136,16 @@ export class TandaRepository {
     }
   }
 
-  private normalizeTanda(row: any): Tanda {
+  private normalizeTanda(row: Record<string, unknown>): Tanda {
     return {
-      id: row.id,
-      name: row.name,
-      organizerId: row.organizer_id,
-      contributionAmount: row.contribution_amount,
-      status: row.status,
-      currentRound: row.current_round,
-      totalRounds: row.total_rounds,
-      created_at: row.created_at,
+      id: row.id as string,
+      name: row.name as string,
+      organizerId: row.organizer_id as string,
+      contributionAmount: row.contribution_amount as number,
+      status: row.status as 'forming' | 'active' | 'completed' | 'cancelled',
+      currentRound: row.current_round as number,
+      totalRounds: row.total_rounds as number,
+      created_at: row.created_at as string,
     };
   }
 }

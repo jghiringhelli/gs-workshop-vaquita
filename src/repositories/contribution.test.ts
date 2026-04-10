@@ -160,7 +160,7 @@ describe('ContributionRepository', () => {
 
   describe('getLatePending', () => {
     it('should retrieve pending and late contributions', () => {
-      const c1 = contributionRepo.create(tandaId, participantId, 1, 1000);
+      contributionRepo.create(tandaId, participantId, 1, 1000);
       const user2 = userRepo.create('user2@example.com', 'User 2');
       const p2 = participantRepo.create(user2.id, tandaId, 'member');
       const c2 = contributionRepo.create(tandaId, p2.id, 1, 1000);

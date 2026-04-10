@@ -44,8 +44,9 @@ export class ParticipantRepository {
         isDefaulter: false,
         created_at: now,
       };
-    } catch (error: any) {
-      if (error.message?.includes('UNIQUE constraint failed')) {
+    } catch (error: unknown) {
+      const err = error as Record<string, unknown>;
+      if ((err.message as string)?.includes('UNIQUE constraint failed')) {
         throw new ValidationError('User is already a participant in this tanda', 'DUPLICATE_PARTICIPANT');
       }
       throw error;
@@ -61,7 +62,7 @@ export class ParticipantRepository {
         WHERE id = ?
       `
       )
-      .get(id) as any;
+      .get(id) as Record<string, unknown>;
 
     if (!row) {
       throw new NotFoundError('Participant', id);
@@ -80,7 +81,7 @@ export class ParticipantRepository {
         ORDER BY rotation_position IS NULL, rotation_position ASC, created_at ASC
       `
       )
-      .all(tandaId) as any[];
+      .all(tandaId) as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeParticipant(row));
   }
@@ -94,7 +95,7 @@ export class ParticipantRepository {
         WHERE user_id = ? AND tanda_id = ?
       `
       )
-      .get(userId, tandaId) as any;
+      .get(userId, tandaId) as Record<string, unknown>;
 
     return row ? this.normalizeParticipant(row) : null;
   }
@@ -165,16 +166,16 @@ export class ParticipantRepository {
     }
   }
 
-  private normalizeParticipant(row: any): Participant {
+  private normalizeParticipant(row: Record<string, unknown>): Participant {
     return {
-      id: row.id,
-      userId: row.user_id,
-      tandaId: row.tanda_id,
-      role: row.role,
-      rotationPosition: row.rotation_position,
-      consecutiveMissed: row.consecutive_missed,
+      id: row.id as string,
+      userId: row.user_id as string,
+      tandaId: row.tanda_id as string,
+      role: row.role as 'organizer' | 'member',
+      rotationPosition: row.rotation_position as number | null,
+      consecutiveMissed: row.consecutive_missed as number,
       isDefaulter: row.is_defaulter === 1,
-      created_at: row.created_at,
+      created_at: row.created_at as string,
     };
   }
 }

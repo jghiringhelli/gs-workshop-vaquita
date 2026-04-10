@@ -2,7 +2,7 @@ import { ContributionRepository, Contribution } from '../repositories/contributi
 import { ParticipantRepository } from '../repositories/participant';
 import { TandaRepository } from '../repositories/tanda';
 import { config } from '../config';
-import { BusinessRuleError, NotFoundError } from '../errors';
+import { BusinessRuleError } from '../errors';
 
 export class ContributionService {
   constructor(
@@ -122,7 +122,7 @@ export class ContributionService {
     return this.contributionRepo.getByRound(tandaId, round);
   }
 
-  getRoundSummary(tandaId: string, round: number): any {
+  getRoundSummary(tandaId: string, round: number): Record<string, unknown> {
     const tanda = this.tandaRepo.getById(tandaId);
     const contributions = this.contributionRepo.getByRound(tandaId, round);
     const participants = this.participantRepo.getByTanda(tandaId);

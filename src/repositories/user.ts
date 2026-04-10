@@ -31,8 +31,9 @@ export class UserRepository {
       }
 
       return { id, email, name, created_at: now };
-    } catch (error: any) {
-      if (error.message?.includes('UNIQUE constraint failed')) {
+    } catch (error: unknown) {
+      const err = error as Record<string, unknown>;
+      if ((err.message as string)?.includes('UNIQUE constraint failed')) {
         throw new ValidationError(`Email '${email}' is already registered`, 'EMAIL_ALREADY_EXISTS');
       }
       throw error;
@@ -48,7 +49,7 @@ export class UserRepository {
         WHERE id = ?
       `
       )
-      .get(id) as any;
+      .get(id) as Record<string, unknown>;
 
     if (!row) {
       throw new NotFoundError('User', id);
@@ -66,7 +67,7 @@ export class UserRepository {
         WHERE email = ?
       `
       )
-      .get(email) as any;
+      .get(email) as Record<string, unknown>;
 
     if (!row) {
       throw new NotFoundError('User with email', email);
@@ -84,17 +85,17 @@ export class UserRepository {
         ORDER BY created_at DESC
       `
       )
-      .all() as any[];
+      .all() as Record<string, unknown>[];
 
     return rows.map((row) => this.normalizeUser(row));
   }
 
-  private normalizeUser(row: any): User {
+  private normalizeUser(row: Record<string, unknown>): User {
     return {
-      id: row.id,
-      email: row.email,
-      name: row.name,
-      created_at: row.created_at,
+      id: row.id as string,
+      email: row.email as string,
+      name: row.name as string,
+      created_at: row.created_at as string,
     };
   }
 }

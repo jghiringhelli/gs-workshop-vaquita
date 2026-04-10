@@ -14,68 +14,68 @@ export function createTandaRoutes(services: ServiceFactory): Router {
   const organizerSchema = z.object({ organizerId: z.string().min(1) });
 
   // POST /api/tandas - Create tanda
-  router.post('/', validateRequest(createTandaSchema), (req: Request, res: Response) => {
-    const input = (req as any).validatedBody as CreateTandaInput;
+  router.post('/', validateRequest(createTandaSchema), (req: Request, res: Response): void => {
+    const input = (req as unknown as Record<string, unknown>).validatedBody as CreateTandaInput;
     const tanda = tandaService.create(input);
     res.status(201).json(tanda);
   });
 
   // GET /api/tandas - List tandas (optional userId query)
-  router.get('/', (req: Request, res: Response) => {
+  router.get('/', (req: Request, res: Response): void => {
     const userId = req.query.userId as string | undefined;
     const tandas = tandaService.list(userId);
     res.json(tandas);
   });
 
   // GET /api/tandas/:id - Get tanda details
-  router.get('/:id', (req: Request, res: Response) => {
+  router.get('/:id', (req: Request, res: Response): void => {
     const tanda = tandaService.getById(String(req.params.id));
     res.json(tanda);
   });
 
   // POST /api/tandas/:id/join - Join tanda
-  router.post('/:id/join', validateRequest(joinSchema), (req: Request, res: Response) => {
-    const input = (req as any).validatedBody;
-    tandaService.join(String(req.params.id), input.userId);
+  router.post('/:id/join', validateRequest(joinSchema), (req: Request, res: Response): void => {
+    const input = (req as unknown as Record<string, unknown>).validatedBody as Record<string, unknown>;
+    tandaService.join(String(req.params.id), input.userId as string);
     res.status(204).send();
   });
 
   // POST /api/tandas/:id/start - Start tanda
-  router.post('/:id/start', validateRequest(organizerSchema), (req: Request, res: Response) => {
-    const input = (req as any).validatedBody;
-    const tanda = tandaService.start(String(req.params.id), input.organizerId);
+  router.post('/:id/start', validateRequest(organizerSchema), (req: Request, res: Response): void => {
+    const input = (req as unknown as Record<string, unknown>).validatedBody as Record<string, unknown>;
+    const tanda = tandaService.start(String(req.params.id), input.organizerId as string);
     res.json(tanda);
   });
 
   // POST /api/tandas/:id/cancel - Cancel tanda
-  router.post('/:id/cancel', validateRequest(organizerSchema), (req: Request, res: Response) => {
-    const input = (req as any).validatedBody;
-    const tanda = tandaService.cancel(String(req.params.id), input.organizerId);
+  router.post('/:id/cancel', validateRequest(organizerSchema), (req: Request, res: Response): void => {
+    const input = (req as unknown as Record<string, unknown>).validatedBody as Record<string, unknown>;
+    const tanda = tandaService.cancel(String(req.params.id), input.organizerId as string);
     res.json(tanda);
   });
 
   // POST /api/tandas/:id/advance - Advance to next round
-  router.post('/:id/advance', validateRequest(organizerSchema), (req: Request, res: Response) => {
-    const input = (req as any).validatedBody;
-    const tanda = tandaService.advance(String(req.params.id), input.organizerId);
+  router.post('/:id/advance', validateRequest(organizerSchema), (req: Request, res: Response): void => {
+    const input = (req as unknown as Record<string, unknown>).validatedBody as Record<string, unknown>;
+    const tanda = tandaService.advance(String(req.params.id), input.organizerId as string);
     res.json(tanda);
   });
 
   // GET /api/tandas/:id/participants - List participants
-  router.get('/:id/participants', (req: Request, res: Response) => {
+  router.get('/:id/participants', (req: Request, res: Response): void => {
     const participants = participantService.getByTanda(String(req.params.id));
     res.json(participants);
   });
 
   // GET /api/tandas/:id/participants/:pid/history - Participant contribution history
-  router.get('/:id/participants/:pid/history', (req: Request, res: Response) => {
+  router.get('/:id/participants/:pid/history', (req: Request, res: Response): void => {
     const history = participantService.getHistory(String(req.params.pid));
     res.json(history);
   });
 
   // POST /api/tandas/:id/contributions - Record contribution
-  router.post('/:id/contributions', validateRequest(recordContributionSchema), (req: Request, res: Response) => {
-    const input = (req as any).validatedBody as RecordContributionInput;
+  router.post('/:id/contributions', validateRequest(recordContributionSchema), (req: Request, res: Response): void => {
+    const input = (req as unknown as Record<string, unknown>).validatedBody as RecordContributionInput;
     const isLate = (req.query.late as string) === 'true';
     const contribution = contributionService.recordContribution(
       String(req.params.id),
@@ -87,7 +87,7 @@ export function createTandaRoutes(services: ServiceFactory): Router {
   });
 
   // GET /api/tandas/:id/rounds/:round - Round summary
-  router.get('/:id/rounds/:round', (req: Request, res: Response) => {
+  router.get('/:id/rounds/:round', (req: Request, res: Response): void => {
     const round = parseInt(String(req.params.round), 10);
     const summary = contributionService.getRoundSummary(String(req.params.id), round);
     res.json(summary);

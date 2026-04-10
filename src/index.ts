@@ -35,7 +35,7 @@ app.use(errorHandler);
 
 // Start server
 const port = config.PORT;
-const server = app.listen(port, () => {
+app.listen(port, () => {
   console.log(`🫰 Tanda API listening on port ${port}`);
 });
 

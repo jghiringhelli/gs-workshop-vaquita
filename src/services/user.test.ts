@@ -4,7 +4,7 @@ import * as path from 'path';
 import { initializeDatabase } from '../db/schema';
 import { UserService } from './user';
 import { RepositoryFactory } from '../repositories';
-import { ValidationError, NotFoundError } from '../errors';
+import { ValidationError } from '../errors';
 import Database from 'better-sqlite3';
 
 describe('UserService', () => {

@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import request from 'supertest';
 import express from 'express';
-import { getDatabase, resetDatabase } from '../db';
+import { resetDatabase } from '../db';
 import { ServiceFactory } from '../services';
 import { createUserRoutes } from './users';
 import { createTandaRoutes } from './tandas';

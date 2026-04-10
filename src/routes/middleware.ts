@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError, ValidationError } from '../errors';
+import { AppError } from '../errors';
 import { ZodError } from 'zod';
 
 export interface AuthRequest extends Request {
   userId?: string;
 }
 
-export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
+export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): Response {
   // Zod validation errors
   if (err instanceof ZodError) {
     return res.status(400).json({
@@ -32,11 +32,11 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
   });
 }
 
-export function validateRequest<T>(schema: any) {
-  return (req: Request, res: Response, next: NextFunction) => {
+export function validateRequest<T extends Record<string, unknown>>(schema: { parse: (data: unknown) => T }): (req: Request, res: Response, next: NextFunction) => void {
+  return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const validated = schema.parse(req.body);
-      (req as any).validatedBody = validated;
+      (req as unknown as Record<string, unknown>).validatedBody = validated;
       next();
     } catch (error) {
       next(error);

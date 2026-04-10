@@ -4,7 +4,7 @@ import * as path from 'path';
 import { initializeDatabase } from '../db/schema';
 import { TandaRepository } from './tanda';
 import { UserRepository } from './user';
-import { ValidationError, NotFoundError } from '../errors';
+import { NotFoundError } from '../errors';
 import Database from 'better-sqlite3';
 
 describe('TandaRepository', () => {
@@ -80,7 +80,7 @@ describe('TandaRepository', () => {
     it('should list all tandas for user', () => {
       const user = userRepo.create('user@example.com', 'User');
       const tanda1 = tandaRepo.create('Tanda 1', organizerId, 500, 6);
-      const tanda2 = tandaRepo.create('Tanda 2', user.id, 1000, 12);
+      tandaRepo.create('Tanda 2', user.id, 1000, 12);
 
       const tandas = tandaRepo.list(organizerId);
 
@@ -90,8 +90,8 @@ describe('TandaRepository', () => {
 
     it('should list all tandas when no organizerId filter', () => {
       const user = userRepo.create('user@example.com', 'User');
-      const tanda1 = tandaRepo.create('Tanda 1', organizerId, 500, 6);
-      const tanda2 = tandaRepo.create('Tanda 2', user.id, 1000, 12);
+      tandaRepo.create('Tanda 1', organizerId, 500, 6);
+      tandaRepo.create('Tanda 2', user.id, 1000, 12);
 
       const tandas = tandaRepo.list();
 
