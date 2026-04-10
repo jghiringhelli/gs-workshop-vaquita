@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fs-server": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": ["C:\\workspace_IA\\gs-workshop-vaquita\\mcp-fs-server.js"]
+    }
+  }
+}
