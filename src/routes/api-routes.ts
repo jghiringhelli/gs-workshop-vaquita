@@ -24,7 +24,8 @@ const userService = new UserService(userRepository);
 const tandaService = new TandaService(
   tandaRepository,
   userRepository,
-  participantRepository
+  participantRepository,
+  config
 );
 
 const createUserSchema = z.object({
@@ -48,6 +49,14 @@ const tandaIdParamSchema = z.object({
 
 const listTandasQuerySchema = z.object({
   userId: z.coerce.number().int().positive(),
+});
+
+const joinTandaSchema = z.object({
+  userId: z.number().int().positive(),
+});
+
+const organizerActionSchema = z.object({
+  organizerId: z.number().int().positive(),
 });
 
 router.get("/health", (_req, res) => {
@@ -108,6 +117,58 @@ router.get("/tandas/:id", (req, res, next) => {
   try {
     const params = parseSchema(tandaIdParamSchema, req.params);
     const tanda = tandaService.getTandaById(params.id);
+    res.status(200).json(tanda);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/tandas/:id/join", (req, res, next) => {
+  try {
+    const params = parseSchema(tandaIdParamSchema, req.params);
+    const body = parseSchema(joinTandaSchema, req.body);
+    const participant = tandaService.joinTanda({
+      tandaId: params.id,
+      userId: body.userId,
+    });
+    res.status(201).json(participant);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/tandas/:id/participants", (req, res, next) => {
+  try {
+    const params = parseSchema(tandaIdParamSchema, req.params);
+    const participants = tandaService.listParticipants(params.id);
+    res.status(200).json(participants);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/tandas/:id/start", (req, res, next) => {
+  try {
+    const params = parseSchema(tandaIdParamSchema, req.params);
+    const body = parseSchema(organizerActionSchema, req.body);
+    const tanda = tandaService.startTanda({
+      tandaId: params.id,
+      organizerId: body.organizerId,
+    });
+    res.status(200).json(tanda);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/tandas/:id/cancel", (req, res, next) => {
+  try {
+    const params = parseSchema(tandaIdParamSchema, req.params);
+    const body = parseSchema(organizerActionSchema, req.body);
+    const tanda = tandaService.cancelTanda({
+      tandaId: params.id,
+      organizerId: body.organizerId,
+    });
     res.status(200).json(tanda);
   } catch (error) {
     next(error);

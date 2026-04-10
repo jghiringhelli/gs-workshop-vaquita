@@ -66,6 +66,24 @@ export class ParticipantRepository {
     return row ? toParticipant(row) : null;
   }
 
+  findByUserAndTanda(userId: number, tandaId: number): Participant | null {
+    const db = getDatabase();
+    const stmt = db.prepare(
+      "SELECT id, user_id, tanda_id, role, rotation_position, is_defaulter FROM participants WHERE user_id = ? AND tanda_id = ?"
+    );
+    const row = stmt.get(userId, tandaId) as ParticipantRow | undefined;
+    return row ? toParticipant(row) : null;
+  }
+
+  findOrganizerByTanda(tandaId: number): Participant | null {
+    const db = getDatabase();
+    const stmt = db.prepare(
+      "SELECT id, user_id, tanda_id, role, rotation_position, is_defaulter FROM participants WHERE tanda_id = ? AND role = 'organizer' LIMIT 1"
+    );
+    const row = stmt.get(tandaId) as ParticipantRow | undefined;
+    return row ? toParticipant(row) : null;
+  }
+
   countByTanda(tandaId: number): number {
     const db = getDatabase();
     const stmt = db.prepare(
@@ -89,5 +107,13 @@ export class ParticipantRepository {
       "UPDATE participants SET rotation_position = ? WHERE id = ?"
     );
     stmt.run(rotationPosition, id);
+  }
+
+  clearRotationByTanda(tandaId: number): void {
+    const db = getDatabase();
+    const stmt = db.prepare(
+      "UPDATE participants SET rotation_position = NULL WHERE tanda_id = ?"
+    );
+    stmt.run(tandaId);
   }
 }
