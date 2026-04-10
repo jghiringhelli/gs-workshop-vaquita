@@ -12,6 +12,9 @@ import { createTandaRouter } from './tanda.routes';
 import { ParticipantRepository } from '../participants/participant.repository';
 import { ParticipantService } from '../participants/participant.service';
 import { createParticipantRouter } from '../participants/participant.routes';
+import { ContributionRepository } from '../contributions/contribution.repository';
+import { ContributionService } from '../contributions/contribution.service';
+import { createContributionRouter } from '../contributions/contribution.routes';
 
 function buildTestApp(opts: { minParticipantsToStart?: number } = {}): Application {
   const db = createDatabase(':memory:');
@@ -27,11 +30,14 @@ function buildTestApp(opts: { minParticipantsToStart?: number } = {}): Applicati
   const participantService = new ParticipantService(tandaRepo, participantRepo, userRepo, {
     maxParticipants: 20,
   });
+  const contributionRepo = new ContributionRepository(db);
+  const contributionService = new ContributionService(tandaRepo, participantRepo, contributionRepo);
 
   return createApp([
     { path: '/api/users', router: createUserRouter(userService) },
     { path: '/api/tandas', router: createTandaRouter(tandaService) },
     { path: '/api/tandas', router: createParticipantRouter(participantService) },
+    { path: '/api/tandas', router: createContributionRouter(contributionService) },
   ]);
 }
 
@@ -388,4 +394,130 @@ describe('POST /api/tandas/:id/cancel', () => {
     expect(res.body.data.status).toBe('cancelled');
   });
 });
+
+describe('POST /api/tandas/:id/advance', () => {
+  it('returns 404 when tanda does not exist', async () => {
+    const app = buildTestApp();
+    const userId = await createUser(app);
+    const res = await request(app)
+      .post('/api/tandas/00000000-0000-0000-0000-000000000000/advance')
+      .send({ requesterId: userId });
+
+    expect(res.status).toBe(404);
+    expect(res.body.errors[0].code).toBe('NOT_FOUND');
+  });
+
+  it('returns 403 when requester is not the organizer', async () => {
+    const app = buildTestApp();
+    const { tandaId } = await buildTandaWithParticipants(app, 2);
+    const organizerId = (
+      await request(app).get(`/api/tandas/${tandaId}`)
+    ).body.data.organizerId as string;
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+    const otherId = await createUser(app, 'intruder@example.com', 'Intruder');
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/advance`)
+      .send({ requesterId: otherId });
+
+    expect(res.status).toBe(403);
+    expect(res.body.errors[0].code).toBe('FORBIDDEN');
+  });
+
+  it('returns 409 when tanda is not active (forming)', async () => {
+    const app = buildTestApp();
+    const { tandaId } = await buildTandaWithParticipants(app, 2);
+    const organizerId = (
+      await request(app).get(`/api/tandas/${tandaId}`)
+    ).body.data.organizerId as string;
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/advance`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(409);
+    expect(res.body.errors[0].code).toBe('CONFLICT');
+  });
+
+  it('returns 409 when tanda is already completed', async () => {
+    // Use minParticipantsToStart=2 so a 2-person tanda can start
+    const app = buildTestApp({ minParticipantsToStart: 2 });
+    const { tandaId } = await buildTandaWithParticipants(app, 1); // 2 total (organizer + 1)
+    const organizerId = (
+      await request(app).get(`/api/tandas/${tandaId}`)
+    ).body.data.organizerId as string;
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+    // Advance twice to exhaust both rounds → auto-complete
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ requesterId: organizerId });
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ requesterId: organizerId });
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/advance`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(409);
+    expect(res.body.errors[0].code).toBe('CONFLICT');
+  });
+
+  it('advances from round 1 to 2 and keeps status active', async () => {
+    const app = buildTestApp();
+    const { tandaId } = await buildTandaWithParticipants(app, 2); // 3 total
+    const organizerId = (
+      await request(app).get(`/api/tandas/${tandaId}`)
+    ).body.data.organizerId as string;
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/advance`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.currentRound).toBe(2);
+    expect(res.body.data.status).toBe('active');
+  });
+
+  it('auto-completes on the last round advance — status becomes completed', async () => {
+    // 2 participants, 2 rounds total
+    const app = buildTestApp({ minParticipantsToStart: 2 });
+    const { tandaId } = await buildTandaWithParticipants(app, 1);
+    const organizerId = (
+      await request(app).get(`/api/tandas/${tandaId}`)
+    ).body.data.organizerId as string;
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+    // Advance to round 2 (still active)
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ requesterId: organizerId });
+    // Advance past totalRounds (round 3 > totalRounds 2) → completed
+    const res = await request(app)
+      .post(`/api/tandas/${tandaId}/advance`)
+      .send({ requesterId: organizerId });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.status).toBe('completed');
+    expect(res.body.data.currentRound).toBe(3);
+  });
+
+  it('completed tanda cannot accept new contributions (end-to-end auto-complete proof)', async () => {
+    const app = buildTestApp({ minParticipantsToStart: 2 });
+    const { tandaId } = await buildTandaWithParticipants(app, 1);
+    const organizerId = (
+      await request(app).get(`/api/tandas/${tandaId}`)
+    ).body.data.organizerId as string;
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ requesterId: organizerId });
+    // Exhaust all rounds
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ requesterId: organizerId });
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ requesterId: organizerId });
+
+    // Verify status is completed
+    const tandaRes = await request(app).get(`/api/tandas/${tandaId}`);
+    expect(tandaRes.body.data.status).toBe('completed');
+
+    // Try to record a contribution — must be rejected
+    const contribRes = await request(app)
+      .post(`/api/tandas/${tandaId}/contributions`)
+      .send({ userId: organizerId, amount: 500 });
+    expect(contribRes.status).toBe(409);
+    expect(contribRes.body.errors[0].code).toBe('CONFLICT');
+  });
+});
+
 
