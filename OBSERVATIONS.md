@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P044
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+Working in clear layers (config/database, repositories, services, routes, tests) made it fast to go from empty starter code to a running API with passing tests.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+The biggest friction was environment setup details during runtime (missing JWT_SECRET, missing data folder, and a Windows lint glob quoting issue).
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Told the AI.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+It was helpful that the AI handled both coding and operational steps end-to-end (run, verify endpoints, split commits logically, and push) with minimal back-and-forth.
