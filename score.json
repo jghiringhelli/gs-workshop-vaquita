@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "31346a0",
+    "commit": "200a241",
     "branch": "participant/P029",
-    "timestamp": "2026-04-10T18:40:55.571Z",
+    "timestamp": "2026-04-10T20:14:17.146Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 28/31 (90%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9032258064516129,
+      "details": "Conventional commits: 29/33 (88%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.8787878787878788,
       "hasDecisionLog": false
     },
     "composable": {
