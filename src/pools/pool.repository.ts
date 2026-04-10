@@ -122,12 +122,16 @@ export const poolRepository = {
   async getBalance(poolId: string): Promise<BalanceResult> {
     const pool = await prisma.pool.findUnique({
       where: { id: poolId },
-      select: { currency: true, contributions: { select: { amountCents: true } } },
+      select: {
+        currency: true,
+        contributions: { select: { amountCents: true } },
+        withdrawals: { where: { status: "APPROVED" }, select: { amountCents: true } },
+      },
     });
     if (!pool) return { totalContributions: 0, approvedWithdrawals: 0, balance: 0, currency: "MXN" };
 
     const totalContributions = pool.contributions.reduce((s, c) => s + c.amountCents, 0);
-    const approvedWithdrawals = 0; // withdrawals not yet implemented
+    const approvedWithdrawals = pool.withdrawals.reduce((s, w) => s + w.amountCents, 0);
     return {
       totalContributions,
       approvedWithdrawals,

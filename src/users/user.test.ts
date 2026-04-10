@@ -7,6 +7,11 @@ const request = supertest(app);
 
 // Clean the user table before every test for isolation.
 beforeEach(async () => {
+  await prisma.withdrawalVote.deleteMany();
+  await prisma.poolWithdrawal.deleteMany();
+  await prisma.poolContribution.deleteMany();
+  await prisma.poolMember.deleteMany();
+  await prisma.pool.deleteMany();
   await prisma.user.deleteMany();
 });
 

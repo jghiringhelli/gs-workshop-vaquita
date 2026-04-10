@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { authenticate } from "../middleware/auth";
 import { poolService } from "./pool.service";
+import { withdrawalService } from "./withdrawal.service";
 
 const router = Router();
 
@@ -23,12 +24,11 @@ const contributeSchema = z.object({
   note: z.string().optional(),
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-
-function validationError(res: Parameters<typeof res>[0], msg: string) {
-  // @ts-expect-error – res is typed via Router context; this helper is only called inline
-  res.status(400).json({ error: msg });
-}
+const withdrawalSchema = z.object({
+  amountCents: z.number().int().positive(),
+  reason: z.string().min(1),
+  receiptUrl: z.string().url().optional(),
+});
 
 // ── Routes ────────────────────────────────────────────────────────────────
 
@@ -102,6 +102,51 @@ router.get("/:id/preview", async (req, res, next) => {
   try {
     const preview = await poolService.getPreview(req.params.id);
     res.json({ pool: preview });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** POST /api/pools/:id/withdrawals — organizer requests a withdrawal */
+router.post("/:id/withdrawals", authenticate, async (req, res, next) => {
+  try {
+    const parsed = withdrawalSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Invalid input" });
+      return;
+    }
+    const withdrawal = await withdrawalService.requestWithdrawal(req.params.id, req.user!.sub, parsed.data);
+    res.status(201).json({ withdrawal });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/pools/:id/withdrawals — list withdrawals with vote counts */
+router.get("/:id/withdrawals", authenticate, async (req, res, next) => {
+  try {
+    const withdrawals = await withdrawalService.listWithdrawals(req.params.id);
+    res.json({ withdrawals });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/pools/:id/ledger — contributions and withdrawals interleaved by createdAt */
+router.get("/:id/ledger", authenticate, async (req, res, next) => {
+  try {
+    const ledger = await withdrawalService.getLedger(req.params.id);
+    res.json({ ledger });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** POST /api/pools/:id/dissolve — organizer dissolves the pool */
+router.post("/:id/dissolve", authenticate, async (req, res, next) => {
+  try {
+    const pool = await withdrawalService.dissolve(req.params.id, req.user!.sub);
+    res.json({ pool });
   } catch (err) {
     next(err);
   }

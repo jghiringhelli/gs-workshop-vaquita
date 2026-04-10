@@ -38,15 +38,16 @@ enum ContributionStatus {
 // ──────────────────────────────────────────────
 
 model User {
-  id              String        @id @default(cuid())
-  email           String        @unique
-  username        String        @unique
-  name            String?
-  passwordHash    String
-  participants    Participant[]
-  organizedPools  Pool[]        @relation("PoolOrganizer")
-  poolMemberships PoolMember[]
-  createdAt       DateTime      @default(now())
+  id                   String           @id @default(cuid())
+  email                String           @unique
+  username             String           @unique
+  name                 String?
+  passwordHash         String
+  participants         Participant[]
+  organizedPools       Pool[]           @relation("PoolOrganizer")
+  poolMemberships      PoolMember[]
+  withdrawalsRequested PoolWithdrawal[]
+  createdAt            DateTime         @default(now())
 }
 
 /// A rotating savings group (tanda / vaquita).
@@ -82,18 +83,20 @@ model Participant {
 
 /// A collective savings pool with a target amount.
 /// Status moves OPEN → FUNDED automatically once contributions reach targetAmount.
+/// Organiser can dissolve (→ CLOSED) at any time.
 model Pool {
-  id            String           @id @default(cuid())
+  id            String             @id @default(cuid())
   name          String
   purpose       String?
-  targetAmount  Int              // stored in cents
-  currency      String           @default("MXN")
-  status        PoolStatus       @default(OPEN)
+  targetAmount  Int                // stored in cents
+  currency      String             @default("MXN")
+  status        PoolStatus         @default(OPEN)
   organizerId   String
-  organizer     User             @relation("PoolOrganizer", fields: [organizerId], references: [id])
+  organizer     User               @relation("PoolOrganizer", fields: [organizerId], references: [id])
   members       PoolMember[]
   contributions PoolContribution[]
-  createdAt     DateTime         @default(now())
+  withdrawals   PoolWithdrawal[]
+  createdAt     DateTime           @default(now())
 }
 
 model PoolMember {
@@ -103,6 +106,7 @@ model PoolMember {
   pool          Pool               @relation(fields: [poolId], references: [id])
   user          User               @relation(fields: [userId], references: [id])
   contributions PoolContribution[]
+  votes         WithdrawalVote[]
   createdAt     DateTime           @default(now())
 
   @@unique([poolId, userId])
@@ -124,6 +128,49 @@ enum PoolStatus {
   OPEN
   FUNDED
   CLOSED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VoteValue {
+  APPROVE
+  REJECT
+}
+
+/// A withdrawal request raised by the organiser.
+/// receiptUrl must be set before any votes can be cast.
+/// Auto-resolves when approve/reject vote thresholds are reached (single transaction).
+model PoolWithdrawal {
+  id                String           @id @default(cuid())
+  poolId            String
+  requestedByUserId String
+  amountCents       Int
+  reason            String
+  receiptUrl        String?
+  status            WithdrawalStatus @default(PENDING)
+  resolvedAt        DateTime?
+  pool              Pool             @relation(fields: [poolId], references: [id])
+  requestedBy       User             @relation(fields: [requestedByUserId], references: [id])
+  votes             WithdrawalVote[]
+  createdAt         DateTime         @default(now())
+}
+
+/// One member's vote on a withdrawal.
+/// A member cannot vote twice on the same withdrawal (unique constraint).
+model WithdrawalVote {
+  id           String         @id @default(cuid())
+  withdrawalId String
+  voterId      String         // PoolMember.id
+  vote         VoteValue
+  withdrawal   PoolWithdrawal @relation(fields: [withdrawalId], references: [id])
+  voter        PoolMember     @relation(fields: [voterId], references: [id])
+  createdAt    DateTime       @default(now())
+
+  @@unique([withdrawalId, voterId])
 }
 
 /// A single payment by one participant for one round.
