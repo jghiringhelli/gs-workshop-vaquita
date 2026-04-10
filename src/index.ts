@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { config } from './config';
 import { AppError } from './errors/AppError';
+import { userRouter } from './routes/userRouter';
 
 export const app = express();
 
@@ -11,7 +12,9 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Route mounts will be added here as endpoints are implemented
+app.use('/api/users', userRouter);
+
+// Route mounts for remaining endpoints will be added here
 
 app.use(
   (
