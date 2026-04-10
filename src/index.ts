@@ -11,6 +11,9 @@ import { createParticipantRouter } from './participants/participant.routes';
 import { TandaRepository } from './tandas/tanda.repository';
 import { TandaService } from './tandas/tanda.service';
 import { createTandaRouter } from './tandas/tanda.routes';
+import { ContributionRepository } from './contributions/contribution.repository';
+import { ContributionService } from './contributions/contribution.service';
+import { createContributionRouter } from './contributions/contribution.routes';
 
 const db = createDatabase();
 
@@ -28,11 +31,18 @@ const participantService = new ParticipantService(
   userRepository,
   { maxParticipants: config.maxParticipants },
 );
+const contributionRepository = new ContributionRepository(db);
+const contributionService = new ContributionService(
+  tandaRepository,
+  participantRepository,
+  contributionRepository,
+);
 
 const app = createApp([
   { path: '/api/users', router: createUserRouter(userService) },
   { path: '/api/tandas', router: createTandaRouter(tandaService) },
   { path: '/api/tandas', router: createParticipantRouter(participantService) },
+  { path: '/api/tandas', router: createContributionRouter(contributionService) },
 ]);
 
 const server = app.listen(config.port, () => {
