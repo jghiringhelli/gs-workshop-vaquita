@@ -1,30 +1,32 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "88d6f49",
-    "branch": "condition-b",
-    "timestamp": "2026-03-30T15:45:10.479Z",
+    "commit": "df97065",
+    "branch": "participant/P040",
+    "timestamp": "2026-04-10T18:12:28.729Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
       "score": 1,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README updated by participant (1980 chars)"
     },
     "bounded": {
-      "score": 2,
-      "max": 2,
-      "details": "No direct DB calls in source files",
-      "violations": []
-    },
-    "verifiable": {
       "score": 0,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "4 direct DB calls found — repository layer missing",
+      "violations": [
+        "src/tandas/tanda.repository.ts"
+      ]
+    },
+    "verifiable": {
+      "score": 2,
+      "max": 2,
+      "details": "Tests: 69 passed, 0 failed | Coverage: 97.6%",
+      "testsPassed": 69,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 97.61
     },
     "defended": {
       "score": 1,
@@ -32,11 +34,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 7/7 (100%) | ADR/decision doc: missing",
-      "conventionalPct": 1,
-      "hasAdr": false
+      "details": "Conventional commits: 57/58 (98%) | Decision log: present",
+      "conventionalPct": 0.9827586206896551,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -49,7 +51,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
@@ -58,16 +60,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "complete",
+    "consented": true,
+    "q1": "18+ months",
+    "q2": "daily",
+    "q3": "still figuring it out"
+  },
   "external_metrics": {
     "tscErrors": 0,
     "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintWarnings": 3,
     "auditCritical": 0,
-    "auditHigh": 0,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "auditHigh": 1,
+    "duplicatePct": 5.52,
+    "branchCount": 137,
+    "testCoverage": 97.61,
+    "testCount": 69,
+    "depCount": 5
   }
 }
