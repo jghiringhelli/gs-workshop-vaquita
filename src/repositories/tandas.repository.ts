@@ -8,8 +8,8 @@ import type {
   RotationAssignment,
   Tanda,
   TandaRow,
-} from "./tanda.types";
-import { mapContributionRow, mapParticipantRow, mapTandaRow } from "./tanda.types";
+} from "../tandas/tanda.types";
+import { mapContributionRow, mapParticipantRow, mapTandaRow } from "../tandas/tanda.types";
 
 type DatabaseConnection = import("better-sqlite3").Database;
 

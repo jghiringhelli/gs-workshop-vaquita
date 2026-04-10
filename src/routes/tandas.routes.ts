@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getAuthenticatedUser, requireAuth } from "../auth/auth.middleware";
 import { asyncHandler } from "../http/async-handler";
-import { TandasRepository } from "../tandas/tandas.repository";
+import { TandasRepository } from "../repositories/tandas.repository";
 import { TandasService } from "../tandas/tandas.service";
 import type { AppContext } from "../types/app-context";
 

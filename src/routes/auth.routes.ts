@@ -3,8 +3,8 @@ import { z } from "zod";
 
 import { AuthService } from "../auth/auth.service";
 import { asyncHandler } from "../http/async-handler";
+import { UsersRepository } from "../repositories/users.repository";
 import type { AppContext } from "../types/app-context";
-import { UsersRepository } from "../users/users.repository";
 
 const issueTokenSchema = z.object({
   userId: z.coerce.number().int().positive(),

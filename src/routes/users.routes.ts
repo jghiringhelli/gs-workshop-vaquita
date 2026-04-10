@@ -2,8 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 
 import { asyncHandler } from "../http/async-handler";
+import { UsersRepository } from "../repositories/users.repository";
 import type { AppContext } from "../types/app-context";
-import { UsersRepository } from "../users/users.repository";
 import { UsersService } from "../users/users.service";
 
 const createUserSchema = z.object({

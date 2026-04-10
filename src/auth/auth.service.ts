@@ -1,6 +1,6 @@
 import { requireJwtSecret, type AppConfig } from "../config/env";
 import { NotFoundError } from "../errors/app-error";
-import { UsersRepository } from "../users/users.repository";
+import { UsersRepository } from "../repositories/users.repository";
 import type { AuthenticatedUser, AuthTokenPayload } from "./auth.types";
 import { signJwt, verifyJwt } from "./jwt";
 

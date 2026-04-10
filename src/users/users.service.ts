@@ -1,6 +1,6 @@
 import { ConflictError, NotFoundError } from "../errors/app-error";
+import { UsersRepository } from "../repositories/users.repository";
 import type { CreateUserInput, User } from "./user.types";
-import { UsersRepository } from "./users.repository";
 
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}

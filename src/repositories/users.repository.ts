@@ -1,6 +1,6 @@
 import { InternalServerError } from "../errors/app-error";
-import type { CreateUserInput, User, UserRow } from "./user.types";
-import { mapUserRow } from "./user.types";
+import type { CreateUserInput, User, UserRow } from "../users/user.types";
+import { mapUserRow } from "../users/user.types";
 
 type DatabaseConnection = import("better-sqlite3").Database;
 

@@ -1,8 +1,8 @@
 import type { AuthenticatedUser } from "../auth/auth.types";
 import type { AppConfig } from "../config/env";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "../errors/app-error";
+import { TandasRepository } from "../repositories/tandas.repository";
 import type { Contribution, CreateTandaInput, Participant, RotationAssignment, Tanda } from "./tanda.types";
-import { TandasRepository } from "./tandas.repository";
 
 export interface CreateTandaRequest {
   name: string;

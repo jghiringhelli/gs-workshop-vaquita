@@ -1,8 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 import { UnauthorizedError } from "../errors/app-error";
+import { UsersRepository } from "../repositories/users.repository";
 import type { AppContext } from "../types/app-context";
-import { UsersRepository } from "../users/users.repository";
 import { AuthService } from "./auth.service";
 import type { AuthenticatedUser } from "./auth.types";
 
