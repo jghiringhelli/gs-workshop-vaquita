@@ -97,3 +97,13 @@ Write tests. Run the acceptance check from docs/spec.md when done.
 
 Commit after finalize prompt: `git commit -m "prompt-N: brief description"`
 ```
+
+## Prompt 5
+run tests and verify
+ - coverage
+ - complete and passed
+ - agree with business logic
+
+verify if implementation agrees with required in md files previously loaded in chat
+
+if any doubt ask for my acceptance criteria
