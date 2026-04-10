@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  name  String
+
+  // Tandas this user organizes
+  organizedTandas Tanda[]       @relation("TandaOrganizer")
+  // Participations across tandas
+  participants    Participant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tanda {
+  id                 Int    @id @default(autoincrement())
+  name               String
+  contributionAmount Int // stored in smallest currency unit (cents)
+  status             String @default("forming") // forming | active | completed | cancelled
+  currentRound       Int    @default(0)
+  totalRounds        Int    @default(0)
+
+  organizerId Int
+  organizer   User @relation("TandaOrganizer", fields: [organizerId], references: [id])
+
+  participants  Participant[]
+  contributions Contribution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Participant {
+  id               Int  @id @default(autoincrement())
+  role             String @default("member") // organizer | member
+  rotationPosition Int?   // assigned when tanda starts (1-based)
+  isDefaulter      Boolean @default(false)
+
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id])
+  tandaId Int
+  tanda   Tanda @relation(fields: [tandaId], references: [id])
+
+  contributions Contribution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // A user can only join a tanda once
+  @@unique([userId, tandaId])
+}
+
+model Contribution {
+  id     Int    @id @default(autoincrement())
+  round  Int
+  amount Int    // in smallest currency unit
+  status String @default("pending") // pending | paid | late | missed
+
+  participantId Int
+  participant   Participant @relation(fields: [participantId], references: [id])
+  tandaId       Int
+  tanda         Tanda       @relation(fields: [tandaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One contribution per participant per round per tanda
+  @@unique([participantId, tandaId, round])
+}
+
