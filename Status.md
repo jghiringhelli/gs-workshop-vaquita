@@ -33,12 +33,13 @@ docs/
 | Feature | Status | Branch | Notes |
 |---------|--------|--------|-------|
 | Users API | Done | participant/P008 | Create, list, and get user endpoints implemented with validation, persistence, and tests |
+| Auth API | Done | participant/P008 | Bearer token issuance and verification implemented via JWT |
 | Tandas Base | Done | participant/P008 | Create, list, get, and participants endpoints implemented |
 | Join Tanda | Done | participant/P008 | Join only while forming, duplicate membership prevented, max participants enforced |
 | Tanda Lifecycle | Done | participant/P008 | Organizer-only start, advance, and cancel implemented with transactional state changes |
-| Contributions | Done | participant/P008 | Contribution recording, participant history, and round summary endpoints implemented |
+| Contributions | Done | participant/P008 | Contribution recording, participant history, round summary, missed tracking, late settlement, and defaulter flagging implemented |
 | Architecture Docs | Done | participant/P008 | ADR-001, Tech Spec, Architecture overview, and diagrams updated |
-| Security Baseline | Partial | participant/P008 | Zod validation, service-layer authorization rules, and env-based secret config exist; JWT auth flow is not yet wired |
+| Security Baseline | Done | participant/P008 | Zod validation, JWT auth, service-layer authorization, audit logs, and versioned schema migration setup implemented |
 
 ## Known Bugs
 | ID | Description | Severity | Status |
@@ -48,17 +49,17 @@ docs/
 ## Technical Debt
 | Item | Impact | Effort | Priority |
 |------|--------|--------|----------|
-| Implement JWT issuance and verification middleware | High | Medium | High |
-| Remove request-body organizer identity and derive auth from token claims | High | Medium | High |
-| Implement full late, penalty, missed, and defaulter automation from spec | Medium | Medium | High |
-| Introduce formal schema migration/versioning strategy | Medium | Medium | Medium |
-| Add richer audit/security hardening around authenticated actions | Medium | Medium | Medium |
+| Add stronger credential flow for auth token issuance | Medium | Medium | High |
+| Add rate limiting and abuse protection around auth and write endpoints | Medium | Medium | High |
+| Evolve versioned startup migrations into explicit reversible migration files | Medium | Medium | Medium |
+| Add richer audit retention and tamper-evidence guarantees | Medium | Medium | Medium |
+| Implement advanced fintech controls beyond workshop scope | High | High | Medium |
 
 ## Current Context
-- Working on: Final delivery readiness and documentation alignment.
+- Working on: Final delivery readiness after closing the major functional gaps.
 - Blocked by: Nothing technical at the moment.
-- Decisions pending: Whether to implement JWT auth in-scope or defend it as documented deferred scope.
-- Next steps: Start the API with `npm run dev`, exercise endpoints manually or via Postman, and optionally implement JWT as the next increment.
+- Decisions pending: Whether to push further into production-grade auth and fintech controls or stop at workshop-complete scope.
+- Next steps: Start the API with `npm run dev`, get a token from `POST /api/auth/token`, and exercise protected endpoints with `Authorization: Bearer <token>`.
 
 ## Validation Snapshot
 - Branch: `participant/P008`
@@ -73,12 +74,14 @@ docs/
 | 2026-04-10 | Use modular feature-based architecture | Keeps routes thin, business rules centralized, and SQL isolated while staying pragmatic for workshop scope | Accepted |
 | 2026-04-10 | Keep SQLite behind repository adapters | Preserves separation of concerns and makes persistence testable and replaceable | Accepted |
 | 2026-04-10 | Enforce organizer-only lifecycle rules in services | Centralizes authorization-sensitive business rules until JWT middleware is added | Accepted |
-| 2026-04-10 | Defer full JWT auth and advanced penalty automation | Prioritized workshop-critical lifecycle correctness, documentation, and test coverage first | Deferred |
+| 2026-04-10 | Use JWT middleware for authenticated tanda writes | Removes trust in client-sent organizer or participant ids on protected routes | Accepted |
+| 2026-04-10 | Close rounds by marking missing contributions and allow late settlement with penalties | Preserves auditable round history while supporting delayed payment recovery | Accepted |
+| 2026-04-10 | Add versioned startup migrations and audit log storage | Makes schema evolution explicit and improves traceability of sensitive actions | Accepted |
 
 ## Security Status
 - Input validation is enforced with Zod at the route boundary.
-- Sensitive lifecycle actions are authorized in the service layer.
-- `JWT_SECRET` is part of validated environment config and is never hardcoded.
+- Sensitive write actions require bearer-token authentication.
+- `JWT_SECRET` is part of validated environment config and is never hardcoded in production.
 - SQL is encapsulated in repositories, reducing injection and layering risks.
-- Full JWT authentication and token-based identity propagation are not implemented yet.
-- Current organizer-only actions still use `organizerId` in the request body as an interim mechanism.
+- Sensitive actions emit audit logs with actor and resource metadata.
+- Remaining security work is now production-hardening, not workshop-blocking functionality.

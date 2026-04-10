@@ -9,3 +9,7 @@ export interface CreateUserInput {
   readonly email: string;
   readonly name: string;
 }
+
+export interface FindUserByEmailInput {
+  readonly email: string;
+}

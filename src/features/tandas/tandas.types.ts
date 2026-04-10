@@ -19,6 +19,7 @@ export interface TandaParticipant {
   readonly tandaId: number;
   readonly role: ParticipantRole;
   readonly rotationPosition: number | null;
+  readonly isDefaulter: boolean;
   readonly createdAt: string;
 }
 
@@ -38,6 +39,7 @@ export interface RoundContributionSummary {
   readonly userId: number;
   readonly role: ParticipantRole;
   readonly rotationPosition: number | null;
+  readonly isDefaulter: boolean;
   readonly contributionStatus: ContributionStatus | "pending";
   readonly amount: number;
   readonly penaltyAmount: number;
@@ -50,6 +52,8 @@ export interface RoundSummary {
   readonly contributionAmount: number;
   readonly expectedParticipants: number;
   readonly paidParticipants: number;
+  readonly lateParticipants: number;
+  readonly missedParticipants: number;
   readonly pendingParticipants: number;
   readonly totalCollected: number;
   readonly potRecipientParticipantId: number | null;
@@ -58,8 +62,8 @@ export interface RoundSummary {
 
 export interface CreateTandaInput {
   readonly name: string;
-  readonly organizerId: number;
   readonly contributionAmount: number;
+  readonly organizerId: number;
 }
 
 export interface JoinTandaInput {
@@ -84,8 +88,7 @@ export interface CancelTandaInput {
 
 export interface RecordContributionInput {
   readonly tandaId: number;
-  readonly participantId: number;
+  readonly userId: number;
   readonly amount: number;
-  readonly round: number;
-  readonly status: ContributionStatus;
+  readonly round?: number;
 }

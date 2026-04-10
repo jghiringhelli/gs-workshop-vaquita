@@ -4,6 +4,7 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "../../lib/errors";
+import type { AuditLogger } from "../../lib/audit-log";
 
 import type { TandaRepository } from "./tandas.repository";
 import type { UserRepository } from "../users";
@@ -29,7 +30,7 @@ export interface TandasService {
   startTanda(input: StartTandaInput): Tanda;
   advanceTanda(input: AdvanceTandaInput): Tanda;
   cancelTanda(input: CancelTandaInput): Tanda;
-  recordContribution(input: Omit<RecordContributionInput, "round" | "status">): ContributionRecord;
+  recordContribution(input: RecordContributionInput): ContributionRecord;
   getParticipantHistory(tandaId: number, participantId: number): ReadonlyArray<ContributionRecord>;
   getRoundSummary(tandaId: number, round: number): RoundSummary;
 }
@@ -37,12 +38,14 @@ export interface TandasService {
 export interface TandasServiceConfig {
   readonly maxParticipants: number;
   readonly minParticipantsToStart: number;
+  readonly latePenaltyPercent: number;
 }
 
 export class DefaultTandasService implements TandasService {
   public constructor(
     private readonly tandaRepository: TandaRepository,
     private readonly userRepository: UserRepository,
+    private readonly auditLogger: AuditLogger,
     private readonly config: TandasServiceConfig,
   ) {}
 
@@ -59,11 +62,21 @@ export class DefaultTandasService implements TandasService {
       });
     }
 
-    return this.tandaRepository.create({
+    const tanda = this.tandaRepository.create({
       name: input.name.trim(),
       organizerId: input.organizerId,
       contributionAmount: input.contributionAmount,
     });
+
+    this.auditLogger.record({
+      actorUserId: input.organizerId,
+      action: "tanda.created",
+      resourceType: "tanda",
+      resourceId: tanda.id,
+      details: { contributionAmount: tanda.contributionAmount },
+    });
+
+    return tanda;
   }
 
   /**
@@ -139,7 +152,16 @@ export class DefaultTandasService implements TandasService {
       });
     }
 
-    return this.tandaRepository.join(input);
+    const participant = this.tandaRepository.join(input);
+    this.auditLogger.record({
+      actorUserId: input.userId,
+      action: "tanda.joined",
+      resourceType: "tanda",
+      resourceId: input.tandaId,
+      details: { participantId: participant.id },
+    });
+
+    return participant;
   }
 
   /**
@@ -179,7 +201,16 @@ export class DefaultTandasService implements TandasService {
     }
 
     const orderedParticipantIds = shuffleParticipantIds(participants.map((participant) => participant.id));
-    return this.tandaRepository.start(input, orderedParticipantIds);
+    const startedTanda = this.tandaRepository.start(input, orderedParticipantIds);
+    this.auditLogger.record({
+      actorUserId: input.organizerId,
+      action: "tanda.started",
+      resourceType: "tanda",
+      resourceId: input.tandaId,
+      details: { totalRounds: startedTanda.totalRounds },
+    });
+
+    return startedTanda;
   }
 
   /**
@@ -203,7 +234,19 @@ export class DefaultTandasService implements TandasService {
       });
     }
 
-    return this.tandaRepository.advance(input);
+    const advancedTanda = this.tandaRepository.advance(input);
+    this.auditLogger.record({
+      actorUserId: input.organizerId,
+      action: "tanda.advanced",
+      resourceType: "tanda",
+      resourceId: input.tandaId,
+      details: {
+        currentRound: advancedTanda.currentRound,
+        status: advancedTanda.status,
+      },
+    });
+
+    return advancedTanda;
   }
 
   /**
@@ -221,7 +264,15 @@ export class DefaultTandasService implements TandasService {
       });
     }
 
-    return this.tandaRepository.cancel(input);
+    const cancelledTanda = this.tandaRepository.cancel(input);
+    this.auditLogger.record({
+      actorUserId: input.organizerId,
+      action: "tanda.cancelled",
+      resourceType: "tanda",
+      resourceId: input.tandaId,
+    });
+
+    return cancelledTanda;
   }
 
   /**
@@ -230,7 +281,7 @@ export class DefaultTandasService implements TandasService {
    * @returns Persisted contribution record.
    */
   public recordContribution(
-    input: Omit<RecordContributionInput, "round" | "status">,
+    input: RecordContributionInput,
   ): ContributionRecord {
     const tanda = this.getTandaById(input.tandaId);
     if (tanda.status !== "active") {
@@ -239,10 +290,10 @@ export class DefaultTandasService implements TandasService {
       });
     }
 
-    const participant = this.getParticipantOrThrow(input.tandaId, input.participantId);
-    if (participant.tandaId !== input.tandaId) {
-      throw new NotFoundError("Participant not found in this tanda.", {
-        details: { tandaId: input.tandaId, participantId: input.participantId },
+    const participant = this.tandaRepository.findParticipantByUserId(input.tandaId, input.userId);
+    if (!participant) {
+      throw new NotFoundError("Authenticated user is not a participant in this tanda.", {
+        details: { tandaId: input.tandaId, userId: input.userId },
       });
     }
 
@@ -256,24 +307,71 @@ export class DefaultTandasService implements TandasService {
       });
     }
 
-    const history = this.tandaRepository.listContributionHistory(input.tandaId, input.participantId);
-    if (history.some((contribution) => contribution.round === tanda.currentRound)) {
-      throw new ConflictError("Participant has already contributed in the current round.", {
-        details: {
-          tandaId: input.tandaId,
-          participantId: input.participantId,
-          round: tanda.currentRound,
-        },
+    const requestedRound = input.round ?? tanda.currentRound;
+    if (requestedRound < 1 || requestedRound > tanda.currentRound) {
+      throw new BadRequestError("Contribution round is outside the active tanda progress.", {
+        details: { tandaId: input.tandaId, round: requestedRound, currentRound: tanda.currentRound },
       });
     }
 
-    return this.tandaRepository.recordContribution({
-      tandaId: input.tandaId,
-      participantId: input.participantId,
-      amount: input.amount,
-      round: tanda.currentRound,
-      status: "paid",
+    const existingContribution = this.tandaRepository.findContributionByRound(
+      input.tandaId,
+      participant.id,
+      requestedRound,
+    );
+
+    if (!existingContribution) {
+      if (requestedRound !== tanda.currentRound) {
+        throw new ConflictError("Only missed contributions from previous rounds can be settled late.", {
+          details: { tandaId: input.tandaId, participantId: participant.id, round: requestedRound },
+        });
+      }
+
+      const contribution = this.tandaRepository.createContribution({
+        tandaId: input.tandaId,
+        participantId: participant.id,
+        amount: input.amount,
+        round: requestedRound,
+        status: "paid",
+        penaltyAmount: 0,
+      });
+
+      this.auditLogger.record({
+        actorUserId: input.userId,
+        action: "contribution.recorded",
+        resourceType: "tanda",
+        resourceId: input.tandaId,
+        details: { participantId: participant.id, round: requestedRound, status: contribution.status },
+      });
+
+      return contribution;
+    }
+
+    if (existingContribution.status !== "missed") {
+      throw new ConflictError("Participant has already settled this round contribution.", {
+        details: { tandaId: input.tandaId, participantId: participant.id, round: requestedRound },
+      });
+    }
+
+    const penaltyAmount = Math.ceil(
+      tanda.contributionAmount * (this.config.latePenaltyPercent / 100),
+    );
+
+    const contribution = this.tandaRepository.settleLateContribution(
+      existingContribution.id,
+      tanda.contributionAmount,
+      penaltyAmount,
+    );
+
+    this.auditLogger.record({
+      actorUserId: input.userId,
+      action: "contribution.settled_late",
+      resourceType: "tanda",
+      resourceId: input.tandaId,
+      details: { participantId: participant.id, round: requestedRound, penaltyAmount },
     });
+
+    return contribution;
   }
 
   /**

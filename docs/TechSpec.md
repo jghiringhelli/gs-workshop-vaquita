@@ -17,6 +17,7 @@ Core runtime modules:
 - Framework: Express
 - Validation: Zod
 - Database: SQLite via `better-sqlite3`
+- Authentication: JWT via `jsonwebtoken`
 - Testing: Vitest + supertest
 
 ### Data Flow
@@ -32,8 +33,9 @@ Implemented contracts:
 - `POST /api/users`
 - `GET /api/users`
 - `GET /api/users/:id`
+- `POST /api/auth/token`
 - `POST /api/tandas`
-- `GET /api/tandas?userId=`
+- `GET /api/tandas`
 - `GET /api/tandas/:id`
 - `POST /api/tandas/:id/join`
 - `POST /api/tandas/:id/start`
@@ -44,13 +46,16 @@ Implemented contracts:
 - `GET /api/tandas/:id/participants/:pid/history`
 - `GET /api/tandas/:id/rounds/:round`
 
-Current organizer-only actions accept `organizerId` in the request body because JWT auth is not wired yet. This preserves explicit authorization checks in the service layer until token-based identity is introduced.
+Protected tanda write operations derive the acting user from a bearer token instead of trusting client-sent organizer or participant identifiers.
 
 ## Security & Compliance
-- JWT secret is already part of validated config, but JWT issuance and verification are not implemented yet.
+- JWT issuance and verification are implemented through `/api/auth/token` and request middleware.
 - All lifecycle-sensitive actions enforce organizer authorization in the service layer.
+- Participant contributions are tied to authenticated user identity.
+- Sensitive actions emit audit log rows with actor, action, resource, and metadata.
 - Validation failures and domain conflicts are returned as typed application errors, not generic server errors.
 - SQL stays fully encapsulated in repositories to reduce injection and layering risk.
+- Versioned schema migrations run at startup to keep database evolution explicit.
 
 ## Dependencies
 - `express@^4.21.0`
@@ -62,7 +67,7 @@ Current organizer-only actions accept `organizerId` in the request body because 
 ## Risks & Mitigations
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| JWT auth not implemented yet | M | M | Keep organizer checks explicit in services and isolate future auth middleware at the route boundary |
-| Round closeout is still simplified | M | H | Current implementation focuses on start/advance/cancel correctness first; missed/late contribution automation can be added behind the existing service boundary |
+| Auth model is email-based token issuance without passwords | M | M | Keep scope explicit for workshop use and evolve toward full credentialed login or external identity provider |
+| Advanced fintech controls are still out of scope | M | H | Current implementation focuses on authenticated lifecycle correctness, auditability, and testability first |
 | Randomized rotation is non-deterministic in tests | L | M | Tests assert uniqueness and full position coverage instead of exact order |
-| SQLite schema evolution may grow complex | M | M | Keep schema bootstrap centralized and confine SQL changes to repository adapters |
+| Migration system is versioned but not fully reversible yet | M | M | Keep migrations isolated and evolve toward explicit up/down migration tooling if the project continues |

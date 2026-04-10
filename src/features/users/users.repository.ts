@@ -13,6 +13,7 @@ interface UserRow {
 export interface UserRepository {
   create(input: CreateUserInput): User;
   findById(id: number): User | null;
+  findByEmail(email: string): User | null;
   list(): ReadonlyArray<User>;
 }
 
@@ -63,6 +64,23 @@ export class SqliteUserRepository implements UserRepository {
          WHERE id = ?`,
       )
       .get(id) as UserRow | undefined;
+
+    return row ? mapUserRow(row) : null;
+  }
+
+  /**
+   * Finds a user by email.
+   * @param email User email.
+   * @returns Matching user or null.
+   */
+  public findByEmail(email: string): User | null {
+    const row = this.database
+      .prepare(
+        `SELECT id, email, name, created_at
+         FROM users
+         WHERE email = ?`,
+      )
+      .get(email) as UserRow | undefined;
 
     return row ? mapUserRow(row) : null;
   }

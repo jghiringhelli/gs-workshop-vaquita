@@ -12,10 +12,14 @@ Users:
 - `GET /api/users`
 - `GET /api/users/:id`
 
+Auth:
+
+- `POST /api/auth/token`
+
 Tandas:
 
 - `POST /api/tandas`
-- `GET /api/tandas?userId=`
+- `GET /api/tandas`
 - `GET /api/tandas/:id`
 - `POST /api/tandas/:id/join`
 - `POST /api/tandas/:id/start`
@@ -33,14 +37,20 @@ Tandas:
 - Maximum participants comes from validated environment config.
 - Rotation is randomized and locked when the tanda starts.
 - Only the organizer can start, advance, or cancel.
+- Protected write operations require a valid bearer token.
 - Contributions are accepted only for active tandas.
 - Contribution amount must match the tanda contribution amount.
 - Duplicate contributions in the same round are rejected.
+- Missing contributions are marked as `missed` when a round closes.
+- Late settlements are allowed for previously missed rounds and incur a configurable penalty.
+- Participants with 2 consecutive missed rounds are flagged as defaulters.
 - A tanda auto-completes after the last round is advanced.
+- Sensitive actions write audit logs.
+- Database schema is applied through versioned startup migrations.
 
 ## Current Scope Notes
 
-The full endpoint surface from [docs/spec.md](docs/spec.md) is implemented. The advanced penalty and defaulter automation rules described in the spec are intentionally not fully modeled yet; the current implementation focuses on the workshop-critical lifecycle, contribution integrity, test coverage, and architectural separation.
+The workshop-critical API surface is implemented, including bearer-token authentication, organizer authorization, late and missed contribution tracking, basic audit logging, and versioned schema setup. Higher-order fintech controls such as MFA, KYC/AML, double-entry bookkeeping, webhook signing, and full compliance-oriented audit retention are still outside the current workshop scope.
 
 ## Run Locally
 

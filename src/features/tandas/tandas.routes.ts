@@ -1,5 +1,6 @@
 import { Router, type RequestHandler, type Router as ExpressRouter } from "express";
 
+import { getAuthenticatedUser } from "../auth";
 import type { TandasService } from "./tandas.service";
 import {
   createTandaBodySchema,
@@ -17,17 +18,20 @@ import {
  * @param tandasService Service dependency for tanda use cases.
  * @returns Express router ready for endpoint implementation.
  */
-export function createTandasRouter(tandasService: TandasService): ExpressRouter {
+export function createTandasRouter(
+  tandasService: TandasService,
+  requireAuthenticatedUser: RequestHandler,
+): ExpressRouter {
   const router = Router();
 
-  router.post("/", createTandaHandler(tandasService));
-  router.get("/", listTandasHandler(tandasService));
+  router.post("/", requireAuthenticatedUser, createTandaHandler(tandasService));
+  router.get("/", requireAuthenticatedUser, listTandasHandler(tandasService));
   router.get("/:id", getTandaByIdHandler(tandasService));
-  router.post("/:id/join", joinTandaHandler(tandasService));
-  router.post("/:id/start", startTandaHandler(tandasService));
-  router.post("/:id/advance", advanceTandaHandler(tandasService));
-  router.post("/:id/cancel", cancelTandaHandler(tandasService));
-  router.post("/:id/contributions", recordContributionHandler(tandasService));
+  router.post("/:id/join", requireAuthenticatedUser, joinTandaHandler(tandasService));
+  router.post("/:id/start", requireAuthenticatedUser, startTandaHandler(tandasService));
+  router.post("/:id/advance", requireAuthenticatedUser, advanceTandaHandler(tandasService));
+  router.post("/:id/cancel", requireAuthenticatedUser, cancelTandaHandler(tandasService));
+  router.post("/:id/contributions", requireAuthenticatedUser, recordContributionHandler(tandasService));
   router.get("/:id/rounds/:round", getRoundSummaryHandler(tandasService));
   router.get("/:id/participants", listParticipantsHandler(tandasService));
   router.get("/:id/participants/:pid/history", getParticipantHistoryHandler(tandasService));
@@ -38,8 +42,12 @@ export function createTandasRouter(tandasService: TandasService): ExpressRouter 
 function createTandaHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
+      const authenticatedUser = getAuthenticatedUser(request);
       const input = createTandaBodySchema.parse(request.body);
-      const tanda = tandasService.createTanda(input);
+      const tanda = tandasService.createTanda({
+        ...input,
+        organizerId: authenticatedUser.id,
+      });
       response.status(201).json(tanda);
     } catch (error) {
       next(error);
@@ -50,8 +58,9 @@ function createTandaHandler(tandasService: TandasService): RequestHandler {
 function listTandasHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
-      const query = listTandasQuerySchema.parse(request.query);
-      const tandas = tandasService.listTandasForUser(query.userId);
+      const authenticatedUser = getAuthenticatedUser(request);
+      listTandasQuerySchema.parse(request.query);
+      const tandas = tandasService.listTandasForUser(authenticatedUser.id);
       response.status(200).json(tandas);
     } catch (error) {
       next(error);
@@ -74,11 +83,12 @@ function getTandaByIdHandler(tandasService: TandasService): RequestHandler {
 function joinTandaHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
+      const authenticatedUser = getAuthenticatedUser(request);
       const params = tandaIdParamsSchema.parse(request.params);
-      const body = joinTandaBodySchema.parse(request.body);
+      joinTandaBodySchema.parse(request.body);
       const participant = tandasService.joinTanda({
         tandaId: params.id,
-        userId: body.userId,
+        userId: authenticatedUser.id,
       });
       response.status(201).json(participant);
     } catch (error) {
@@ -90,11 +100,12 @@ function joinTandaHandler(tandasService: TandasService): RequestHandler {
 function startTandaHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
+      const authenticatedUser = getAuthenticatedUser(request);
       const params = tandaIdParamsSchema.parse(request.params);
-      const body = organizerActionBodySchema.parse(request.body);
+      organizerActionBodySchema.parse(request.body);
       const tanda = tandasService.startTanda({
         tandaId: params.id,
-        organizerId: body.organizerId,
+        organizerId: authenticatedUser.id,
       });
       response.status(200).json(tanda);
     } catch (error) {
@@ -106,11 +117,12 @@ function startTandaHandler(tandasService: TandasService): RequestHandler {
 function advanceTandaHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
+      const authenticatedUser = getAuthenticatedUser(request);
       const params = tandaIdParamsSchema.parse(request.params);
-      const body = organizerActionBodySchema.parse(request.body);
+      organizerActionBodySchema.parse(request.body);
       const tanda = tandasService.advanceTanda({
         tandaId: params.id,
-        organizerId: body.organizerId,
+        organizerId: authenticatedUser.id,
       });
       response.status(200).json(tanda);
     } catch (error) {
@@ -122,11 +134,12 @@ function advanceTandaHandler(tandasService: TandasService): RequestHandler {
 function cancelTandaHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
+      const authenticatedUser = getAuthenticatedUser(request);
       const params = tandaIdParamsSchema.parse(request.params);
-      const body = organizerActionBodySchema.parse(request.body);
+      organizerActionBodySchema.parse(request.body);
       const tanda = tandasService.cancelTanda({
         tandaId: params.id,
-        organizerId: body.organizerId,
+        organizerId: authenticatedUser.id,
       });
       response.status(200).json(tanda);
     } catch (error) {
@@ -138,12 +151,14 @@ function cancelTandaHandler(tandasService: TandasService): RequestHandler {
 function recordContributionHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
+      const authenticatedUser = getAuthenticatedUser(request);
       const params = tandaIdParamsSchema.parse(request.params);
       const body = recordContributionBodySchema.parse(request.body);
       const contribution = tandasService.recordContribution({
         tandaId: params.id,
-        participantId: body.participantId,
+        userId: authenticatedUser.id,
         amount: body.amount,
+        round: body.round,
       });
       response.status(201).json(contribution);
     } catch (error) {

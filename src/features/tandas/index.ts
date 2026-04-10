@@ -15,6 +15,7 @@ export type {
   JoinTandaInput,
   RecordContributionInput,
   RoundSummary,
+  RoundContributionSummary,
   StartTandaInput,
   Tanda,
   TandaParticipant,

@@ -7,7 +7,6 @@ import type {
   ContributionRecord,
   CreateTandaInput,
   JoinTandaInput,
-  RecordContributionInput,
   RoundSummary,
   RoundContributionSummary,
   StartTandaInput,
@@ -32,6 +31,7 @@ interface ParticipantRow {
   readonly tanda_id: number;
   readonly role: "organizer" | "member";
   readonly rotation_position: number | null;
+  readonly is_defaulter: number;
   readonly created_at: string;
 }
 
@@ -51,9 +51,19 @@ interface RoundSummaryRow {
   readonly user_id: number;
   readonly role: "organizer" | "member";
   readonly rotation_position: number | null;
+  readonly is_defaulter: number;
   readonly contribution_status: "pending" | "paid" | "late" | "missed" | null;
   readonly amount: number | null;
   readonly penalty_amount: number | null;
+}
+
+interface WriteContributionInput {
+  readonly tandaId: number;
+  readonly participantId: number;
+  readonly round: number;
+  readonly amount: number;
+  readonly penaltyAmount: number;
+  readonly status: "paid" | "late" | "missed";
 }
 
 export interface TandaRepository {
@@ -61,11 +71,14 @@ export interface TandaRepository {
   findById(id: number): Tanda | null;
   listByUserId(userId: number): ReadonlyArray<Tanda>;
   listParticipants(tandaId: number): ReadonlyArray<TandaParticipant>;
+  findParticipantByUserId(tandaId: number, userId: number): TandaParticipant | null;
   join(input: JoinTandaInput): TandaParticipant;
   start(input: StartTandaInput, orderedParticipantIds: ReadonlyArray<number>): Tanda;
   advance(input: AdvanceTandaInput): Tanda;
   cancel(input: CancelTandaInput): Tanda;
-  recordContribution(input: RecordContributionInput): ContributionRecord;
+  createContribution(input: WriteContributionInput): ContributionRecord;
+  findContributionByRound(tandaId: number, participantId: number, round: number): ContributionRecord | null;
+  settleLateContribution(contributionId: number, amount: number, penaltyAmount: number): ContributionRecord;
   listContributionHistory(tandaId: number, participantId: number): ReadonlyArray<ContributionRecord>;
   getRoundSummary(tandaId: number, round: number): RoundSummary;
 }
@@ -165,7 +178,7 @@ export class SqliteTandaRepository implements TandaRepository {
   public listParticipants(tandaId: number): ReadonlyArray<TandaParticipant> {
     const rows = this.database
       .prepare(
-        `SELECT id, user_id, tanda_id, role, rotation_position, created_at
+        `SELECT id, user_id, tanda_id, role, rotation_position, is_defaulter, created_at
          FROM participants
          WHERE tanda_id = ?
          ORDER BY id ASC`,
@@ -173,6 +186,24 @@ export class SqliteTandaRepository implements TandaRepository {
       .all(tandaId) as ReadonlyArray<ParticipantRow>;
 
     return rows.map(mapParticipantRow);
+  }
+
+  /**
+   * Finds a participant in a tanda by user identifier.
+   * @param tandaId Tanda identifier.
+   * @param userId User identifier.
+   * @returns Matching participant or null.
+   */
+  public findParticipantByUserId(tandaId: number, userId: number): TandaParticipant | null {
+    const row = this.database
+      .prepare(
+        `SELECT id, user_id, tanda_id, role, rotation_position, is_defaulter, created_at
+         FROM participants
+         WHERE tanda_id = ? AND user_id = ?`,
+      )
+      .get(tandaId, userId) as ParticipantRow | undefined;
+
+    return row ? mapParticipantRow(row) : null;
   }
 
   /**
@@ -190,7 +221,7 @@ export class SqliteTandaRepository implements TandaRepository {
 
     const participant = this.database
       .prepare(
-        `SELECT id, user_id, tanda_id, role, rotation_position, created_at
+        `SELECT id, user_id, tanda_id, role, rotation_position, is_defaulter, created_at
          FROM participants
          WHERE id = ?`,
       )
@@ -258,6 +289,9 @@ export class SqliteTandaRepository implements TandaRepository {
         throw new AppError("Failed to load tanda during advance.", 500, "PERSISTENCE_ERROR");
       }
 
+      this.insertMissedContributions(payload.tandaId, tanda.currentRound);
+      this.flagDefaulters(payload.tandaId, tanda.currentRound);
+
       if (tanda.currentRound >= tanda.totalRounds) {
         this.database
           .prepare(
@@ -314,7 +348,7 @@ export class SqliteTandaRepository implements TandaRepository {
    * @param input Contribution payload.
    * @returns Persisted contribution record.
    */
-  public recordContribution(input: RecordContributionInput): ContributionRecord {
+  public createContribution(input: WriteContributionInput): ContributionRecord {
     const result = this.database
       .prepare(
         `INSERT INTO contributions (
@@ -324,9 +358,16 @@ export class SqliteTandaRepository implements TandaRepository {
           amount,
           penalty_amount,
           status
-        ) VALUES (?, ?, ?, ?, 0, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
       )
-      .run(input.tandaId, input.participantId, input.round, input.amount, input.status);
+      .run(
+        input.tandaId,
+        input.participantId,
+        input.round,
+        input.amount,
+        input.penaltyAmount,
+        input.status,
+      );
 
     const contribution = this.database
       .prepare(
@@ -335,6 +376,64 @@ export class SqliteTandaRepository implements TandaRepository {
          WHERE id = ?`,
       )
       .get(Number(result.lastInsertRowid)) as ContributionRow | undefined;
+
+    if (!contribution) {
+      throw new AppError("Failed to reload persisted contribution.", 500, "PERSISTENCE_ERROR");
+    }
+
+    return mapContributionRow(contribution);
+  }
+
+  /**
+   * Finds a participant contribution by round.
+   * @param tandaId Tanda identifier.
+   * @param participantId Participant identifier.
+   * @param round Contribution round.
+   * @returns Matching contribution or null.
+   */
+  public findContributionByRound(
+    tandaId: number,
+    participantId: number,
+    round: number,
+  ): ContributionRecord | null {
+    const row = this.database
+      .prepare(
+        `SELECT id, tanda_id, participant_id, round, amount, penalty_amount, status, recorded_at
+         FROM contributions
+         WHERE tanda_id = ? AND participant_id = ? AND round = ?`,
+      )
+      .get(tandaId, participantId, round) as ContributionRow | undefined;
+
+    return row ? mapContributionRow(row) : null;
+  }
+
+  /**
+   * Converts a previously missed contribution into a late paid contribution.
+   * @param contributionId Contribution identifier.
+   * @param amount Contribution amount.
+   * @param penaltyAmount Calculated late penalty.
+   * @returns Updated contribution record.
+   */
+  public settleLateContribution(
+    contributionId: number,
+    amount: number,
+    penaltyAmount: number,
+  ): ContributionRecord {
+    this.database
+      .prepare(
+        `UPDATE contributions
+         SET amount = ?, penalty_amount = ?, status = 'late', recorded_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+      )
+      .run(amount, penaltyAmount, contributionId);
+
+    const contribution = this.database
+      .prepare(
+        `SELECT id, tanda_id, participant_id, round, amount, penalty_amount, status, recorded_at
+         FROM contributions
+         WHERE id = ?`,
+      )
+      .get(contributionId) as ContributionRow | undefined;
 
     if (!contribution) {
       throw new AppError("Failed to reload persisted contribution.", 500, "PERSISTENCE_ERROR");
@@ -384,6 +483,7 @@ export class SqliteTandaRepository implements TandaRepository {
            p.user_id,
            p.role,
            p.rotation_position,
+            p.is_defaulter,
            c.status AS contribution_status,
            c.amount,
            c.penalty_amount
@@ -399,7 +499,13 @@ export class SqliteTandaRepository implements TandaRepository {
 
     const contributions = rows.map(mapRoundContributionSummaryRow);
     const paidParticipants = contributions.filter(
-      (contribution) => contribution.contributionStatus !== "pending",
+      (contribution) => contribution.contributionStatus === "paid" || contribution.contributionStatus === "late",
+    ).length;
+    const lateParticipants = contributions.filter(
+      (contribution) => contribution.contributionStatus === "late",
+    ).length;
+    const missedParticipants = contributions.filter(
+      (contribution) => contribution.contributionStatus === "missed",
     ).length;
     const totalCollected = contributions.reduce(
       (total, contribution) => total + contribution.amount + contribution.penaltyAmount,
@@ -414,11 +520,60 @@ export class SqliteTandaRepository implements TandaRepository {
       contributionAmount: tanda.contributionAmount,
       expectedParticipants: contributions.length,
       paidParticipants,
-      pendingParticipants: contributions.length - paidParticipants,
+      lateParticipants,
+      missedParticipants,
+      pendingParticipants: contributions.filter(
+        (contribution) => contribution.contributionStatus === "pending",
+      ).length,
       totalCollected,
       potRecipientParticipantId: potRecipient?.participantId ?? null,
       contributions,
     };
+  }
+
+  private insertMissedContributions(tandaId: number, round: number): void {
+    this.database
+      .prepare(
+        `INSERT INTO contributions (tanda_id, participant_id, round, amount, penalty_amount, status)
+         SELECT p.tanda_id, p.id, ?, 0, 0, 'missed'
+         FROM participants p
+         WHERE p.tanda_id = ?
+           AND NOT EXISTS (
+             SELECT 1
+             FROM contributions c
+             WHERE c.tanda_id = p.tanda_id
+               AND c.participant_id = p.id
+               AND c.round = ?
+           )`,
+      )
+      .run(round, tandaId, round);
+  }
+
+  private flagDefaulters(tandaId: number, round: number): void {
+    if (round < 2) {
+      return;
+    }
+
+    this.database
+      .prepare(
+        `UPDATE participants
+         SET is_defaulter = 1
+         WHERE tanda_id = ?
+           AND EXISTS (
+             SELECT 1
+             FROM contributions current_round
+             INNER JOIN contributions previous_round
+               ON previous_round.participant_id = current_round.participant_id
+              AND previous_round.tanda_id = current_round.tanda_id
+              AND previous_round.round = current_round.round - 1
+             WHERE current_round.participant_id = participants.id
+               AND current_round.tanda_id = participants.tanda_id
+               AND current_round.round = ?
+               AND current_round.status = 'missed'
+               AND previous_round.status = 'missed'
+           )`,
+      )
+      .run(tandaId, round);
   }
 }
 
@@ -442,6 +597,7 @@ function mapParticipantRow(row: ParticipantRow): TandaParticipant {
     tandaId: row.tanda_id,
     role: row.role,
     rotationPosition: row.rotation_position,
+    isDefaulter: row.is_defaulter === 1,
     createdAt: row.created_at,
   };
 }
@@ -465,6 +621,7 @@ function mapRoundContributionSummaryRow(row: RoundSummaryRow): RoundContribution
     userId: row.user_id,
     role: row.role,
     rotationPosition: row.rotation_position,
+    isDefaulter: row.is_defaulter === 1,
     contributionStatus: row.contribution_status ?? "pending",
     amount: row.amount ?? 0,
     penaltyAmount: row.penalty_amount ?? 0,

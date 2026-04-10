@@ -16,23 +16,16 @@ export const roundSummaryParamsSchema = z.object({
 
 export const createTandaBodySchema = z.object({
   name: z.string().trim().min(1).max(120),
-  organizerId: z.coerce.number().int().positive(),
   contributionAmount: z.coerce.number().int().positive(),
 });
 
-export const listTandasQuerySchema = z.object({
-  userId: z.coerce.number().int().positive(),
-}).strict();
+export const listTandasQuerySchema = z.object({}).strict();
 
-export const joinTandaBodySchema = z.object({
-  userId: z.coerce.number().int().positive(),
-}).strict();
+export const joinTandaBodySchema = z.object({}).strict();
 
-export const organizerActionBodySchema = z.object({
-  organizerId: z.coerce.number().int().positive(),
-}).strict();
+export const organizerActionBodySchema = z.object({}).strict();
 
 export const recordContributionBodySchema = z.object({
-  participantId: z.coerce.number().int().positive(),
   amount: z.coerce.number().int().positive(),
+  round: z.coerce.number().int().positive().optional(),
 }).strict();

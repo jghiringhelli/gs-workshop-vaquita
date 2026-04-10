@@ -8,6 +8,12 @@ import {
 } from "./infrastructure/database";
 import { errorHandler, notFoundHandler } from "./lib/http-error-handler";
 import {
+  createAuthRouter,
+  createRequireAuthenticatedUser,
+  JwtAuthService,
+  type AuthService,
+} from "./features/auth";
+import {
   DefaultTandasService,
   SqliteTandaRepository,
   createTandasRouter,
@@ -19,10 +25,12 @@ import {
   createUsersRouter,
   type UsersService,
 } from "./features/users";
+import { SqliteAuditLogger } from "./lib/audit-log";
 
 export interface ApplicationContext {
   readonly config: AppConfig;
   readonly database: DatabaseConnection;
+  readonly authService: AuthService;
   readonly usersService: UsersService;
   readonly tandasService: TandasService;
 }
@@ -38,14 +46,21 @@ export function createApplicationContext(config: AppConfig = loadConfig()): Appl
 
   const userRepository = new SqliteUserRepository(database.client);
   const tandaRepository = new SqliteTandaRepository(database.client);
+  const auditLogger = new SqliteAuditLogger(database.client);
+  const authService = new JwtAuthService(userRepository, auditLogger, {
+    jwtSecret: config.jwtSecret,
+    jwtExpiresIn: config.jwtExpiresIn,
+  });
 
   return {
     config,
     database,
+    authService,
     usersService: new DefaultUsersService(userRepository),
-    tandasService: new DefaultTandasService(tandaRepository, userRepository, {
+    tandasService: new DefaultTandasService(tandaRepository, userRepository, auditLogger, {
       maxParticipants: config.maxParticipants,
       minParticipantsToStart: 3,
+      latePenaltyPercent: config.latePenaltyPercent,
     }),
   };
 }
@@ -57,6 +72,7 @@ export function createApplicationContext(config: AppConfig = loadConfig()): Appl
  */
 export function createApp(context: ApplicationContext): Express {
   const app = express();
+  const requireAuthenticatedUser = createRequireAuthenticatedUser(context.authService);
 
   app.use(express.json());
   app.get("/health", (_request, response) => {
@@ -66,8 +82,9 @@ export function createApp(context: ApplicationContext): Express {
     });
   });
 
+  app.use("/api/auth", createAuthRouter(context.authService));
   app.use("/api/users", createUsersRouter(context.usersService));
-  app.use("/api/tandas", createTandasRouter(context.tandasService));
+  app.use("/api/tandas", createTandasRouter(context.tandasService, requireAuthenticatedUser));
 
   app.use(notFoundHandler);
   app.use(errorHandler);

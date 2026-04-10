@@ -36,6 +36,12 @@ export class ForbiddenError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  public constructor(message: string, context: ErrorContext = {}) {
+    super(message, 401, "UNAUTHORIZED", context);
+  }
+}
+
 export class ValidationAppError extends AppError {
   public constructor(message: string, context: ErrorContext = {}) {
     super(message, 422, "VALIDATION_ERROR", context);

@@ -27,6 +27,7 @@ Responsibilities:
 
 - Parse request parameters and bodies
 - Validate input with Zod
+- Authenticate protected requests through bearer-token middleware
 - Call application services
 - Translate successful results into HTTP responses
 - Delegate failures to centralized error handling
@@ -39,6 +40,7 @@ Non-responsibilities:
 
 Examples:
 
+- `src/features/auth/auth.routes.ts`
 - `src/features/users/users.routes.ts`
 - `src/features/tandas/tandas.routes.ts`
 
@@ -56,6 +58,7 @@ Responsibilities:
 
 Examples:
 
+- `src/features/auth/auth.service.ts`
 - `src/features/users/users.service.ts`
 - `src/features/tandas/tandas.service.ts`
 
@@ -101,11 +104,13 @@ Responsibilities:
 
 - Typed application errors
 - Centralized HTTP error translation
+- Audit log persistence for security-sensitive actions
 
 Examples:
 
 - `src/lib/errors.ts`
 - `src/lib/http-error-handler.ts`
+- `src/lib/audit-log.ts`
 
 ## How This Relates to Clean Architecture
 
@@ -159,7 +164,7 @@ This is why the system can be described as lightweight hexagonal or ports-and-ad
 
 ### Composition Root
 
-`src/app.ts` builds the dependency graph and wires repositories into services and services into routes.
+`src/app.ts` builds the dependency graph and wires repositories into services, authentication into middleware, and services into routes.
 
 ### Repository Pattern
 
@@ -177,6 +182,10 @@ Multi-step persistence operations such as create-with-auto-join and start-with-r
 
 Domain and application errors are converted to HTTP responses by one error-handling middleware instead of being repeated in every route.
 
+### Authentication Middleware
+
+Bearer-token verification lives at the route boundary so handlers do not trust client-sent identity fields.
+
 ## Main Tradeoffs
 
 ### Why this is good for the workshop
@@ -188,9 +197,9 @@ Domain and application errors are converted to HTTP responses by one error-handl
 
 ### What is intentionally simplified
 
-- organizer authorization is request-body-based until JWT auth is implemented
-- penalty, late, missed, and defaulter automation are not yet fully modeled
-- schema bootstrap is centralized in code rather than formal migration tooling
+- auth tokens are issued through a lightweight email-based workshop flow rather than a full password or external identity system
+- migration execution is versioned at startup but not yet modeled as fully reversible up/down scripts
+- advanced fintech controls such as MFA, double-entry ledgers, and regulatory workflows remain outside workshop scope
 
 Those simplifications are documented in README and Tech Spec so the current implementation is transparent about scope.
 
@@ -207,6 +216,6 @@ Those simplifications are documented in README and Tech Spec so the current impl
 If the project continues after the workshop, the next architectural steps should be:
 
 1. add JWT authentication middleware and remove organizer identity from request bodies
-2. implement full missed/late/penalty/defaulter policies behind the current service boundary
-3. introduce migration/versioning for database schema changes
+2. add rate limiting and stronger credential flows around token issuance
+3. evolve the migration runner into explicit reversible migration files
 4. consider dedicated domain policy modules if the tanda rules grow substantially

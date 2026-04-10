@@ -23,16 +23,17 @@ This API solves that: transparent ledger, enforced business rules, rotation lock
 | `POST` | `/api/users` | Create a user |
 | `GET` | `/api/users` | List users |
 | `GET` | `/api/users/:id` | Get user by ID |
-| `POST` | `/api/tandas` | Create a tanda (creator = organizer, auto-joins) |
-| `GET` | `/api/tandas` | List tandas for a user (`?userId=`) |
+| `POST` | `/api/auth/token` | Issue a bearer token for an existing user |
+| `POST` | `/api/tandas` | Create a tanda (authenticated creator = organizer, auto-joins) |
+| `GET` | `/api/tandas` | List tandas for the authenticated user |
 | `GET` | `/api/tandas/:id` | Get tanda details |
-| `POST` | `/api/tandas/:id/join` | Join a tanda |
-| `POST` | `/api/tandas/:id/start` | Start (organizer only — FORMING → ACTIVE) |
-| `POST` | `/api/tandas/:id/cancel` | Cancel (organizer only) |
+| `POST` | `/api/tandas/:id/join` | Join a tanda as the authenticated user |
+| `POST` | `/api/tandas/:id/start` | Start (authenticated organizer only — FORMING → ACTIVE) |
+| `POST` | `/api/tandas/:id/cancel` | Cancel (authenticated organizer only) |
 | `GET` | `/api/tandas/:id/participants` | List participants |
-| `POST` | `/api/tandas/:id/contributions` | Record a contribution for the current round |
+| `POST` | `/api/tandas/:id/contributions` | Record a contribution for the authenticated participant; optional `round` settles a previous missed round late |
 | `GET` | `/api/tandas/:id/rounds/:round` | Round summary |
-| `POST` | `/api/tandas/:id/advance` | Advance to next round (organizer only) |
+| `POST` | `/api/tandas/:id/advance` | Advance to next round (authenticated organizer only) |
 | `GET` | `/api/tandas/:id/participants/:pid/history` | Contribution history for a participant |
 
 ## Business Rules
@@ -47,6 +48,8 @@ This API solves that: transparent ledger, enforced business rules, rotation lock
 8. Only the **organizer** can advance to the next round.
 9. The tanda **auto-completes** after the last round.
 10. Status transitions: `FORMING → ACTIVE → COMPLETED` or `FORMING/ACTIVE → CANCELLED`.
+11. Protected tanda write operations derive user identity from a bearer token, not client-sent ids.
+12. When a round closes, participants without a contribution are recorded as `missed` for that round.
 
 ## Tech Stack
 
