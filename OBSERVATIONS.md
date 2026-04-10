@@ -1,20 +1,17 @@
-# Session Observations — Participant PXXX
-
-Fill this in during your last commit (when you get the 15-minute warning).
-One sentence per question — no pressure to write more.
+# Session Observations — Participant P008
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The feature-based architecture made it straightforward to implement the API incrementally while keeping routes thin, business rules centralized, and tests easy to add.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+The main friction was balancing workshop delivery speed against full spec completeness, especially around deferred security work like JWT auth and advanced contribution penalty rules.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Mixed.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The documentation effort ended up being as important as the code, because aligning README, TechSpec, ADRs, diagrams, Status, and security scope made the final delivery much clearer and more defensible.
