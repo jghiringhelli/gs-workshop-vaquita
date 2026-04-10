@@ -1,67 +1,73 @@
-# 🫰 Tanda API — Workshop
+# Tanda / Vaquita API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+This project implements a REST API for managing tandas (rotating savings groups / vaquitas) with a transparent contribution ledger and service-driven business rules.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What is built
 
----
+- `POST /api/users`, `GET /api/users`, `GET /api/users/:id`
+- `POST /api/tandas`, `GET /api/tandas?userId=`, `GET /api/tandas/:id`
+- `POST /api/tandas/:id/join`, `POST /api/tandas/:id/start`, `POST /api/tandas/:id/cancel`
+- `GET /api/tandas/:id/participants`
+- `POST /api/tandas/:id/contributions`
+- `GET /api/tandas/:id/rounds/:round`
+- `POST /api/tandas/:id/advance`
+- `GET /api/tandas/:id/participants/:pid/history`
 
-## Setup
+## Business rules enforced
+
+- organizer auto-joins on tanda creation
+- minimum 3 participants before start
+- maximum participant count comes from config
+- rotation is assigned and locked when the tanda starts
+- contributions must match the tanda amount
+- late contributions receive a 5% configurable penalty
+- missed contributions are recorded on round advance
+- 2 consecutive misses flag a participant as a defaulter
+- final advance completes the tanda automatically
+
+## Architecture
+
+The API follows a layered flow:
+
+```text
+routes -> services -> repository interfaces -> SQLite adapters
+```
+
+- route handlers validate input and delegate only
+- services enforce business rules and status transitions
+- repositories isolate all `better-sqlite3` access
+- SQLite schema is created automatically at startup
+
+## Run locally
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run dev
 ```
 
----
+The API starts on `http://localhost:3000`.
 
-## Your instructions are in START.md
+## Verification commands
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+```bash
+npm test
+npm run test:coverage
+npm run typecheck
+npm run lint
+```
 
----
+## Configuration
 
-## How scoring works
+These environment variables are supported:
 
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
+- `PORT`
+- `DATABASE_FILE_PATH`
+- `MIN_PARTICIPANTS_TO_START`
+- `MAX_PARTICIPANTS_PER_TANDA`
+- `LATE_PENALTY_PERCENT`
+- `CONTRIBUTION_WINDOW_HOURS`
 
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
+## Notes
 
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
-
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+- Externally visible HTTP behavior follows `docs/spec.md` and `START.md` where those workshop contracts are more specific than the generic API standards.
+- Monetary values are stored and processed as integer minor units to avoid floating-point drift.
