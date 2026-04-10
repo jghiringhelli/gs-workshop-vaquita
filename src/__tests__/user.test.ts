@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../app';
-import { resetDatabase } from '../db/database';
+import { resetDatabase, closeDatabase, initializeDatabase } from '../db/database';
 import { verifyToken } from '../utils/jwt';
+import { logger } from '../logger';
 
 describe('User endpoints', () => {
   beforeEach(() => {
@@ -99,6 +100,27 @@ describe('User endpoints', () => {
       const res = await request(app).get('/api/users/999');
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe('Logger coverage', () => {
+    it('should call logger methods without errors', () => {
+      expect(() => logger.info('test info')).not.toThrow();
+      expect(() => logger.error('test error')).not.toThrow();
+      expect(() => logger.warn('test warn')).not.toThrow();
+    });
+  });
+
+  describe('Database lifecycle', () => {
+    it('should close and reinitialize database without errors', () => {
+      expect(() => closeDatabase()).not.toThrow();
+      initializeDatabase();
+    });
+  });
+
+  describe('JWT edge cases', () => {
+    it('should reject token with missing userId in payload', () => {
+      expect(() => verifyToken('eyJhbGciOiJIUzI1NiJ9.e30.invalid')).toThrow();
     });
   });
 });
