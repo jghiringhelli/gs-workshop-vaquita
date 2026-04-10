@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P054
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+It felt smooth overall, I barely had to step in. I just did a quick sanity check and made a few minor tweaks.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+The Node installation slowed me down a bit.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+AI took care of the commits.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+I was actually surprised at how little intervention I had to make.
