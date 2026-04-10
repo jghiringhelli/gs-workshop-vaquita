@@ -145,11 +145,30 @@ export class SqliteTandaRepository implements TandaRepository {
 
   /**
    * Adds a participant to a tanda.
-   * @param _input Join request payload.
+   * @param input Join request payload.
    * @returns Persisted participant record.
    */
-  public join(_input: JoinTandaInput): TandaParticipant {
-    throw new NotImplementedAppError("SqliteTandaRepository.join is not implemented yet.");
+  public join(input: JoinTandaInput): TandaParticipant {
+    const result = this.database
+      .prepare(
+        `INSERT INTO participants (user_id, tanda_id, role, rotation_position)
+         VALUES (?, ?, 'member', NULL)`,
+      )
+      .run(input.userId, input.tandaId);
+
+    const participant = this.database
+      .prepare(
+        `SELECT id, user_id, tanda_id, role, rotation_position, created_at
+         FROM participants
+         WHERE id = ?`,
+      )
+      .get(Number(result.lastInsertRowid)) as ParticipantRow | undefined;
+
+    if (!participant) {
+      throw new AppError("Failed to reload persisted participant.", 500, "PERSISTENCE_ERROR");
+    }
+
+    return mapParticipantRow(participant);
   }
 
   /**

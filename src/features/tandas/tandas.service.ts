@@ -1,4 +1,4 @@
-import { NotFoundError, NotImplementedAppError } from "../../lib/errors";
+import { ConflictError, NotFoundError, NotImplementedAppError } from "../../lib/errors";
 
 import type { TandaRepository } from "./tandas.repository";
 import type { UserRepository } from "../users";
@@ -19,10 +19,15 @@ export interface TandasService {
   recordContribution(input: RecordContributionInput): void;
 }
 
+export interface TandasServiceConfig {
+  readonly maxParticipants: number;
+}
+
 export class DefaultTandasService implements TandasService {
   public constructor(
     private readonly tandaRepository: TandaRepository,
     private readonly userRepository: UserRepository,
+    private readonly config: TandasServiceConfig,
   ) {}
 
   /**
@@ -85,11 +90,40 @@ export class DefaultTandasService implements TandasService {
 
   /**
    * Joins a user to a tanda.
-   * @param _input Join request payload.
+   * @param input Join request payload.
    * @returns Persisted participant projection.
    */
-  public joinTanda(_input: JoinTandaInput): TandaParticipant {
-    throw new NotImplementedAppError("DefaultTandasService.joinTanda is not implemented yet.");
+  public joinTanda(input: JoinTandaInput): TandaParticipant {
+    const tanda = this.getTandaById(input.tandaId);
+    const user = this.userRepository.findById(input.userId);
+
+    if (!user) {
+      throw new NotFoundError("User not found.", { details: { userId: input.userId } });
+    }
+
+    if (tanda.status !== "forming") {
+      throw new ConflictError("Only tandas in forming status can be joined.", {
+        details: { tandaId: input.tandaId, status: tanda.status },
+      });
+    }
+
+    const participants = this.tandaRepository.listParticipants(input.tandaId);
+    if (participants.some((participant) => participant.userId === input.userId)) {
+      throw new ConflictError("User is already a participant in this tanda.", {
+        details: { tandaId: input.tandaId, userId: input.userId },
+      });
+    }
+
+    if (participants.length >= this.config.maxParticipants) {
+      throw new ConflictError("Tanda has reached the maximum number of participants.", {
+        details: {
+          tandaId: input.tandaId,
+          maxParticipants: this.config.maxParticipants,
+        },
+      });
+    }
+
+    return this.tandaRepository.join(input);
   }
 
   /**

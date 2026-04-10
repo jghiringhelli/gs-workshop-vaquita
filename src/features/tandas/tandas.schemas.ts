@@ -26,7 +26,7 @@ export const listTandasQuerySchema = z.object({
 
 export const joinTandaBodySchema = z.object({
   userId: z.coerce.number().int().positive(),
-});
+}).strict();
 
 export const recordContributionBodySchema = z.object({
   participantId: z.coerce.number().int().positive(),

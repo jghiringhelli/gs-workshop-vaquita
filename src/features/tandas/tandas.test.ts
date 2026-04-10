@@ -174,6 +174,133 @@ describe("tandas feature", () => {
     expect(response.status).toBe(404);
     expect(response.body.error.code).toBe("NOT_FOUND");
   });
+
+  it("joins a user to a forming tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberId = await createUser(app, "bob@example.com", "Bob");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+
+    const response = await request(app).post("/api/tandas/1/join").send({ userId: memberId });
+
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({
+      userId: memberId,
+      tandaId: 1,
+      role: "member",
+      rotationPosition: null,
+    });
+
+    const participantsResponse = await request(app).get("/api/tandas/1/participants");
+    expect(participantsResponse.body).toHaveLength(2);
+  });
+
+  it("rejects invalid join payloads", async () => {
+    const app = createApp(context);
+
+    const response = await request(app).post("/api/tandas/1/join").send({ userId: 0, extra: true });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 404 when joining a missing tanda", async () => {
+    const app = createApp(context);
+    const memberId = await createUser(app, "bob@example.com", "Bob");
+
+    const response = await request(app).post("/api/tandas/999/join").send({ userId: memberId });
+
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("returns 404 when joining with a missing user", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+
+    const response = await request(app).post("/api/tandas/1/join").send({ userId: 999 });
+
+    expect(response.status).toBe(404);
+    expect(response.body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("rejects duplicate participants", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberId = await createUser(app, "bob@example.com", "Bob");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberId });
+
+    const response = await request(app).post("/api/tandas/1/join").send({ userId: memberId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
+  it("rejects join when the tanda is not forming", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberId = await createUser(app, "bob@example.com", "Bob");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    context.database.client.prepare("UPDATE tandas SET status = 'active' WHERE id = 1").run();
+
+    const response = await request(app).post("/api/tandas/1/join").send({ userId: memberId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
+  it("rejects join when the max participant limit is reached", async () => {
+    disposeApplicationContext(context);
+    context = createApplicationContext(
+      loadConfig({
+        ...process.env,
+        DATABASE_PATH: ":memory:",
+        NODE_ENV: "test",
+        MAX_PARTICIPANTS: "3",
+      }),
+    );
+
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const memberOneId = await createUser(app, "bob@example.com", "Bob");
+    const memberTwoId = await createUser(app, "carol@example.com", "Carol");
+    const memberThreeId = await createUser(app, "dave@example.com", "Dave");
+
+    await request(app).post("/api/tandas").send({
+      name: "Tanda Enero",
+      organizerId,
+      contributionAmount: 1000,
+    });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberOneId });
+    await request(app).post("/api/tandas/1/join").send({ userId: memberTwoId });
+
+    const response = await request(app).post("/api/tandas/1/join").send({ userId: memberThreeId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
 });
 
 async function createUser(
