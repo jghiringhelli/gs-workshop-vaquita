@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P058
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The layered architecture with domain, services, and repositories made it easy to implement business logic separately from routes.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Switching from better-sqlite3 to sqlite3 due to Node version compatibility issues took some time to adapt the database code.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Made regular commits after each major feature implementation, following conventional commit format.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI was able to implement the full API with all business rules correctly, including complex logic like rotation randomization and round advancement.
