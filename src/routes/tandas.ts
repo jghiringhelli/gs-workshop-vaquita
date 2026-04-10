@@ -68,7 +68,7 @@ export function createTandaRoutes(tandaService: TandaService): Router {
    */
   router.get('/:id', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
       const tanda = tandaService.getTandaById(id);
 
       res.status(200).json({
@@ -84,7 +84,7 @@ export function createTandaRoutes(tandaService: TandaService): Router {
    */
   router.post('/:id/join', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
       const input = joinTandaSchema.parse(req.body);
 
       const participant = tandaService.joinTanda(id, input.userId);
@@ -102,7 +102,7 @@ export function createTandaRoutes(tandaService: TandaService): Router {
    */
   router.post('/:id/start', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
       const { organizerId } = req.body;
 
       if (!organizerId || typeof organizerId !== 'string') {
@@ -129,7 +129,7 @@ export function createTandaRoutes(tandaService: TandaService): Router {
    */
   router.get('/:id/participants', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
 
       const participants = tandaService.getParticipants(id);
 
@@ -149,7 +149,7 @@ export function createTandaRoutes(tandaService: TandaService): Router {
    */
   router.post('/:id/cancel', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
       const { organizerId } = req.body;
 
       if (!organizerId || typeof organizerId !== 'string') {

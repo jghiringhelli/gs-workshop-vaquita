@@ -13,7 +13,7 @@ export function createContributionRoutes(contributionService: ContributionServic
    */
   router.post('/:id/contributions', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
       const input = recordContributionSchema.parse(req.body);
 
       const contribution = contributionService.recordContribution(id, input.participantId, input.amount);
@@ -29,7 +29,7 @@ export function createContributionRoutes(contributionService: ContributionServic
    */
   router.get('/:id/rounds/:round', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id, round } = req.params;
+      const { id, round } = req.params as { id: string; round: string };
 
       const summary = contributionService.getRoundSummary(id, parseInt(round, 10));
 
@@ -44,7 +44,7 @@ export function createContributionRoutes(contributionService: ContributionServic
    */
   router.post('/:id/advance', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id } = req.params;
+      const { id } = req.params as { id: string };
       const { organizerId } = req.body;
 
       if (!organizerId) {
@@ -69,7 +69,7 @@ export function createContributionRoutes(contributionService: ContributionServic
    */
   router.get('/:id/participants/:pid/history', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { pid } = req.params;
+      const { pid } = req.params as { id: string; pid: string };
 
       const history = contributionService.getParticipantHistory(pid);
 
