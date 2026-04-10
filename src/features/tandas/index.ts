@@ -9,10 +9,12 @@ export {
 } from "./tandas.repository";
 export type {
   AdvanceTandaInput,
+  CancelTandaInput,
   ContributionRecord,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
+  RoundSummary,
   StartTandaInput,
   Tanda,
   TandaParticipant,

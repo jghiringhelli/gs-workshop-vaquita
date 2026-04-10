@@ -1,24 +1,27 @@
-<!-- UNFILLED: State Machine — Primary Entity -->
-<!-- Replace state names (Draft, Pending, Active, etc.) and transition labels -->
-<!-- with the actual lifecycle states of your domain entity.               -->
-# State Machine: Primary Entity
+﻿# State Machine: Tanda Lifecycle
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft
+    [*] --> Forming
 
-    Draft --> Pending: submit()
-    Pending --> Active: approve()
-    Pending --> Rejected: reject()
-    Active --> Completed: complete()
+    Forming --> Active: start()
+    Forming --> Cancelled: cancel()
+    Active --> Active: advance()
+    Active --> Completed: advance() on last round
     Active --> Cancelled: cancel()
 
     Completed --> [*]
-    Rejected --> [*]
     Cancelled --> [*]
 
+    note right of Forming
+        Organizer auto-joins on create.
+        Additional members may join.
+        Start requires at least 3 participants.
+    end note
+
     note right of Active
-        FILL: add invariant or constraint
-        e.g. "requires valid payment method"
+        Rotation order is randomized and locked at start.
+        currentRound begins at 1.
+        Contributions are recorded against the active round only.
     end note
 ```

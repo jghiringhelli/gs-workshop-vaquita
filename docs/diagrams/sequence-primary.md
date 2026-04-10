@@ -1,26 +1,33 @@
-<!-- UNFILLED: Sequence Diagram — Primary Flow -->
-<!-- Replace participant labels and messages with real actors and contracts -->
-# Sequence Diagram: Primary Flow
+# Sequence Diagram: Organizer Starts and Advances a Tanda
 
 ```mermaid
 sequenceDiagram
-    participant Client as <!-- FILL: initiating actor, e.g. Browser / CLI / Service -->
-    participant API as <!-- FILL: entry-point service, e.g. API Gateway -->
-    participant Service as <!-- FILL: domain service, e.g. AuthService -->
-    participant Store as <!-- FILL: persistence layer, e.g. Database -->
+    participant Organizer as Organizer Client
+    participant API as Express API
+    participant Service as TandasService
+    participant Store as SQLite Repository
 
-    Note over Client,Store: <!-- FILL: describe the primary flow in one sentence -->
+    Note over Organizer,Store: Organizer starts a forming tanda, then advances rounds until completion.
 
-    Client->>API: <!-- FILL: request, e.g. POST /login {credentials} -->
-    API->>Service: <!-- FILL: delegate, e.g. authenticate(credentials) -->
-    Service->>Store: <!-- FILL: query, e.g. findUserByEmail(email) -->
-    Store-->>Service: <!-- FILL: result, e.g. User | null -->
+    Organizer->>API: POST /api/tandas/:id/start {organizerId}
+    API->>Service: startTanda(tandaId, organizerId)
+    Service->>Store: load tanda and participants
+    Store-->>Service: tanda + participant roster
 
-    alt <!-- FILL: failure case, e.g. User not found or wrong password -->
-        Service-->>API: <!-- FILL: error response, e.g. AuthError -->
-        API-->>Client: <!-- FILL: HTTP error, e.g. 401 Unauthorized -->
-    else <!-- FILL: success case -->
-        Service-->>API: <!-- FILL: success result, e.g. JWT token -->
-        API-->>Client: <!-- FILL: HTTP success, e.g. 200 OK {token} -->
+    alt not organizer or fewer than 3 participants
+        Service-->>API: domain error
+        API-->>Organizer: 4xx error response
+    else start allowed
+        Service->>Store: transaction: assign randomized rotation, set status=active, currentRound=1, totalRounds=N
+        Store-->>Service: updated tanda
+        Service-->>API: started tanda
+        API-->>Organizer: 200 OK {active tanda}
+
+        Organizer->>API: POST /api/tandas/:id/advance {organizerId}
+        API->>Service: advanceTanda(tandaId, organizerId)
+        Service->>Store: transaction: increment round or complete tanda
+        Store-->>Service: updated tanda
+        Service-->>API: advanced tanda
+        API-->>Organizer: 200 OK {active or completed tanda}
     end
 ```

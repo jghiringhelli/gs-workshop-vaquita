@@ -687,6 +687,138 @@ describe("tandas feature", () => {
     expect(response.status).toBe(422);
     expect(response.body.error.code).toBe("VALIDATION_ERROR");
   });
+
+  it("cancels a tanda when requested by the organizer", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+
+    const createResponse = await request(app).post("/api/tandas").send({
+      name: "Tanda Cancel",
+      organizerId,
+      contributionAmount: 1000,
+    });
+
+    const response = await request(app)
+      .post(`/api/tandas/${createResponse.body.id}/cancel`)
+      .send({ organizerId });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      id: createResponse.body.id,
+      status: "cancelled",
+    });
+  });
+
+  it("rejects invalid cancel payloads", async () => {
+    const app = createApp(context);
+
+    const response = await request(app)
+      .post("/api/tandas/1/cancel")
+      .send({ organizerId: 0, extra: true });
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("returns 403 when a non-organizer cancels a tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const outsiderId = await createUser(app, "bob@example.com", "Bob");
+
+    const createResponse = await request(app).post("/api/tandas").send({
+      name: "Tanda Cancel",
+      organizerId,
+      contributionAmount: 1000,
+    });
+
+    const response = await request(app)
+      .post(`/api/tandas/${createResponse.body.id}/cancel`)
+      .send({ organizerId: outsiderId });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("FORBIDDEN");
+  });
+
+  it("returns 409 when cancelling a completed tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const tandaId = await createStartedTanda(app, organizerId, "Tanda Completed Cancel");
+
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ organizerId });
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ organizerId });
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ organizerId });
+
+    const response = await request(app).post(`/api/tandas/${tandaId}/cancel`).send({ organizerId });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe("CONFLICT");
+  });
+
+  it("returns a round summary for an active tanda", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const tandaId = await createStartedTanda(app, organizerId, "Tanda Round Summary");
+
+    const participantsResponse = await request(app).get(`/api/tandas/${tandaId}/participants`);
+    const memberParticipant = participantsResponse.body.find(
+      (participant: { role: string }) => participant.role === "member",
+    ) as { id: number };
+
+    await request(app).post(`/api/tandas/${tandaId}/contributions`).send({
+      participantId: memberParticipant.id,
+      amount: 1000,
+    });
+
+    const response = await request(app).get(`/api/tandas/${tandaId}/rounds/1`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      tandaId,
+      round: 1,
+      status: "active",
+      expectedParticipants: 3,
+      paidParticipants: 1,
+      pendingParticipants: 2,
+      totalCollected: 1000,
+    });
+    expect(response.body.contributions).toHaveLength(3);
+  });
+
+  it("returns 400 when requesting a round summary before start", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+
+    const createResponse = await request(app).post("/api/tandas").send({
+      name: "Tanda Forming Summary",
+      organizerId,
+      contributionAmount: 1000,
+    });
+
+    const response = await request(app).get(`/api/tandas/${createResponse.body.id}/rounds/1`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("BAD_REQUEST");
+  });
+
+  it("returns 400 when requesting an out-of-range round summary", async () => {
+    const app = createApp(context);
+    const organizerId = await createUser(app, "alice@example.com", "Alice");
+    const tandaId = await createStartedTanda(app, organizerId, "Tanda Round Range");
+
+    const response = await request(app).get(`/api/tandas/${tandaId}/rounds/99`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe("BAD_REQUEST");
+  });
+
+  it("rejects invalid round summary params", async () => {
+    const app = createApp(context);
+
+    const response = await request(app).get("/api/tandas/1/rounds/not-a-number");
+
+    expect(response.status).toBe(422);
+    expect(response.body.error.code).toBe("VALIDATION_ERROR");
+  });
 });
 
 async function createUser(

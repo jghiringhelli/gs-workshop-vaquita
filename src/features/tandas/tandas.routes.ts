@@ -7,6 +7,7 @@ import {
   listTandasQuerySchema,
   organizerActionBodySchema,
   participantHistoryParamsSchema,
+  roundSummaryParamsSchema,
   recordContributionBodySchema,
   tandaIdParamsSchema,
 } from "./tandas.schemas";
@@ -25,7 +26,9 @@ export function createTandasRouter(tandasService: TandasService): ExpressRouter 
   router.post("/:id/join", joinTandaHandler(tandasService));
   router.post("/:id/start", startTandaHandler(tandasService));
   router.post("/:id/advance", advanceTandaHandler(tandasService));
+  router.post("/:id/cancel", cancelTandaHandler(tandasService));
   router.post("/:id/contributions", recordContributionHandler(tandasService));
+  router.get("/:id/rounds/:round", getRoundSummaryHandler(tandasService));
   router.get("/:id/participants", listParticipantsHandler(tandasService));
   router.get("/:id/participants/:pid/history", getParticipantHistoryHandler(tandasService));
 
@@ -116,6 +119,22 @@ function advanceTandaHandler(tandasService: TandasService): RequestHandler {
   };
 }
 
+function cancelTandaHandler(tandasService: TandasService): RequestHandler {
+  return (request, response, next): void => {
+    try {
+      const params = tandaIdParamsSchema.parse(request.params);
+      const body = organizerActionBodySchema.parse(request.body);
+      const tanda = tandasService.cancelTanda({
+        tandaId: params.id,
+        organizerId: body.organizerId,
+      });
+      response.status(200).json(tanda);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
 function recordContributionHandler(tandasService: TandasService): RequestHandler {
   return (request, response, next): void => {
     try {
@@ -127,6 +146,18 @@ function recordContributionHandler(tandasService: TandasService): RequestHandler
         amount: body.amount,
       });
       response.status(201).json(contribution);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function getRoundSummaryHandler(tandasService: TandasService): RequestHandler {
+  return (request, response, next): void => {
+    try {
+      const params = roundSummaryParamsSchema.parse(request.params);
+      const summary = tandasService.getRoundSummary(params.id, params.round);
+      response.status(200).json(summary);
     } catch (error) {
       next(error);
     }

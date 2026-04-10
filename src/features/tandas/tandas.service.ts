@@ -10,10 +10,12 @@ import type { TandaRepository } from "./tandas.repository";
 import type { UserRepository } from "../users";
 import type {
   AdvanceTandaInput,
+  CancelTandaInput,
   ContributionRecord,
   CreateTandaInput,
   JoinTandaInput,
   RecordContributionInput,
+  RoundSummary,
   StartTandaInput,
   Tanda,
   TandaParticipant,
@@ -27,8 +29,10 @@ export interface TandasService {
   joinTanda(input: JoinTandaInput): TandaParticipant;
   startTanda(input: StartTandaInput): Tanda;
   advanceTanda(input: AdvanceTandaInput): Tanda;
+  cancelTanda(input: CancelTandaInput): Tanda;
   recordContribution(input: Omit<RecordContributionInput, "round" | "status">): ContributionRecord;
   getParticipantHistory(tandaId: number, participantId: number): ReadonlyArray<ContributionRecord>;
+  getRoundSummary(tandaId: number, round: number): RoundSummary;
 }
 
 export interface TandasServiceConfig {
@@ -204,6 +208,24 @@ export class DefaultTandasService implements TandasService {
   }
 
   /**
+   * Cancels a tanda if the organizer requests it from a valid state.
+   * @param input Cancel request payload.
+   * @returns Updated tanda projection.
+   */
+  public cancelTanda(input: CancelTandaInput): Tanda {
+    const tanda = this.getTandaById(input.tandaId);
+    this.assertOrganizerActionAllowed(tanda, input.organizerId);
+
+    if (tanda.status === "completed" || tanda.status === "cancelled") {
+      throw new ConflictError("Completed or cancelled tandas cannot be cancelled again.", {
+        details: { tandaId: input.tandaId, status: tanda.status },
+      });
+    }
+
+    return this.tandaRepository.cancel(input);
+  }
+
+  /**
    * Records a contribution for the active round.
    * @param input Contribution payload without derived round metadata.
    * @returns Persisted contribution record.
@@ -268,6 +290,30 @@ export class DefaultTandasService implements TandasService {
     this.getTandaById(tandaId);
     this.getParticipantOrThrow(tandaId, participantId);
     return this.tandaRepository.listContributionHistory(tandaId, participantId);
+  }
+
+  /**
+   * Returns an aggregated summary for a tanda round.
+   * @param tandaId Tanda identifier.
+   * @param round Round number.
+   * @returns Round summary projection.
+   */
+  public getRoundSummary(tandaId: number, round: number): RoundSummary {
+    const tanda = this.getTandaById(tandaId);
+
+    if (tanda.totalRounds === 0) {
+      throw new BadRequestError("Round summaries are only available after the tanda starts.", {
+        details: { tandaId, round },
+      });
+    }
+
+    if (round < 1 || round > tanda.totalRounds) {
+      throw new BadRequestError("Requested round is outside the configured tanda lifecycle.", {
+        details: { tandaId, round, totalRounds: tanda.totalRounds },
+      });
+    }
+
+    return this.tandaRepository.getRoundSummary(tandaId, round);
   }
 
   private assertOrganizerActionAllowed(tanda: Tanda, organizerId: number): void {

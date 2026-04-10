@@ -33,6 +33,29 @@ export interface ContributionRecord {
   readonly recordedAt: string;
 }
 
+export interface RoundContributionSummary {
+  readonly participantId: number;
+  readonly userId: number;
+  readonly role: ParticipantRole;
+  readonly rotationPosition: number | null;
+  readonly contributionStatus: ContributionStatus | "pending";
+  readonly amount: number;
+  readonly penaltyAmount: number;
+}
+
+export interface RoundSummary {
+  readonly tandaId: number;
+  readonly round: number;
+  readonly status: TandaStatus;
+  readonly contributionAmount: number;
+  readonly expectedParticipants: number;
+  readonly paidParticipants: number;
+  readonly pendingParticipants: number;
+  readonly totalCollected: number;
+  readonly potRecipientParticipantId: number | null;
+  readonly contributions: ReadonlyArray<RoundContributionSummary>;
+}
+
 export interface CreateTandaInput {
   readonly name: string;
   readonly organizerId: number;
@@ -50,6 +73,11 @@ export interface StartTandaInput {
 }
 
 export interface AdvanceTandaInput {
+  readonly tandaId: number;
+  readonly organizerId: number;
+}
+
+export interface CancelTandaInput {
   readonly tandaId: number;
   readonly organizerId: number;
 }
