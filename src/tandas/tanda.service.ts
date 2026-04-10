@@ -4,8 +4,8 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "../errors/app-error";
+import { TandaRepository } from "../repositories/tanda.repository";
 
-import { TandaRepository } from "./tanda.repository";
 import {
   type Contribution,
   type CreateTandaInput,

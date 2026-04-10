@@ -1,6 +1,6 @@
 import { type DatabaseConnection } from "../db/database";
 
-import { type CreateUserInput, type User } from "./user.types";
+import { type CreateUserInput, type User } from "../users/user.types";
 
 interface UserRow {
   id: number;

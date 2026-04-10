@@ -30,6 +30,7 @@ src/
   db/
   errors/
   http/
+  repositories/
   users/
   tandas/
   testing/

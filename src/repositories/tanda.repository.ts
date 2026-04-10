@@ -9,7 +9,7 @@ import {
   type ParticipantRole,
   type Tanda,
   type TandaStatus,
-} from "./tanda.types";
+} from "../tandas/tanda.types";
 
 interface TandaRow {
   id: number;

@@ -3,10 +3,10 @@ import express, { type Express } from "express";
 import { type AppConfig } from "./config/env";
 import { type DatabaseConnection } from "./db/database";
 import { errorHandler, notFoundHandler } from "./http/error-handler";
-import { TandaRepository } from "./tandas/tanda.repository";
+import { TandaRepository } from "./repositories/tanda.repository";
+import { UserRepository } from "./repositories/user.repository";
 import { createTandaRouter } from "./tandas/tanda.routes";
 import { TandaService, type ShuffleParticipants } from "./tandas/tanda.service";
-import { UserRepository } from "./users/user.repository";
 import { createUserRouter } from "./users/user.routes";
 import { UserService } from "./users/user.service";
 
