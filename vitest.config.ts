@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    env: { NODE_ENV: "test" },
+    env: { NODE_ENV: "test", DATABASE_PATH: ":memory:" },
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {
       provider: "v8",
