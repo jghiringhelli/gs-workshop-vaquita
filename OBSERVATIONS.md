@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P028
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The AI generated the full layered architecture (repositories, services, routes) in just a few prompts while respecting separation of concerns from the start.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+A typo in the package.json `start` script (`.ts` instead of `.js`) caused the server to fail when running `npm start`.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+told the AI
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI automatically loaded the context from CLAUDE.md and the project ADRs, which made it follow the architecture conventions without needing manual explanation.
