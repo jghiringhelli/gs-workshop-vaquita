@@ -3,6 +3,7 @@ import { ZodError } from 'zod'
 import { prisma } from './lib/prisma'
 import usersRouter from './routes/users'
 import tandasRouter from './routes/tandas'
+import withdrawalsRouter from './routes/withdrawals'
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -13,6 +14,8 @@ app.use(express.json())
 // Routes
 app.use('/api/users', usersRouter)
 app.use('/api/tandas', tandasRouter)
+app.use('/api/tandas', withdrawalsRouter)
+app.use('/api/withdrawals', withdrawalsRouter)
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

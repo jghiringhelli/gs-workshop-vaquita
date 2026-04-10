@@ -14,6 +14,8 @@ describe('Tanda Management', () => {
 
   beforeEach(async () => {
     // Clean up in proper order to respect foreign keys
+    await prisma.withdrawalVote.deleteMany({})
+    await prisma.withdrawal.deleteMany({})
     await prisma.tandaAuditLog.deleteMany({})
     await prisma.contribution.deleteMany({})
     await prisma.payout.deleteMany({})
@@ -48,6 +50,8 @@ describe('Tanda Management', () => {
     // Clean up in reverse order
     try {
       await prisma.$executeRaw`PRAGMA foreign_keys = OFF`
+      await prisma.withdrawalVote.deleteMany({})
+      await prisma.withdrawal.deleteMany({})
       await prisma.tandaAuditLog.deleteMany({})
       await prisma.contribution.deleteMany({})
       await prisma.payout.deleteMany({})

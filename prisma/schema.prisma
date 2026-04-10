@@ -46,6 +46,7 @@ model Tanda {
   contributions       Contribution[]
   payouts             Payout[]
   auditLogs           TandaAuditLog[]
+  withdrawals         Withdrawal[]
   
   // Audit
   createdAt           DateTime @default(now())
@@ -152,4 +153,53 @@ model TandaAuditLog {
   @@index([tandaId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model Withdrawal {
+  id                  String   @id @default(cuid())
+  tandaId             String
+  organizerId         String   // User who requested withdrawal
+  
+  tanda               Tanda    @relation(fields: [tandaId], references: [id], onDelete: Cascade)
+  
+  // Amount and metadata
+  amountCents         Int      // amount requested
+  reason              String?  // why is this withdrawal needed
+  receiptUrl          String?  // proof of expense
+  
+  // Voting state
+  status              String   @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
+  approveVotes        Int      @default(0)
+  rejectVotes         Int      @default(0)
+  resolvedAt          DateTime? // when the vote reached quorum
+  
+  // Relations
+  votes               WithdrawalVote[]
+  
+  // Audit
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([tandaId])
+  @@index([organizerId])
+  @@index([status])
+}
+
+model WithdrawalVote {
+  id            String   @id @default(cuid())
+  withdrawalId  String
+  participantId String
+  participantUserId String // cache user ID for auth checks
+  
+  withdrawal    Withdrawal @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  
+  // Vote choice
+  vote          String   // "approve" | "reject"
+  
+  // Audit
+  createdAt     DateTime @default(now())
+
+  @@unique([withdrawalId, participantId])
+  @@index([withdrawalId])
+  @@index([participantId])
 }

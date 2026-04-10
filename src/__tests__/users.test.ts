@@ -8,6 +8,8 @@ describe('User Authentication', () => {
     // Clean up in order to respect foreign keys
     // Skip foreign key checks temporarily
     await prisma.$executeRaw`PRAGMA foreign_keys = OFF`
+    await prisma.withdrawalVote.deleteMany({})
+    await prisma.withdrawal.deleteMany({})
     await prisma.tandaAuditLog.deleteMany({})
     await prisma.contribution.deleteMany({})
     await prisma.payout.deleteMany({})
@@ -21,6 +23,8 @@ describe('User Authentication', () => {
     // Clean up after tests (best effort)
     try {
       await prisma.$executeRaw`PRAGMA foreign_keys = OFF`
+      await prisma.withdrawalVote.deleteMany({})
+      await prisma.withdrawal.deleteMany({})
       await prisma.tandaAuditLog.deleteMany({})
       await prisma.contribution.deleteMany({})
       await prisma.payout.deleteMany({})

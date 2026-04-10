@@ -94,4 +94,6 @@ Enforce from docs/spec.md:
 - POST /pools/:id/dissolve — organiser dissolves the pool
 
 Write tests. Run the acceptance check from docs/spec.md when done.
+
+Commit after finalize prompt: `git commit -m "prompt-N: brief description"`
 ```
