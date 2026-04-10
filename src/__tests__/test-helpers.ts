@@ -72,3 +72,44 @@ export async function completeTanda(tandaId: number, token: string, advances: nu
     await advanceTanda(tandaId, token);
   }
 }
+
+export async function createFormingTanda(opts?: { contributionAmount?: number; totalRounds?: number }): Promise<{
+  tandaId: number;
+  organizer: { id: number; token: string };
+}> {
+  const organizer = await createUser('org@test.com', 'Org');
+  const res = await request(app)
+    .post('/api/tandas')
+    .set('Authorization', `Bearer ${organizer.token}`)
+    .send({ name: 'Forming Tanda', contributionAmount: opts?.contributionAmount ?? 500, totalRounds: opts?.totalRounds ?? 3 });
+  return { tandaId: res.body.id, organizer };
+}
+
+export async function postContribution(
+  tandaId: number,
+  token: string,
+  body: Record<string, unknown> = {}
+): Promise<request.Response> {
+  return request(app)
+    .post(`/api/tandas/${tandaId}/contributions`)
+    .set('Authorization', `Bearer ${token}`)
+    .send(body);
+}
+
+export async function startTanda(tandaId: number, token: string): Promise<request.Response> {
+  return request(app)
+    .post(`/api/tandas/${tandaId}/start`)
+    .set('Authorization', `Bearer ${token}`);
+}
+
+export async function cancelTanda(tandaId: number, token: string): Promise<request.Response> {
+  return request(app)
+    .post(`/api/tandas/${tandaId}/cancel`)
+    .set('Authorization', `Bearer ${token}`);
+}
+
+export async function joinTanda(tandaId: number, token: string): Promise<request.Response> {
+  return request(app)
+    .post(`/api/tandas/${tandaId}/join`)
+    .set('Authorization', `Bearer ${token}`);
+}

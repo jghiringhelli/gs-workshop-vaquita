@@ -6,7 +6,7 @@ import { resetDatabase, closeDatabase, initializeDatabase } from '../db/database
 import { verifyToken } from '../utils/jwt';
 import { logger } from '../logger';
 import { ValidationError } from '../errors/errors';
-import { setupActiveTanda } from './test-helpers';
+import { createTandaWithOrganizer } from './test-helpers';
 
 describe('User endpoints', () => {
   beforeEach(() => {
@@ -145,36 +145,11 @@ describe('User endpoints', () => {
     });
   });
 
-  describe('optionalAuth with invalid token on GET endpoint', () => {
-    it('should still succeed with invalid token on optional auth route', async () => {
-      // Create a user and tanda first
-      const createRes = await request(app)
-        .post('/api/users')
-        .send({ email: 'opt@test.com', name: 'OptAuth' });
-      await request(app)
-        .post('/api/tandas')
-        .send({ name: 'T', contributionAmount: 100, organizerId: createRes.body.id });
-
-      // GET /api/tandas with a bad token — optionalAuth should ignore it
-      const res = await request(app)
-        .get('/api/tandas/1')
-        .set('Authorization', 'Bearer bad.token.here');
-
+  describe('optionalAuth with invalid token', () => {
+    it('should succeed with invalid token on optional auth route', async () => {
+      const { tanda } = await createTandaWithOrganizer();
+      const res = await request(app).get(`/api/tandas/${tanda.id}`).set('Authorization', 'Bearer bad.token.here');
       expect(res.status).toBe(200);
-    });
-  });
-
-  describe('Contribution with explicit participantId', () => {
-    it('should accept participantId in body', async () => {
-      const { tandaId, organizer, participantIds } = await setupActiveTanda();
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/contributions`)
-        .set('Authorization', `Bearer ${organizer.token}`)
-        .send({ participantId: participantIds[0] });
-
-      expect(res.status).toBe(201);
-      expect(res.body.participantId).toBe(participantIds[0]);
     });
   });
 

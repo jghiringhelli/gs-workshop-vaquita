@@ -2,12 +2,13 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../app';
 import { resetDatabase } from '../db/database';
-import { createUser, createTandaWithOrganizer, createTandaWith3Members, completeTanda } from './test-helpers';
+import {
+  createUser, createTandaWithOrganizer, createTandaWith3Members,
+  completeTanda, startTanda, cancelTanda, joinTanda,
+} from './test-helpers';
 
 describe('Tanda endpoints', () => {
-  beforeEach(() => {
-    resetDatabase();
-  });
+  beforeEach(() => { resetDatabase(); });
 
   describe('POST /api/tandas', () => {
     it('should create a tanda with correct shape', async () => {
@@ -26,11 +27,8 @@ describe('Tanda endpoints', () => {
     });
 
     it('should auto-join the organizer as a participant', async () => {
-      const { tanda, organizer } = await createTandaWithOrganizer();
-      const res = await request(app)
-        .get(`/api/tandas/${tanda.id}/participants`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
+      const { tanda } = await createTandaWithOrganizer();
+      const res = await request(app).get(`/api/tandas/${tanda.id}/participants`);
       expect(res.body).toHaveLength(1);
       expect(res.body[0].role).toBe('organizer');
     });
@@ -39,18 +37,16 @@ describe('Tanda endpoints', () => {
       const user = await createUser('body@test.com', 'BodyUser');
       const res = await request(app)
         .post('/api/tandas')
-        .send({ name: 'No Token Tanda', contributionAmount: 200, organizerId: user.id });
-
+        .send({ name: 'No Token', contributionAmount: 200, organizerId: user.id });
       expect(res.status).toBe(201);
     });
 
-    it('should create a tanda without totalRounds (defaults)', async () => {
+    it('should create a tanda without totalRounds', async () => {
       const user = await createUser('org@test.com', 'Org');
       const res = await request(app)
         .post('/api/tandas')
         .set('Authorization', `Bearer ${user.token}`)
         .send({ name: 'No Rounds', contributionAmount: 500 });
-
       expect(res.status).toBe(201);
       expect(typeof res.body.totalRounds).toBe('number');
     });
@@ -58,11 +54,8 @@ describe('Tanda endpoints', () => {
 
   describe('GET /api/tandas/:id', () => {
     it('should return tanda with participants array', async () => {
-      const { tanda, organizer } = await createTandaWithOrganizer();
-      const res = await request(app)
-        .get(`/api/tandas/${tanda.id}`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
+      const { tanda } = await createTandaWithOrganizer();
+      const res = await request(app).get(`/api/tandas/${tanda.id}`);
       expect(res.status).toBe(200);
       expect(typeof res.body.id).toBe('number');
       expect(Array.isArray(res.body.participants)).toBe(true);
@@ -78,235 +71,151 @@ describe('Tanda endpoints', () => {
     it('should filter by userId', async () => {
       const { organizer } = await createTandaWithOrganizer();
       const other = await createUser('other@test.com', 'Other');
-
-      const res1 = await request(app).get(`/api/tandas?userId=${organizer.id}`);
-      const res2 = await request(app).get(`/api/tandas?userId=${other.id}`);
-
-      expect(res1.body).toHaveLength(1);
-      expect(res2.body).toHaveLength(0);
+      expect((await request(app).get(`/api/tandas?userId=${organizer.id}`)).body).toHaveLength(1);
+      expect((await request(app).get(`/api/tandas?userId=${other.id}`)).body).toHaveLength(0);
     });
 
-    it('should return all tandas without userId filter', async () => {
+    it('should return all tandas without filter', async () => {
       await createTandaWithOrganizer();
       const res = await request(app).get('/api/tandas');
-
       expect(res.status).toBe(200);
       expect(res.body.length).toBeGreaterThanOrEqual(1);
     });
   });
 
   describe('POST /api/tandas/:id/join', () => {
-    it('should allow a user to join a forming tanda', async () => {
+    it('should allow joining a forming tanda', async () => {
       const { tanda } = await createTandaWithOrganizer();
-      const member = await createUser('member@test.com', 'Member');
-
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/join`)
-        .set('Authorization', `Bearer ${member.token}`);
-
+      const member = await createUser('m@test.com', 'M');
+      const res = await joinTanda(tanda.id, member.token);
       expect(res.status).toBe(200);
       expect(res.body.role).toBe('member');
     });
 
     it('should return 409 for duplicate join', async () => {
       const { tanda } = await createTandaWithOrganizer();
-      const member = await createUser('member@test.com', 'Member');
-      await request(app).post(`/api/tandas/${tanda.id}/join`).set('Authorization', `Bearer ${member.token}`);
-
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/join`)
-        .set('Authorization', `Bearer ${member.token}`);
-
-      expect(res.status).toBe(409);
+      const member = await createUser('m@test.com', 'M');
+      await joinTanda(tanda.id, member.token);
+      expect((await joinTanda(tanda.id, member.token)).status).toBe(409);
     });
 
     it('should return 400 for joining a non-forming tanda', async () => {
       const { tandaId, organizer } = await createTandaWith3Members();
-      await request(app).post(`/api/tandas/${tandaId}/start`).set('Authorization', `Bearer ${organizer.token}`);
-
+      await startTanda(tandaId, organizer.token);
       const late = await createUser('late@test.com', 'Late');
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/join`)
-        .set('Authorization', `Bearer ${late.token}`);
-
-      expect(res.status).toBe(400);
+      expect((await joinTanda(tandaId, late.token)).status).toBe(400);
     });
 
     it('should return 400 when joining a cancelled tanda', async () => {
       const { tanda, organizer } = await createTandaWithOrganizer();
-      await request(app).post(`/api/tandas/${tanda.id}/cancel`).set('Authorization', `Bearer ${organizer.token}`);
-
-      const member = await createUser('late@test.com', 'Late');
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/join`)
-        .set('Authorization', `Bearer ${member.token}`);
-
-      expect(res.status).toBe(400);
+      await cancelTanda(tanda.id, organizer.token);
+      const member = await createUser('m@test.com', 'M');
+      expect((await joinTanda(tanda.id, member.token)).status).toBe(400);
     });
 
-    it('should reject join when tanda is at max capacity', async () => {
-      const organizer = await createUser('org@test.com', 'Organizer');
+    it('should reject join at max capacity', async () => {
+      const organizer = await createUser('org@test.com', 'Org');
       const tandaRes = await request(app)
         .post('/api/tandas')
         .set('Authorization', `Bearer ${organizer.token}`)
-        .send({ name: 'Small Tanda', contributionAmount: 100, totalRounds: 3 });
+        .send({ name: 'Full', contributionAmount: 100, totalRounds: 3 });
 
       for (let i = 1; i <= 19; i++) {
-        const m = await createUser(`fill${i}@test.com`, `Fill${i}`);
-        await request(app).post(`/api/tandas/${tandaRes.body.id}/join`).set('Authorization', `Bearer ${m.token}`);
+        const m = await createUser(`f${i}@test.com`, `F${i}`);
+        await joinTanda(tandaRes.body.id, m.token);
       }
-
       const extra = await createUser('extra@test.com', 'Extra');
-      const res = await request(app)
-        .post(`/api/tandas/${tandaRes.body.id}/join`)
-        .set('Authorization', `Bearer ${extra.token}`);
-
-      expect(res.status).toBe(400);
+      expect((await joinTanda(tandaRes.body.id, extra.token)).status).toBe(400);
     });
   });
 
   describe('POST /api/tandas/:id/start', () => {
     it('should return 400 with fewer than 3 participants', async () => {
       const { tanda, organizer } = await createTandaWithOrganizer();
-
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/start`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
-      expect(res.status).toBe(400);
+      expect((await startTanda(tanda.id, organizer.token)).status).toBe(400);
     });
 
-    it('should return 400 with exactly 2 participants (boundary)', async () => {
+    it('should return 400 with exactly 2 participants', async () => {
       const { tanda, organizer } = await createTandaWithOrganizer();
       const m1 = await createUser('m1@test.com', 'M1');
-      await request(app).post(`/api/tandas/${tanda.id}/join`).set('Authorization', `Bearer ${m1.token}`);
-
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/start`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
-      expect(res.status).toBe(400);
+      await joinTanda(tanda.id, m1.token);
+      expect((await startTanda(tanda.id, organizer.token)).status).toBe(400);
     });
 
-    it('should succeed with exactly 3 participants (boundary)', async () => {
+    it('should succeed with exactly 3 participants', async () => {
       const { tandaId, organizer } = await createTandaWith3Members();
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/start`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
+      const res = await startTanda(tandaId, organizer.token);
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('active');
       expect(res.body.currentRound).toBe(1);
     });
 
-    it('should return 403 when non-organizer tries to start', async () => {
+    it('should return 403 when non-organizer starts', async () => {
       const { tandaId, members } = await createTandaWith3Members();
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/start`)
-        .set('Authorization', `Bearer ${members[0].token}`);
-
-      expect(res.status).toBe(403);
+      expect((await startTanda(tandaId, members[0].token)).status).toBe(403);
     });
 
-    it('should assign unique rotation positions to all participants', async () => {
+    it('should assign unique rotation positions', async () => {
       const { tandaId, organizer } = await createTandaWith3Members();
-      await request(app).post(`/api/tandas/${tandaId}/start`).set('Authorization', `Bearer ${organizer.token}`);
-
-      const participants = await request(app)
-        .get(`/api/tandas/${tandaId}/participants`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
-      const positions = participants.body.map((p: { rotationPosition: number }) => p.rotationPosition);
+      await startTanda(tandaId, organizer.token);
+      const parts = await request(app).get(`/api/tandas/${tandaId}/participants`);
+      const positions = parts.body.map((p: { rotationPosition: number }) => p.rotationPosition);
       expect(positions.sort()).toEqual([1, 2, 3]);
     });
 
-    it('should return 400 when starting an already active tanda', async () => {
+    it('should return 400 when starting already active tanda', async () => {
       const { tandaId, organizer } = await createTandaWith3Members();
-      await request(app).post(`/api/tandas/${tandaId}/start`).set('Authorization', `Bearer ${organizer.token}`);
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/start`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
-      expect(res.status).toBe(400);
+      await startTanda(tandaId, organizer.token);
+      expect((await startTanda(tandaId, organizer.token)).status).toBe(400);
     });
 
     it('should return 401 without auth token', async () => {
       const { tanda } = await createTandaWithOrganizer();
-      const res = await request(app).post(`/api/tandas/${tanda.id}/start`);
-      expect(res.status).toBe(401);
+      expect((await request(app).post(`/api/tandas/${tanda.id}/start`)).status).toBe(401);
     });
   });
 
   describe('POST /api/tandas/:id/cancel', () => {
     it('should cancel a forming tanda', async () => {
       const { tanda, organizer } = await createTandaWithOrganizer();
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/cancel`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
+      const res = await cancelTanda(tanda.id, organizer.token);
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('cancelled');
     });
 
-    it('should allow cancelling an active tanda', async () => {
+    it('should cancel an active tanda', async () => {
       const { tandaId, organizer } = await createTandaWith3Members();
-      await request(app).post(`/api/tandas/${tandaId}/start`).set('Authorization', `Bearer ${organizer.token}`);
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/cancel`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
+      await startTanda(tandaId, organizer.token);
+      const res = await cancelTanda(tandaId, organizer.token);
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('cancelled');
     });
 
     it('should return 403 when non-organizer cancels', async () => {
       const { tandaId, members } = await createTandaWith3Members();
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/cancel`)
-        .set('Authorization', `Bearer ${members[0].token}`);
-
-      expect(res.status).toBe(403);
+      expect((await cancelTanda(tandaId, members[0].token)).status).toBe(403);
     });
 
-    it('should return 400 when cancelling a completed tanda', async () => {
+    it('should return 400 when cancelling completed tanda', async () => {
       const { tandaId, organizer } = await createTandaWith3Members();
-      await request(app).post(`/api/tandas/${tandaId}/start`).set('Authorization', `Bearer ${organizer.token}`);
+      await startTanda(tandaId, organizer.token);
       await completeTanda(tandaId, organizer.token, 3);
-
-      const res = await request(app)
-        .post(`/api/tandas/${tandaId}/cancel`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
-      expect(res.status).toBe(400);
+      expect((await cancelTanda(tandaId, organizer.token)).status).toBe(400);
     });
 
-    it('should return 400 when cancelling an already cancelled tanda', async () => {
+    it('should return 400 when cancelling already cancelled tanda', async () => {
       const { tanda, organizer } = await createTandaWithOrganizer();
-      await request(app).post(`/api/tandas/${tanda.id}/cancel`).set('Authorization', `Bearer ${organizer.token}`);
-
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/cancel`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
-      expect(res.status).toBe(400);
+      await cancelTanda(tanda.id, organizer.token);
+      expect((await cancelTanda(tanda.id, organizer.token)).status).toBe(400);
     });
   });
 
   describe('GET /api/tandas/:id/participants', () => {
-    it('should return correct participant count', async () => {
-      const { tanda, organizer } = await createTandaWithOrganizer();
+    it('should return correct count', async () => {
+      const { tanda } = await createTandaWithOrganizer();
       const m1 = await createUser('m1@test.com', 'M1');
-      await request(app).post(`/api/tandas/${tanda.id}/join`).set('Authorization', `Bearer ${m1.token}`);
-
-      const res = await request(app)
-        .get(`/api/tandas/${tanda.id}/participants`)
-        .set('Authorization', `Bearer ${organizer.token}`);
-
+      await joinTanda(tanda.id, m1.token);
+      const res = await request(app).get(`/api/tandas/${tanda.id}/participants`);
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(2);
     });
@@ -315,28 +224,19 @@ describe('Tanda endpoints', () => {
   describe('Auth edge cases', () => {
     it('should return 401 with malformed token', async () => {
       const { tanda } = await createTandaWithOrganizer();
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/start`)
-        .set('Authorization', 'Bearer not.a.valid.token');
-
+      const res = await request(app).post(`/api/tandas/${tanda.id}/start`).set('Authorization', 'Bearer not.a.valid.token');
       expect(res.status).toBe(401);
     });
 
-    it('should return 401 with invalid signature token', async () => {
+    it('should return 401 with invalid signature', async () => {
       const { tanda } = await createTandaWithOrganizer();
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/start`)
-        .set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjF9.invalidsignature');
-
+      const res = await request(app).post(`/api/tandas/${tanda.id}/start`).set('Authorization', 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjF9.badsig');
       expect(res.status).toBe(401);
     });
 
-    it('should return 401 with no Bearer prefix', async () => {
+    it('should return 401 without Bearer prefix', async () => {
       const { tanda } = await createTandaWithOrganizer();
-      const res = await request(app)
-        .post(`/api/tandas/${tanda.id}/start`)
-        .set('Authorization', 'Token sometoken');
-
+      const res = await request(app).post(`/api/tandas/${tanda.id}/start`).set('Authorization', 'Token x');
       expect(res.status).toBe(401);
     });
   });
