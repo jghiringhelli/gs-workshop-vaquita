@@ -33,6 +33,16 @@ Environment/config values used by the app:
 
 `JWT_SECRET` is required for token issuance/verification.
 
+## Database Initialization
+
+To create/load initial data in the local database, run:
+
+```bash
+npm run seed
+```
+
+`npm run seed` is a manual command and does **not** run automatically when starting the API (`npm run dev` or `npm start`).
+
 ## Implemented Endpoints
 
 ### Health + Auth
