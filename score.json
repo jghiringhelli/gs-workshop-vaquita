@@ -1,16 +1,16 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "f924d01",
+    "commit": "0fa0f94",
     "branch": "participant/P013",
-    "timestamp": "2026-04-10T17:50:01.369Z",
+    "timestamp": "2026-04-10T18:17:21.282Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
-      "score": 0,
+      "score": 1,
       "max": 1,
-      "details": "README not modified from template — update it to describe what you built"
+      "details": "README updated by participant (3087 chars)"
     },
     "bounded": {
       "score": 2,
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 28/29 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9655172413793104,
+      "details": "Conventional commits: 30/31 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.967741935483871,
       "hasDecisionLog": false
     },
     "composable": {
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 4,
+      "score": 5,
       "max": 8
     },
     "total_with_live_tests": {
@@ -59,11 +59,11 @@
     }
   },
   "intake": {
-    "status": "consent_pending",
-    "consented": false,
-    "q1": null,
-    "q2": null,
-    "q3": null
+    "status": "complete",
+    "consented": true,
+    "q1": "6–18 months",
+    "q2": "occasionally",
+    "q3": "confident and systematic"
   },
   "external_metrics": {
     "tscErrors": 0,
