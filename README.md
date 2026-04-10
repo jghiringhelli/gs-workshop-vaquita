@@ -1,67 +1,69 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+REST API for managing tandas / vaquitas: rotating savings groups where every member
+contributes the same amount every round and one member receives the pot each round.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+The MVP implements:
 
----
+- user creation and lookup
+- tanda creation, joining, start, cancel, and round advancement
+- participant listing and contribution history
+- contribution recording with late-penalty handling
+- round summaries and automatic completion after the last round
 
-## Setup
+## Architecture
+
+The implementation follows the workshop layering rules:
+
+- routes validate HTTP input and send responses
+- services enforce business rules
+- repositories own all SQL
+
+No route file talks to the database directly.
+
+## API Base Paths
+
+The same routes are exposed at both:
+
+- `/api/...`
+- `/api/v1/...`
+
+Health check:
+
+- `GET /health`
+
+## Auth
+
+`POST /api/users` returns a JWT token signed with `JWT_SECRET`. For workshop compatibility,
+the tanda endpoints still accept the explicit actor ids described in `docs/spec.md`. When a
+bearer token is present, it must match the actor id supplied in the request.
+
+## Local Run
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run build
+npm start
 ```
 
----
+Default server URL: `http://localhost:3000`
 
-## Your instructions are in START.md
+## Environment
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+Supported environment variables:
 
----
+- `PORT`
+- `DATABASE_PATH`
+- `JWT_SECRET`
+- `JWT_TTL_SECONDS`
+- `MIN_PARTICIPANTS`
+- `MAX_PARTICIPANTS`
+- `CONTRIBUTION_WINDOW_HOURS`
+- `LATE_PENALTY_BASIS_POINTS`
+- `DEFAULT_CURRENCY_CODE`
 
-## How scoring works
+## Notes
 
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
-
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
-
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
-
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+- Monetary values are stored internally in integer minor units
+- Organizer is auto-added as the first participant when a tanda is created
+- Rotation is randomized and locked when a tanda starts
