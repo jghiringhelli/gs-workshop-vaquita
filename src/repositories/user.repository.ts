@@ -6,7 +6,7 @@ import type { User } from "@prisma/client";
 import prisma from "../db";
 
 export const userRepository = {
-  async create(data: { email: string; name: string }): Promise<User> {
+  async create(data: { email: string; name: string; password?: string }): Promise<User> {
     return prisma.user.create({ data });
   },
 

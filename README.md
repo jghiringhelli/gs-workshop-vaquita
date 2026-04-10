@@ -65,3 +65,30 @@ Executable and Composable are scored via hidden live tests after the session. Th
 - No SQL in route handlers — services and repositories are separate layers
 - JWT secret comes from an env var, never hardcoded
 - Every endpoint has at least one test
+
+---
+
+## API Reference
+
+### Authentication
+
+| Method | Path | Body | Response | Description |
+|--------|------|------|----------|-------------|
+| `POST` | `/api/users/register` | `{ email, username, password }` | `201 User` | Register a new user. Password is bcrypt-hashed; hash is never returned. |
+| `POST` | `/api/users/login` | `{ email, password }` | `200 { token }` | Authenticate and receive a signed JWT (7-day expiry). |
+
+**Register example:**
+```bash
+curl -s -X POST http://localhost:3000/api/users/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","username":"Alice","password":"secret123"}'
+```
+
+**Login example:**
+```bash
+curl -s -X POST http://localhost:3000/api/users/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"secret123"}'
+```
+
+> **Security note:** `JWT_SECRET` must be set as an environment variable (see `.env`). It is never hardcoded.

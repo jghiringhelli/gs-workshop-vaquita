@@ -8,9 +8,10 @@ datasource db {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  name  String
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  name     String
+  password String? // bcrypt hash — null for users created without auth
 
   // Tandas this user organizes
   organizedTandas Tanda[]       @relation("TandaOrganizer")
