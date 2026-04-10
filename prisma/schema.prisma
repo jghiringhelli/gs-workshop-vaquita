@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum TandaStatus {
+  forming
+  active
+  completed
+  cancelled
+}
+
+enum ParticipantRole {
+  organizer
+  member
+}
+
+enum ContributionStatus {
+  pending
+  paid
+  late
+  missed
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  email           String        @unique
+  name            String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  organizedTandas Tanda[]       @relation("TandaOrganizer")
+  participations  Participant[]
+}
+
+model Tanda {
+  id                 Int            @id @default(autoincrement())
+  name               String
+  organizerId        Int
+  organizer          User           @relation("TandaOrganizer", fields: [organizerId], references: [id])
+  contributionAmount Float
+  status             TandaStatus    @default(forming)
+  currentRound       Int            @default(0)
+  totalRounds        Int            @default(0)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  participants       Participant[]
+  contributions      Contribution[]
+}
+
+model Participant {
+  id               Int                @id @default(autoincrement())
+  userId           Int
+  tandaId          Int
+  user             User               @relation(fields: [userId], references: [id])
+  tanda            Tanda              @relation(fields: [tandaId], references: [id])
+  role             ParticipantRole    @default(member)
+  rotationPosition Int?
+  createdAt        DateTime           @default(now())
+  contributions    Contribution[]
+
+  @@unique([userId, tandaId])
+}
+
+model Contribution {
+  id            Int                @id @default(autoincrement())
+  tandaId       Int
+  participantId Int
+  round         Int
+  amount        Float
+  status        ContributionStatus @default(pending)
+  paidAt        DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  tanda         Tanda              @relation(fields: [tandaId], references: [id])
+  participant   Participant        @relation(fields: [participantId], references: [id])
+
+  @@unique([participantId, round])
+}
