@@ -5,16 +5,16 @@ One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The base skeleton and tests were a great help. 
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Not Knowing the ts language and the architecture of the project.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+ typed commands manually
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The project did not work
