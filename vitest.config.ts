@@ -5,11 +5,19 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
+    setupFiles: ["src/test/setup.ts"],
+    pool: "forks",
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
       include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts", "src/**/*.spec.ts", "src/index.ts"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts",
+        "src/index.ts",
+        "src/server.ts",
+        "src/test/**",
+      ],
     },
   },
 });

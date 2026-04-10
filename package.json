@@ -4,6 +4,7 @@
   "description": "Tanda/Vaquita Management API",
   "main": "dist/index.js",
   "scripts": {
+    "setup": "node -e \"const fs=require('fs'),p=require('path'),b=p.resolve('.');['src/config','src/db','src/errors','src/middleware','src/modules/users','src/modules/tandas','src/test'].forEach(d=>{fs.mkdirSync(p.join(b,d),{recursive:true});console.log('ok: '+d);})\"",
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.ts",
@@ -18,13 +19,16 @@
     "express": "^4.21.0",
     "better-sqlite3": "^11.7.0",
     "zod": "^3.24.0",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "jsonwebtoken": "^9.0.0",
+    "dotenv": "^16.0.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/uuid": "^10.0.0",
     "@types/node": "^22.0.0",
+    "@types/jsonwebtoken": "^9.0.0",
     "typescript": "^5.7.0",
     "tsx": "^4.19.0",
     "vitest": "^3.0.0",
