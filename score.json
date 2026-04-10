@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "ea54779",
+    "commit": "68efc13",
     "branch": "participant/P041",
-    "timestamp": "2026-04-10T18:28:02.483Z",
+    "timestamp": "2026-04-10T18:41:57.630Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 31/32 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.96875,
+      "details": "Conventional commits: 33/34 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.9705882352941176,
       "hasDecisionLog": false
     },
     "composable": {
@@ -66,13 +66,13 @@
     "q3": null
   },
   "external_metrics": {
-    "tscErrors": 2,
-    "eslintErrors": 2,
-    "eslintWarnings": 10,
+    "tscErrors": 3,
+    "eslintErrors": 3,
+    "eslintWarnings": 29,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": 0,
-    "branchCount": 21,
+    "duplicatePct": 5.01,
+    "branchCount": 56,
     "testCoverage": null,
     "testCount": 0,
     "depCount": 13
