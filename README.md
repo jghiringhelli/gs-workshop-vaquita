@@ -1,24 +1,82 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A REST API for managing **tandas** (also called *vaquitas*) — informal rotating savings groups common in Mexico and Latin America. Each participant contributes a fixed amount every round; one person receives the full pot per round until everyone has had a turn.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What this API does
 
----
+- **User management** — create and list users
+- **Tanda lifecycle** — create, join, start, cancel, and advance tandas through rounds
+- **Rotation** — rotation order is randomly assigned when the tanda starts
+- **Contributions** — track payments per round with `paid` / `missed` status
+- **Defaulter detection** — participants who miss 2+ consecutive rounds are flagged
+- **Auto-completion** — the tanda closes automatically after the last round
+
+## Architecture
+
+Strict 3-layer separation: **Routes → Services → Repositories**. No SQL in route handlers.
+
+```
+src/
+├── app.ts                          # Express factory
+├── config.ts                       # Env vars + named constants
+├── db/database.ts                  # SQLite singleton + migrations
+├── errors/AppError.ts              # Custom error hierarchy
+├── middleware/                     # errorHandler, Zod validate
+└── modules/
+    ├── users/                      # user.repository / service / router
+    ├── tandas/                     # tanda.repository / service / router
+    ├── participants/               # participant.repository / service
+    └── contributions/              # contribution.repository / service
+```
 
 ## Setup
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+cp .env.example .env               # set JWT_SECRET before running
+npm run dev                        # starts on http://localhost:3000
+npm test                           # run 22 tests
+npm run typecheck                  # zero TypeScript errors
 ```
 
----
+## API Endpoints
 
-## Your instructions are in START.md
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/users` | Create a user |
+| `GET` | `/api/users` | List users |
+| `GET` | `/api/users/:id` | Get user by ID |
+| `POST` | `/api/tandas` | Create a tanda (creator auto-joins as organizer) |
+| `GET` | `/api/tandas?userId=` | List tandas for a user |
+| `GET` | `/api/tandas/:id` | Get tanda details |
+| `POST` | `/api/tandas/:id/join` | Join a tanda |
+| `POST` | `/api/tandas/:id/start` | Start tanda — FORMING → ACTIVE |
+| `POST` | `/api/tandas/:id/cancel` | Cancel tanda |
+| `GET` | `/api/tandas/:id/participants` | List participants |
+| `POST` | `/api/tandas/:id/contributions` | Record a contribution for current round |
+| `GET` | `/api/tandas/:id/rounds/:round` | Round summary |
+| `POST` | `/api/tandas/:id/advance` | Advance to next round (organizer only) |
+| `GET` | `/api/tandas/:id/participants/:pid/history` | Participant contribution history |
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+## Business Rules
+
+- Minimum **3** / maximum **20** participants to start
+- Only the **organizer** can start, cancel, or advance rounds
+- Rotation positions are **randomised** on start
+- `totalRounds` = number of participants
+- Participants who miss a round get a `missed` contribution auto-created on advance
+- **2 consecutive missed** contributions → `isDefaulter = true`
+- Tanda **auto-completes** after the last round is advanced
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `3000` | HTTP port |
+| `JWT_SECRET` | *(required)* | Secret for JWT signing |
+| `DATABASE_URL` | `file:./dev.db` | SQLite file path |
+| `MAX_PARTICIPANTS` | `20` | Max participants per tanda |
+| `LATE_PENALTY_PCT` | `0.05` | Late contribution penalty (5%) |
 
 ---
 
