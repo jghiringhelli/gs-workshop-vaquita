@@ -6,6 +6,11 @@ export default defineConfig({
     environment: "node",
     env: { NODE_ENV: "test" },
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
+    server: {
+      deps: {
+        external: ["better-sqlite3"],
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
