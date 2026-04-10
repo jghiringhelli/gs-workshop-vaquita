@@ -9,6 +9,9 @@ export interface IUserRepository {
    */
   create(input: CreateUserInput): User;
 
+  /** Lists all users. */
+  listAll(): User[];
+
   /**
    * Finds a user by primary key.
    * @param id - User UUID.

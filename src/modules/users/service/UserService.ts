@@ -12,8 +12,13 @@ const CreateUserSchema = z.object({
 export class UserService {
   constructor(private readonly userRepo: IUserRepository) {}
 
+  /** Returns all users. */
+  listUsers(): User[] {
+    return this.userRepo.listAll();
+  }
+
   /**
-   * Creates a new user after validating input and checking email uniqueness.
+   * Creates a new userafter validating input and checking email uniqueness.
    * @param raw - Unvalidated request body.
    * @returns The created user.
    */

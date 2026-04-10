@@ -10,7 +10,13 @@ import { handleZodError } from '../../../shared/middleware/handleZodError';
 export function createUserRouter(userService: UserService): Router {
   const router = Router();
 
-  router.post('/', (req: Request, res: Response, next: NextFunction) => {
+  router.get('/', (_req: Request, res: Response, next: NextFunction) => {
+    try {
+      res.json(userService.listUsers());
+    } catch (err) { next(err); }
+  });
+
+  router.post('/',(req: Request, res: Response, next: NextFunction) => {
     try {
       const user = userService.createUser(req.body);
       res.status(201).json(user);

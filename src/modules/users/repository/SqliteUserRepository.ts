@@ -7,6 +7,12 @@ import { IUserRepository } from '../ports/IUserRepository';
 export class SqliteUserRepository implements IUserRepository {
   constructor(private readonly db: Database.Database) {}
 
+  listAll(): User[] {
+    return this.db
+      .prepare('SELECT id, email, name FROM users ORDER BY rowid ASC')
+      .all() as User[];
+  }
+
   create(input: CreateUserInput): User {
     const id = uuidv4();
     this.db

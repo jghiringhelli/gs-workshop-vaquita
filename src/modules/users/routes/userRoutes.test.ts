@@ -5,6 +5,20 @@ import { createDatabase } from '../../../shared/db/database';
 const db = createDatabase(':memory:');
 const app = createApp(db);
 
+describe('GET /api/users', () => {
+  it('returns an array of all users', async () => {
+    await request(app).post('/api/users').send({ email: 'list1@example.com', name: 'List1' });
+    await request(app).post('/api/users').send({ email: 'list2@example.com', name: 'List2' });
+
+    const res = await request(app).get('/api/users');
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    const emails = res.body.map((u: { email: string }) => u.email);
+    expect(emails).toContain('list1@example.com');
+    expect(emails).toContain('list2@example.com');
+  });
+});
+
 describe('POST /api/users', () => {
   it('creates a user and returns 201 with id, email, name', async () => {
     const res = await request(app)
