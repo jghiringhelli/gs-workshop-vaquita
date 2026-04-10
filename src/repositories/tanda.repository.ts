@@ -6,7 +6,7 @@ import prisma from "../db";
 import type { Prisma } from "@prisma/client";
 
 // Payload types for queries that use `include`
-type TandaWithDetails = Tanda & {
+export type TandaWithDetails = Tanda & {
   participants: (Participant & { user: User })[];
   organizer: User;
 };
@@ -18,7 +18,8 @@ type ContributionWithParticipant = Contribution & {
 };
 
 export const tandaRepository = {
-  async create(data: Prisma.TandaCreateInput): Promise<Tanda> {
+  // Use unchecked input so organizerId can be passed as a plain number
+  async create(data: Prisma.TandaUncheckedCreateInput): Promise<Tanda> {
     return prisma.tanda.create({ data });
   },
 
@@ -60,6 +61,10 @@ export const tandaRepository = {
     });
   },
 
+  async findParticipantById(id: number): Promise<Participant | null> {
+    return prisma.participant.findUnique({ where: { id } });
+  },
+
   async updateParticipant(id: number, data: Prisma.ParticipantUpdateInput): Promise<Participant> {
     return prisma.participant.update({ where: { id }, data });
   },
@@ -72,6 +77,16 @@ export const tandaRepository = {
     tandaId: number;
   }): Promise<Contribution> {
     return prisma.contribution.create({ data });
+  },
+
+  async findContributionByRound(
+    participantId: number,
+    tandaId: number,
+    round: number
+  ): Promise<Contribution | null> {
+    return prisma.contribution.findUnique({
+      where: { participantId_tandaId_round: { participantId, tandaId, round } },
+    });
   },
 
   async getContributionsByRound(tandaId: number, round: number): Promise<ContributionWithParticipant[]> {
@@ -88,4 +103,5 @@ export const tandaRepository = {
     });
   },
 };
+
 
