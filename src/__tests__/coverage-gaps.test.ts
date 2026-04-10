@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import request from 'supertest';
 import app from '../app';
 import { resetDatabase } from '../db/database';
 import { createUser } from './test-helpers';
 import * as tandaService from '../services/tanda.service';
+import * as userService from '../services/user.service';
 import * as userRepo from '../repositories/user.repository';
 
 describe('Coverage gap tests', () => {
@@ -138,6 +139,30 @@ describe('Coverage gap tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.recipient).toBeNull();
+    });
+  });
+
+  describe('Route catch branches — force errors in list endpoints', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should return 500 when listTandas throws unexpected error', async () => {
+      vi.spyOn(tandaService, 'listTandas').mockImplementation(() => {
+        throw new Error('DB exploded');
+      });
+
+      const res = await request(app).get('/api/tandas');
+      expect(res.status).toBe(500);
+    });
+
+    it('should return 500 when listUsers throws unexpected error', async () => {
+      vi.spyOn(userService, 'listUsers').mockImplementation(() => {
+        throw new Error('DB exploded');
+      });
+
+      const res = await request(app).get('/api/users');
+      expect(res.status).toBe(500);
     });
   });
 });
