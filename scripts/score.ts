@@ -109,7 +109,8 @@ function checkVerifiable(): { score: number; max: number; details: string; tests
   if (existsSync(coverageSummaryPath)) {
     try {
       const summary = JSON.parse(readFileSync(coverageSummaryPath, 'utf8'));
-      coveragePct = summary.total?.lines?.pct ?? null;
+      const rawPct = summary.total?.lines?.pct ?? null;
+      coveragePct = rawPct !== null && !isNaN(Number(rawPct)) ? Number(rawPct) : null;
     } catch { /* ignore */ }
   }
 
