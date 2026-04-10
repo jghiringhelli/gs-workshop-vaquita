@@ -24,6 +24,8 @@ This branch implements a TypeScript + Express + SQLite API with:
 ```bash
 npm install
 npm run dev     # starts on http://localhost:3000
+npm run db:reset # clears all data from dev.db while keeping the schema
+npm run seed    # fills dev.db with demo users, tandas, participants and contributions
 npm test        # run tests
 ```
 
