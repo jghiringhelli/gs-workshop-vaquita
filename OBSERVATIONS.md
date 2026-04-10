@@ -5,15 +5,15 @@ One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+How work with the AI in a different way
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Understand the requeriments due sometimes I didn't heard the instructions correctly. Prepare my local environment due some missing programs.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Through command line
 
 ## Anything surprising?
 
