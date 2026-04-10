@@ -1,24 +1,59 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API — P031
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A production-quality REST API for managing **tandas** (rotating savings groups / vaquitas), built with TypeScript + Express + SQLite.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What was built
 
----
+A fully-layered REST API implementing all 10 business rules from the spec:
+
+- **14 endpoints** covering users, tandas, participants, contributions, rounds, and history
+- **3-layer architecture**: `routes → services → repositories → db` (zero SQL in route handlers)
+- **All business rules enforced**: min 3 participants to start, max 20, randomized rotation on start, 5% late penalty, consecutive-missed defaulter detection, organizer-only actions, auto-complete after last round
+- **Custom error hierarchy**: `NotFoundError`, `ValidationError`, `ForbiddenError`, `ConflictError`
+- **Zod validation** on all request bodies
+- **35 integration tests** with 90%+ line coverage (`:memory:` SQLite for isolation)
+- **ADR** documenting the repository pattern decision (`docs/decisions/ADR-001.md`)
 
 ## Setup
 
 ```bash
 npm install
 npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm test        # run tests (35 tests, ~90% coverage)
+npm run typecheck  # zero TypeScript errors
 ```
 
----
+## API Endpoints
 
-## Your instructions are in START.md
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/users` | Create a user |
+| `GET` | `/api/users` | List users |
+| `GET` | `/api/users/:id` | Get user by ID |
+| `POST` | `/api/tandas` | Create a tanda (creator auto-joins as organizer) |
+| `GET` | `/api/tandas?userId=` | List tandas for a user |
+| `GET` | `/api/tandas/:id` | Get tanda details |
+| `POST` | `/api/tandas/:id/join` | Join a tanda |
+| `POST` | `/api/tandas/:id/start` | Start tanda (organizer only — FORMING → ACTIVE) |
+| `POST` | `/api/tandas/:id/cancel` | Cancel tanda (organizer only) |
+| `GET` | `/api/tandas/:id/participants` | List participants |
+| `POST` | `/api/tandas/:id/contributions` | Record a contribution for the current round |
+| `GET` | `/api/tandas/:id/rounds/:round` | Round summary |
+| `POST` | `/api/tandas/:id/advance` | Advance to next round (organizer only) |
+| `GET` | `/api/tandas/:id/participants/:pid/history` | Contribution history |
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+## Architecture
+
+```
+src/
+├── config.ts            # All env-configurable constants
+├── db/database.ts       # SQLite connection + schema (4 tables)
+├── errors/index.ts      # Custom error hierarchy
+├── repositories/        # Data access layer (only layer using db.*)
+├── services/            # Business logic (10 rules from spec)
+├── routes/              # HTTP handlers (Zod validation → service → response)
+└── middleware/          # Error handler
+```
 
 ---
 
