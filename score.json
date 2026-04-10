@@ -1,30 +1,30 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "061d7ce",
-    "branch": "condition-a",
-    "timestamp": "2026-03-30T15:45:01.740Z",
+    "commit": "1f8eae8",
+    "branch": "participant/P047",
+    "timestamp": "2026-04-10T17:28:15.664Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
-      "score": 1,
+      "score": 0,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README not modified from template — update it to describe what you built"
     },
     "bounded": {
       "score": 2,
       "max": 2,
-      "details": "No direct DB calls in source files",
+      "details": "No direct DB calls in route/service files",
       "violations": []
     },
     "verifiable": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "Tests: 26 passed, 0 failed | Coverage: 89.8%",
+      "testsPassed": 26,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 89.83
     },
     "defended": {
       "score": 1,
@@ -32,11 +32,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 8/9 (89%) | ADR/decision doc: missing",
-      "conventionalPct": 0.8888888888888888,
-      "hasAdr": false
+      "details": "Conventional commits: 28/38 (74%) | Decision log: present",
+      "conventionalPct": 0.7368421052631579,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 7,
       "max": 8
     },
     "total_with_live_tests": {
@@ -58,16 +58,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "consent_pending",
+    "consented": false,
+    "q1": null,
+    "q2": null,
+    "q3": null
+  },
   "external_metrics": {
     "tscErrors": 0,
     "eslintErrors": 0,
     "eslintWarnings": 0,
     "auditCritical": 0,
-    "auditHigh": 0,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "auditHigh": 1,
+    "duplicatePct": 18.63,
+    "branchCount": 68,
+    "testCoverage": 89.83,
+    "testCount": 26,
+    "depCount": 5
   }
 }
