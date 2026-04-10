@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "7388bef",
+    "commit": "79c1300",
     "branch": "participant/P057-vaquita-a",
-    "timestamp": "2026-04-10T18:40:08.847Z",
+    "timestamp": "2026-04-10T18:54:48.050Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 35/36 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9722222222222222,
+      "details": "Conventional commits: 37/38 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.9736842105263158,
       "hasDecisionLog": false
     },
     "composable": {
@@ -67,11 +67,11 @@
   },
   "external_metrics": {
     "tscErrors": 0,
-    "eslintErrors": 52,
-    "eslintWarnings": 4,
+    "eslintErrors": 0,
+    "eslintWarnings": 2,
     "auditCritical": 0,
     "auditHigh": 1,
-    "duplicatePct": 2.35,
+    "duplicatePct": 2.18,
     "branchCount": 77,
     "testCoverage": null,
     "testCount": 103,
