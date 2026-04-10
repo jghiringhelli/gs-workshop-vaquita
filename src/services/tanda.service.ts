@@ -74,7 +74,7 @@ export function createTanda(
     throw new NotFoundError('User not found');
   }
 
-  const rounds = totalRounds ?? 0;
+  const rounds = totalRounds ?? 3;
   const tanda = tandaRepo.createTanda(name, userId, contributionAmount, rounds);
 
   participantRepo.createParticipant(userId, tanda.id, 'organizer');

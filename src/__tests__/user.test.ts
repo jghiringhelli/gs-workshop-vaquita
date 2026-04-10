@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../app';
 import { resetDatabase } from '../db/database';
+import { verifyToken } from '../utils/jwt';
 
 describe('User endpoints', () => {
   beforeEach(() => {
@@ -21,6 +22,15 @@ describe('User endpoints', () => {
       expect(res.body.name).toBe('Alice');
       expect(typeof res.body.id).toBe('number');
       expect(typeof res.body.token).toBe('string');
+    });
+
+    it('should return a valid JWT token with userId', async () => {
+      const res = await request(app)
+        .post('/api/users')
+        .send({ email: 'jwt@test.com', name: 'JWT' });
+
+      const payload = verifyToken(res.body.token);
+      expect(payload.userId).toBe(res.body.id);
     });
 
     it('should return 400 when email is missing', async () => {
