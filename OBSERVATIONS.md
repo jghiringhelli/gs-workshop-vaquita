@@ -1,20 +1,17 @@
-# Session Observations — Participant PXXX
-
-Fill this in during your last commit (when you get the 15-minute warning).
-One sentence per question — no pressure to write more.
+# Session Observations — Participant P011
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+Delegating full feature slices (service + routes + tests in one prompt) to the AI kept each step coherent and consistent with the existing layer pattern.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Context compaction mid-session meant the AI had to re-read several files to recover state before continuing with the tanda implementation.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Told the AI — it composed conventional-commit messages after each meaningful step.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI caught and fixed the password-leak bug in the user CRUD endpoints without being explicitly asked, once it ran the acceptance check and saw `"password":null` in the response.
