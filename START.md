@@ -1,5 +1,5 @@
-# Workshop — Vaquita Group B (ForgeCraft)
-**Mode:** ForgeCraft drives. Let it lead.
+# Workshop — Vaquita Group B (ForgeCraft Context)
+**Mode:** Free prompting — with project intelligence pre-loaded.
 
 ## Setup
 
@@ -16,12 +16,13 @@ npm test        # confirm baseline passes before you start
 
 > **Before you write any code:** open `INTAKE.md`, fill in your developer profile answers, tick the consent box, and commit it. The scoring pipeline reads it automatically.
 
-Start the server in a dedicated terminal:
-```bash
-npm run dev     # starts on http://localhost:3000
-```
+## What's different on this branch
 
-> `npm run dev` does not return to the prompt. Open a second terminal for everything else.
+This branch has been set up with ForgeCraft. Your AI assistant will automatically load `CLAUDE.md` as project context — it contains the engineering standards, architecture decisions, and use cases for this project.
+
+You don't need to run any setup commands. Just open Copilot Chat and start building. The project intelligence is already there.
+
+> **Optional:** If you want to test your API manually during development — `npm run dev` starts the server at `http://localhost:3000`. Open a second terminal; the command doesn't return to the prompt.
 
 ## The Brief
 
@@ -31,93 +32,28 @@ Your stakeholder sent this message:
 > amount every round, and one person takes the whole collected pot each round. Everyone
 > gets a turn before the cycle repeats. Members need to track who has paid each round."*
 
-A spec has been started in `docs/spec.md`. ForgeCraft will use it to guide the build.
+Full domain detail and API spec are in `docs/spec.md`. Full project requirements in `docs/PRD.md`.
 
-## Scoring (8 pts automated on every push · 6 pts hidden live tests = 14 pts)
+## Scoring (8 pts automated on every push · 6 pts checked after session = 14 pts)
 
 | Property | Pts | What earns it |
 |----------|-----|---------------|
-| **Executable** | 3 | API contracts pass: correct HTTP status codes, response shapes *(hidden)* |
-| **Composable** | 3 | HTTP layer translates only — business logic never leaks into routes *(hidden)* |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.prepare / db.run / db.get / db.all` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits (1pt) + at least one decision log entry (1pt) |
-| **Self-describing** | 1 | README describes what you built |
+| **Executable** | 3 | Your API works — correct status codes and response shapes on every endpoint *(checked after session)* |
+| **Composable** | 3 | Business logic lives in services, not in route handlers *(checked after session)* |
+| **Verifiable** | 2 | All tests pass + ≥60% line coverage on your new code |
+| **Bounded** | 2 | No database calls directly inside route files |
+| **Auditable** | 2 | ≥50% of commits follow `feat:`/`fix:`/`chore:` format (1pt) + at least one design decision documented in a `.md` file (1pt) |
+| **Self-describing** | 1 | README explains what you built |
 | **Defended** | 1 | Zero TypeScript errors |
 | **Total** | **14** | |
 
-## Step 1 — Add ForgeCraft to your AI assistant
+> **Decision log entry:** any `.md` file where you document a design choice you made and why.
 
-In VS Code with GitHub Copilot, create `.vscode/mcp.json` in this folder:
-```json
-{
-  "servers": {
-    "forgecraft": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "forgecraft-mcp@1.4.0"]
-    }
-  }
-}
-```
+## How to Work
 
-Open Copilot Chat → Agent mode → confirm `forgecraft` appears in tools.
-
-## Fallback — if ForgeCraft isn't loading
-
-If `forgecraft` doesn't appear in your Copilot tools list, use the local fallback — identical behaviour, zero network dependency:
-
-```bash
-git clone https://github.com/jghiringhelli/forgecraft-mcp
-cd forgecraft-mcp && npm install && npm run build
-```
-
-Update `.vscode/mcp.json` to use the local build:
-
-```json
-{
-  "servers": {
-    "forgecraft": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["C:/absolute/path/to/forgecraft-mcp/dist/index.js"]
-    }
-  }
-}
-```
-
-Then `Ctrl+Shift+P` → *Developer: Reload Window*.
-
-## Step 2 — Run setup
-
-Tell your AI assistant (in Agent mode), replacing the path with wherever you cloned the repo:
-
-```
-I have a new project at [path to your cloned repo].
-Use the forgecraft MCP tool to run setup_project on it.
-Answer any questions it asks you.
-```
-
-Follow wherever ForgeCraft leads. Let it drive the whole flow.
-
-## Step 3 — Implement the spec
-
-Once setup completes:
-
-```
-Read docs/spec.md carefully. Use ForgeCraft check_cascade
-to confirm we are ready to build, then implement the spec.
-```
-
-## Step 4 — Bonus (optional)
-
-Once the spec is implemented:
-
-```
-Add a pool leaderboard endpoint — show members ranked by total contributions.
-```
-
-Watch whether ForgeCraft updates the spec, records a design decision, and drives TDD.
+- Use your AI however you want — no rules
+- **Commit after each meaningful step.** Aim for at least one commit every 15–20 minutes
+- Write notes in `OBSERVATIONS.md` as you go
 
 ## Observations (write in OBSERVATIONS.md)
 
@@ -130,12 +66,10 @@ Watch whether ForgeCraft updates the spec, records a design decision, and drives
 - [ ] Did the AI introduce anti-patterns you didn't ask for?
 - [ ] Are there direct `db.*` calls in your new route files?
 
-**ForgeCraft:**
-- [ ] Did ForgeCraft infer the project tags correctly?
-- [ ] Did `check_cascade` pass cleanly or were there stubs to fill?
-- [ ] Did the bonus feature trigger a decision log entry + spec update?
-- [ ] Was the AI instruction file (CLAUDE.md / copilot-instructions) useful or noise?
-- [ ] What was confusing?
+**Context:**
+- [ ] Did you notice CLAUDE.md or the docs affecting how the AI responded?
+- [ ] Did the AI follow the architecture described in the project docs?
+- [ ] What would have been different without the pre-loaded context?
 
 ## Before You Finish
 

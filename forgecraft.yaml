@@ -1,0 +1,41 @@
+projectName: gs-workshop-vaquita-b
+tags:
+  - UNIVERSAL
+  - API
+  - DATABASE
+  - LIBRARY
+  - FINTECH
+sensitiveData: true
+cascade:
+  steps:
+    - step: functional_spec
+      required: true
+      rationale: >-
+        All projects require a functional specification (docs/PRD.md); it is the axiom set from which all other
+        artifacts are derived.
+      decidedAt: '2026-04-10'
+      decidedBy: scaffold
+    - step: architecture_diagrams
+      required: false
+      rationale: 'MVP stage: architecture diagram deferred — revisit at production phase.'
+      decidedAt: '2026-04-10'
+      decidedBy: scaffold
+    - step: constitution
+      required: true
+      rationale: >-
+        All projects require an architectural constitution (CLAUDE.md); it is the operative grammar that constrains
+        every AI coding session.
+      decidedAt: '2026-04-10'
+      decidedBy: scaffold
+    - step: adrs
+      required: false
+      rationale: 'ADRs are optional (MVP stage): decisions are not yet stable. Add them when scope solidifies.'
+      decidedAt: '2026-04-10'
+      decidedBy: scaffold
+    - step: behavioral_contracts
+      required: true
+      rationale: >-
+        API behavioral contracts (docs/use-cases.md) define the integration surface for consumers — required before any
+        endpoint is implemented.
+      decidedAt: '2026-04-10'
+      decidedBy: scaffold
