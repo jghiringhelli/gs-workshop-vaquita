@@ -5,6 +5,8 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["dotenv/config"],
+    // Run test files sequentially so they don't race on the shared SQLite database
+    fileParallelism: false,
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {
       provider: "v8",

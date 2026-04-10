@@ -38,13 +38,15 @@ enum ContributionStatus {
 // ──────────────────────────────────────────────
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  username     String        @unique
-  name         String?
-  passwordHash String
-  participants Participant[]
-  createdAt    DateTime      @default(now())
+  id              String        @id @default(cuid())
+  email           String        @unique
+  username        String        @unique
+  name            String?
+  passwordHash    String
+  participants    Participant[]
+  organizedPools  Pool[]        @relation("PoolOrganizer")
+  poolMemberships PoolMember[]
+  createdAt       DateTime      @default(now())
 }
 
 /// A rotating savings group (tanda / vaquita).
@@ -76,6 +78,52 @@ model Participant {
   createdAt        DateTime           @default(now())
 
   @@unique([userId, tandaId])
+}
+
+/// A collective savings pool with a target amount.
+/// Status moves OPEN → FUNDED automatically once contributions reach targetAmount.
+model Pool {
+  id            String           @id @default(cuid())
+  name          String
+  purpose       String?
+  targetAmount  Int              // stored in cents
+  currency      String           @default("MXN")
+  status        PoolStatus       @default(OPEN)
+  organizerId   String
+  organizer     User             @relation("PoolOrganizer", fields: [organizerId], references: [id])
+  members       PoolMember[]
+  contributions PoolContribution[]
+  createdAt     DateTime         @default(now())
+}
+
+model PoolMember {
+  id            String             @id @default(cuid())
+  poolId        String
+  userId        String
+  pool          Pool               @relation(fields: [poolId], references: [id])
+  user          User               @relation(fields: [userId], references: [id])
+  contributions PoolContribution[]
+  createdAt     DateTime           @default(now())
+
+  @@unique([poolId, userId])
+}
+
+/// A single payment into a pool by a member.
+model PoolContribution {
+  id          String     @id @default(cuid())
+  poolId      String
+  memberId    String
+  amountCents Int
+  note        String?
+  pool        Pool       @relation(fields: [poolId], references: [id])
+  member      PoolMember @relation(fields: [memberId], references: [id])
+  createdAt   DateTime   @default(now())
+}
+
+enum PoolStatus {
+  OPEN
+  FUNDED
+  CLOSED
 }
 
 /// A single payment by one participant for one round.
