@@ -1,8 +1,13 @@
 node_modules/
 dist/
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 coverage/
+.score-coverage/
+.score-test-report.json
+.score-jscpd/
 .env
 .env.local
 *.log

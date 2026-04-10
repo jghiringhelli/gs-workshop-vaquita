@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P045
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+Once the native dependency issue was fixed, the test-feedback loop was fast and made it easy to validate changes quickly.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+The main slowdown was diagnosing the better-sqlite3 and Node 24 compatibility problem on Windows before feature work.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+mixed
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+It was surprising that everything was functionally ready but scoring looked broken until the environment/runtime mismatch was resolved.
