@@ -13,16 +13,14 @@ Complete this before your first code commit. Your answers are stored alongside y
 
 **Q1: How long have you been using AI coding tools?**
 
-Answer: <!-- 6–18 months -->
+Answer: 6–18 months 
 
 **Q2: How frequently do you use AI in your coding workflow?**
 
-Answer: <!-- weekly -->
+Answer: weekly
 
 **Q3: How would you rate your current AI workflow?**
 
-Answer: <!-- still figuring it out -->
-
----
+Answer: still figuring it out
 
 *Replace the `<!-- ... -->` placeholders with your answers, tick the consent box, then commit this file.*

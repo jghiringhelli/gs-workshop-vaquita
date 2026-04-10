@@ -16,6 +16,18 @@ export function createApp(): express.Express {
 
   app.use(express.json());
 
+  app.get('/', (_req, res) => {
+    res.json({ 
+      message: 'Tanda API',
+      version: '1.0.0',
+      endpoints: {
+        health: '/health',
+        users: '/api/users',
+        tandas: '/api/tandas'
+      }
+    });
+  });
+
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });

@@ -38,18 +38,29 @@ export function closeDatabase(): void {
   }
 }
 
+export function clearDatabase(): void {
+  const database = getDatabase();
+
+  database.pragma('foreign_keys = OFF');
+  database.exec('DELETE FROM contributions');
+  database.exec('DELETE FROM participants');
+  database.exec('DELETE FROM tandas');
+  database.exec('DELETE FROM users');
+  database.pragma('foreign_keys = ON');
+}
+
 export function resetDatabase(): void {
   closeDatabase();
-  
+
   if (fs.existsSync(CONFIG.DATABASE_PATH)) {
     fs.unlinkSync(CONFIG.DATABASE_PATH);
   }
-  
+
   const walPath = CONFIG.DATABASE_PATH + '-wal';
   const shmPath = CONFIG.DATABASE_PATH + '-shm';
-  
+
   if (fs.existsSync(walPath)) fs.unlinkSync(walPath);
   if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath);
-  
+
   getDatabase();
 }
