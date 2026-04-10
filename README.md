@@ -1,67 +1,85 @@
-# 🫰 Tanda API — Workshop
+# Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+REST API for managing rotating savings groups (tandas / vaquitas) with an auditable lifecycle, participant roster, round-based contributions, and organizer-controlled state transitions.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+The implementation follows a modular feature-based architecture with Express for HTTP, Zod for validation, and SQLite via `better-sqlite3` for persistence. Route handlers stay thin, business rules live in services, and all SQL is isolated in repositories.
 
----
+## What Is Implemented
 
-## Setup
+Users:
+
+- `POST /api/users`
+- `GET /api/users`
+- `GET /api/users/:id`
+
+Tandas:
+
+- `POST /api/tandas`
+- `GET /api/tandas?userId=`
+- `GET /api/tandas/:id`
+- `POST /api/tandas/:id/join`
+- `POST /api/tandas/:id/start`
+- `POST /api/tandas/:id/advance`
+- `POST /api/tandas/:id/cancel`
+- `GET /api/tandas/:id/participants`
+- `POST /api/tandas/:id/contributions`
+- `GET /api/tandas/:id/participants/:pid/history`
+- `GET /api/tandas/:id/rounds/:round`
+
+## Core Business Rules Enforced
+
+- Organizer auto-joins when a tanda is created.
+- A tanda needs at least 3 participants to start.
+- Maximum participants comes from validated environment config.
+- Rotation is randomized and locked when the tanda starts.
+- Only the organizer can start, advance, or cancel.
+- Contributions are accepted only for active tandas.
+- Contribution amount must match the tanda contribution amount.
+- Duplicate contributions in the same round are rejected.
+- A tanda auto-completes after the last round is advanced.
+
+## Current Scope Notes
+
+The full endpoint surface from [docs/spec.md](docs/spec.md) is implemented. The advanced penalty and defaulter automation rules described in the spec are intentionally not fully modeled yet; the current implementation focuses on the workshop-critical lifecycle, contribution integrity, test coverage, and architectural separation.
+
+## Run Locally
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run dev
 ```
 
----
+The API starts on `http://localhost:3000` by default.
 
-## Your instructions are in START.md
+## Validation
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+```bash
+npm run typecheck
+npm test
+npm run lint
+```
 
----
+## Architecture
 
-## How scoring works
+- ADR: [docs/adrs/ADR-001-modular-feature-architecture.md](docs/adrs/ADR-001-modular-feature-architecture.md)
+- Tech spec: [docs/TechSpec.md](docs/TechSpec.md)
+- Diagrams: [docs/diagrams](docs/diagrams)
 
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
+## Project Structure
 
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
+```text
+src/
+	app.ts
+	index.ts
+	config/
+	infrastructure/
+		database/
+	lib/
+	features/
+		users/
+		tandas/
+```
 
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
+## Workshop Notes
 
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+The original workshop brief, scoring context, and participant workflow remain in [START.md](START.md).

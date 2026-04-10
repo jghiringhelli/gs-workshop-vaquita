@@ -1,18 +1,14 @@
-<!-- UNFILLED: C4 Container Diagram -->
-<!-- Replace container labels, technology fields, and relations with your stack -->
 # Container Diagram — gs-workshop-vaquita-b
 
 ```mermaid
 C4Container
     title Container Diagram: gs-workshop-vaquita-b
 
-    Person(user, "<!-- FILL: actor name -->", "<!-- FILL: actor description -->")
+    Person(user, "Organizer / Member", "Uses an HTTP client, test client, or future frontend to interact with the API")
 
-    Container(web, "<!-- FILL: frontend name, e.g. Web Application -->", "<!-- FILL: technology, e.g. React -->", "<!-- FILL: responsibility -->")
-    Container(api, "<!-- FILL: backend name, e.g. API Server -->", "<!-- FILL: technology, e.g. Node.js / Express -->", "<!-- FILL: responsibility -->")
-    Container(db, "<!-- FILL: database name, e.g. Primary Database -->", "<!-- FILL: technology, e.g. PostgreSQL -->", "<!-- FILL: responsibility -->")
+    Container(api, "Tanda API", "Node.js + Express + Zod", "Exposes REST endpoints for users, tandas, lifecycle actions, contributions, and round summaries")
+    ContainerDb(db, "SQLite Database", "better-sqlite3 / SQLite", "Stores users, tandas, participants, and contributions")
 
-    Rel(user, web, "<!-- FILL: interaction, e.g. Uses -->", "<!-- FILL: protocol, e.g. HTTPS -->")
-    Rel(web, api, "<!-- FILL: call, e.g. API calls -->", "<!-- FILL: protocol, e.g. REST / JSON -->")
-    Rel(api, db, "<!-- FILL: query, e.g. Reads and writes -->", "<!-- FILL: protocol, e.g. SQL -->")
+    Rel(user, api, "Calls REST endpoints", "HTTP / JSON")
+    Rel(api, db, "Reads and writes domain state", "SQL")
 ```

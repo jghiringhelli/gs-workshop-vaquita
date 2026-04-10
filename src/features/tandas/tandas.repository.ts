@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 
-import { AppError, NotImplementedAppError } from "../../lib/errors";
+import { AppError } from "../../lib/errors";
 import type {
   AdvanceTandaInput,
   CancelTandaInput,

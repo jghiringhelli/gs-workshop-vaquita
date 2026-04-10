@@ -1,23 +1,25 @@
-<!-- UNFILLED: Flow Diagram — UC-01: Primary Use Case -->
-<!-- Replace node labels and edge conditions with real user journey steps -->
-# Flow: UC-01: Primary Use Case
+# Flow: UC-01 Organizer Creates and Starts a Tanda
 
 ```mermaid
 flowchart TD
-    Start([<!-- FILL: trigger, e.g. User opens registration page -->])
+    Start([Organizer wants to create a tanda])
 
-    Start --> Input[<!-- FILL: first action, e.g. Fill in name, email, password -->]
-    Input --> Validate{<!-- FILL: validation check, e.g. All fields valid? -->}
+    Start --> CreateUser[Create organizer user if needed]
+    CreateUser --> CreateTanda[POST /api/tandas]
+    CreateTanda --> AutoJoin[Organizer auto-joins as first participant]
+    AutoJoin --> MoreMembers[Members join via POST /api/tandas/:id/join]
+    MoreMembers --> Validate{At least 3 participants joined?}
 
-    Validate -->|<!-- FILL: failure label, e.g. Invalid -->| Error[<!-- FILL: error action, e.g. Show validation errors -->]
-    Error --> Input
+    Validate -->|No| Wait[Keep tanda in forming status]
+    Wait --> MoreMembers
 
-    Validate -->|<!-- FILL: success label, e.g. Valid -->| Process[<!-- FILL: main action, e.g. Create account -->]
-    Process --> Check{<!-- FILL: guard check, e.g. Email already exists? -->}
+    Validate -->|Yes| StartTanda[POST /api/tandas/:id/start]
+    StartTanda --> OrganizerCheck{Caller is organizer?}
 
-    Check -->|<!-- FILL: conflict label, e.g. Yes -->| Conflict[<!-- FILL: conflict action, e.g. Show duplicate email error -->]
-    Conflict --> End([<!-- FILL: exit label, e.g. User corrects email -->])
+    OrganizerCheck -->|No| Forbidden[Return 403 Forbidden]
+    Forbidden --> End([Request rejected])
 
-    Check -->|<!-- FILL: proceed label, e.g. No -->| Success[<!-- FILL: success action, e.g. Send confirmation email -->]
-    Success --> End
+    OrganizerCheck -->|Yes| Randomize[Randomize and lock rotation positions]
+    Randomize --> Activate[Set status to active and currentRound to 1]
+    Activate --> End([Tanda ready for contributions and round progression])
 ```

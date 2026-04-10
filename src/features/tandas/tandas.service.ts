@@ -3,7 +3,6 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
-  NotImplementedAppError,
 } from "../../lib/errors";
 
 import type { TandaRepository } from "./tandas.repository";
