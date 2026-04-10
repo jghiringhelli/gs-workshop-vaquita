@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "c96f7b9",
+    "commit": "a09d186",
     "branch": "participant/P036",
-    "timestamp": "2026-04-10T18:19:28.698Z",
+    "timestamp": "2026-04-10T18:27:26.124Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -21,10 +21,10 @@
     "verifiable": {
       "score": 2,
       "max": 2,
-      "details": "Tests: 29 passed, 0 failed | Coverage: 89.9%",
-      "testsPassed": 29,
+      "details": "Tests: 55 passed, 0 failed | Coverage: 96.0%",
+      "testsPassed": 55,
       "testsFailed": 0,
-      "coveragePct": 89.88
+      "coveragePct": 95.96
     },
     "defended": {
       "score": 1,
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 36/37 (97%) | Decision log: present",
-      "conventionalPct": 0.972972972972973,
+      "details": "Conventional commits: 37/38 (97%) | Decision log: present",
+      "conventionalPct": 0.9736842105263158,
       "hasDecisionLog": true
     },
     "composable": {
@@ -73,8 +73,8 @@
     "auditHigh": 1,
     "duplicatePct": 0.49,
     "branchCount": 87,
-    "testCoverage": 89.88,
-    "testCount": 29,
+    "testCoverage": 95.96,
+    "testCount": 55,
     "depCount": 4
   }
 }
