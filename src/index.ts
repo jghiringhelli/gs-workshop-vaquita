@@ -1,2 +1,7 @@
-// Tanda API — Entry point
-// Build your API here. Good luck! 🫰
+import { createApp } from "./app";
+import { getConfig } from "./config/env";
+
+const app = createApp();
+const config = getConfig();
+
+app.listen(config.port);
