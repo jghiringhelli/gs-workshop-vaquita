@@ -41,7 +41,7 @@ const recordContributionSchema = z.object({
 // Helper to parse and validate request body
 const parseBody =
   <T,>(schema: z.ZodSchema<T>) =>
-  async (req: Request, res: Response, next: NextFunction) => {
+  (req: Request, res: Response, next: NextFunction) => {
     try {
       const data = schema.parse(req.body);
       (req as any).validatedData = data;
@@ -56,7 +56,7 @@ const parseBody =
         });
         throw new ValidationError("Invalid request data", details);
       }
-      next(error);
+      throw error;
     }
   };
 

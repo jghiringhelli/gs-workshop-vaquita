@@ -20,6 +20,7 @@ import {
   ConflictError,
 } from "./errors";
 import config from "./config";
+import { getDatabase } from "./db";
 
 /**
  * Service layer - business logic, orchestration, rule enforcement
@@ -160,7 +161,7 @@ export const tandaService = {
 
     // Set total rounds to number of participants if not set
     if (tanda.totalRounds === 0) {
-      const db = require("./db").getDatabase();
+      const db = getDatabase();
       const stmt = db.prepare(
         "UPDATE tandas SET total_rounds = ? WHERE id = ?"
       );

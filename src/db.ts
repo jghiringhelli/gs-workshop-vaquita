@@ -17,6 +17,18 @@ export function initializeDatabase(): Database.Database {
   // Enable foreign keys
   db.pragma("foreign_keys = ON");
 
+  // Drop old tables if they exist (for schema upgrades)
+  try {
+    db.exec(`
+      DROP TABLE IF EXISTS contributions;
+      DROP TABLE IF EXISTS participants;
+      DROP TABLE IF EXISTS tandas;
+      DROP TABLE IF EXISTS users;
+    `);
+  } catch (e) {
+    // Ignore errors
+  }
+
   // Create tables
   db.exec(`
     -- Users table
@@ -35,7 +47,7 @@ export function initializeDatabase(): Database.Database {
       contribution_amount REAL NOT NULL CHECK (contribution_amount > 0),
       status TEXT NOT NULL DEFAULT 'forming',
       current_round INTEGER NOT NULL DEFAULT 1,
-      total_rounds INTEGER NOT NULL CHECK (total_rounds >= 1),
+      total_rounds INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE CASCADE,
