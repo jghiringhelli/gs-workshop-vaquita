@@ -1,2 +1,10 @@
 // Tanda API — Entry point
-// Build your API here. Good luck! 🫰
+import { createApp } from './app.js';
+import { getConfig } from './shared/config/index.js';
+
+const app = createApp();
+const { port } = getConfig();
+
+app.listen(port, () => {
+  console.log(`Tanda API running on http://localhost:${port}`);
+});
