@@ -36,3 +36,16 @@ export interface CreateParticipantDTO {
   role: ParticipantRole;
   rotationPosition?: number;
 }
+
+/**
+ * Response DTO — the shape returned to API consumers.
+ * Explicit field list keeps internal-only fields (e.g. future audit fields) out of responses.
+ */
+export interface ParticipantResponseDTO {
+  id: string;
+  userId: string;
+  tandaId: string;
+  role: ParticipantRole;
+  rotationPosition: number | null;
+  createdAt: string;
+}
