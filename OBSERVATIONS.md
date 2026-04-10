@@ -1,20 +1,17 @@
-# Session Observations — Participant PXXX
-
-Fill this in during your last commit (when you get the 15-minute warning).
-One sentence per question — no pressure to write more.
+# Session Observations — Participant P016
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The AI scaffolded the full layered architecture (repositories, services, routes, DI wiring) in one pass with zero TypeScript errors and all tests passing.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Verifying the live server via curl was tricky — the server process died when bash sessions ended, requiring workarounds to run smoke tests.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Told the AI — it grouped changes into logical conventional commits per layer (domain, repositories, services, api, tests).
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI proactively documented an architectural decision (ADR for UUID identifiers) when asked to justify a design choice, and caught that the spec examples used integer IDs while our implementation used UUIDs.
