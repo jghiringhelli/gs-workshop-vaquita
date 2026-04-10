@@ -1,67 +1,74 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+A production-quality REST API for managing **tandas** (rotating savings groups, also known as *vaquitas*) — an informal financial system common in Mexico and Latin America where N participants contribute a fixed amount every round, and one participant receives the full pot each round.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+## What it does
 
----
+- **User management**: Create users with unique email validation
+- **Tanda lifecycle**: Create → Form (gather participants) → Start (randomize rotation) → Active rounds → Auto-complete
+- **Contribution tracking**: Record payments per round with 5% late penalty enforcement
+- **Business rules enforced**: Min 3 / Max 20 participants, organizer-only actions, 2 consecutive misses = defaulter, auto-completion after last round
+- **Transparent ledger**: Round summaries show who paid, who's missing, and who receives the payout
+
+## Tech Stack
+
+- **TypeScript** + **Node.js** (ESM)
+- **Express** — HTTP layer
+- **SQLite** via `better-sqlite3` — zero-setup persistence (in-memory for tests)
+- **Zod** — input validation
+- **Vitest** + **supertest** — 46 tests, 88%+ coverage
+
+## Architecture
+
+```
+src/
+├── config/          # Environment-based configuration (no magic numbers)
+├── db/              # SQLite singleton + schema DDL
+├── errors/          # Custom error hierarchy (AppError → NotFound, Validation, Forbidden, Conflict)
+├── middleware/      # Error handler (maps AppError → HTTP response)
+├── repositories/    # Data access layer (ONLY place with db.* calls)
+├── services/        # Business logic (all domain rules live here)
+├── routes/          # HTTP translation only (parse → service → respond)
+├── validators/      # Zod schemas for request validation
+└── tests/           # Integration tests per domain (users, tandas, participants, contributions)
+```
+
+**Layer separation**: Routes → Services → Repositories. Zero SQL in routes or services.
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/users` | Create a user |
+| `GET` | `/api/users` | List users |
+| `GET` | `/api/users/:id` | Get user by ID |
+| `POST` | `/api/tandas` | Create a tanda (creator = organizer, auto-joins) |
+| `GET` | `/api/tandas` | List tandas (`?userId=` to filter) |
+| `GET` | `/api/tandas/:id` | Get tanda details |
+| `POST` | `/api/tandas/:id/join` | Join a tanda |
+| `POST` | `/api/tandas/:id/start` | Start (organizer only, ≥3 participants) |
+| `POST` | `/api/tandas/:id/cancel` | Cancel (organizer only) |
+| `GET` | `/api/tandas/:id/participants` | List participants |
+| `POST` | `/api/tandas/:id/contributions` | Record a contribution |
+| `GET` | `/api/tandas/:id/rounds/:round` | Round summary with payout recipient |
+| `POST` | `/api/tandas/:id/advance` | Advance round (organizer only) |
+| `GET` | `/api/tandas/:id/participants/:pid/history` | Contribution history |
 
 ## Setup
 
 ```bash
 npm install
 npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm test        # run tests (46 tests, 88%+ coverage)
+npm run typecheck  # zero TS errors
 ```
 
----
+## Configuration (Environment Variables)
 
-## Your instructions are in START.md
-
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
-
----
-
-## How scoring works
-
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
-
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
-
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
-
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | Server port |
+| `MAX_PARTICIPANTS` | `20` | Maximum participants per tanda |
+| `PENALTY_PCT` | `0.05` | Late contribution penalty (5%) |
+| `JWT_SECRET` | — | JWT signing secret (required in production) |
+| `DB_PATH` | `tanda.db` | SQLite database file path |
