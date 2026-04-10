@@ -5,16 +5,16 @@ One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+ Using Copilot step by step worked well because it helped me move from the spec to working endpoints and tests without losing track of the implementation order.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+What slowed me down most was checking that the prompts stayed aligned with the real spec and debugging a few test and environment issues in Windows.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+mixed
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+It was surprising that the API was implemented successfully from the spec, but I still had to be careful because some guidance files were not fully aligned with the actual requirements.
