@@ -32,7 +32,7 @@ export function errorHandler(
       {} as Record<string, string>
     );
   }
-  // Handle custom errors
+  // Handle User domain errors
   else if (err.name === 'UserEmailAlreadyExistsError') {
     statusCode = 409;
     errorCode = 'EMAIL_ALREADY_EXISTS';
@@ -40,6 +40,24 @@ export function errorHandler(
   } else if (err.name === 'UserNotFoundError') {
     statusCode = 404;
     errorCode = 'USER_NOT_FOUND';
+    message = err.message;
+  }
+  // Handle Tanda domain errors
+  else if (err.name === 'TandaNotFoundError') {
+    statusCode = 404;
+    errorCode = 'TANDA_NOT_FOUND';
+    message = err.message;
+  } else if (err.name === 'InvalidTandaStatusError') {
+    statusCode = 400;
+    errorCode = 'INVALID_TANDA_STATUS';
+    message = err.message;
+  } else if (err.name === 'InsufficientParticipantsError') {
+    statusCode = 400;
+    errorCode = 'INSUFFICIENT_PARTICIPANTS';
+    message = err.message;
+  } else if (err.name === 'AlreadyParticipantError') {
+    statusCode = 409;
+    errorCode = 'ALREADY_PARTICIPANT';
     message = err.message;
   }
 

@@ -2,8 +2,11 @@ import express from 'express';
 import { config } from './config';
 import { getDatabase } from './db';
 import { UserRepository } from './repositories/user-repository';
+import { TandaRepository } from './repositories/tanda-repository';
 import { UserService } from './services/user.service';
+import { TandaService } from './services/tanda.service';
 import { createUserRoutes } from './routes/users';
+import { createTandaRoutes } from './routes/tandas';
 import { errorHandler, notFoundHandler } from './middleware/error-handler';
 
 /**
@@ -20,12 +23,15 @@ async function main() {
 
   // Initialize repositories
   const userRepository = new UserRepository(db);
+  const tandaRepository = new TandaRepository(db);
 
-  // Initialize services
+  // Initialize services (dependency injection)
   const userService = new UserService(userRepository);
+  const tandaService = new TandaService(tandaRepository, userRepository);
 
   // Routes
   app.use('/api/users', createUserRoutes(userService));
+  app.use('/api/tandas', createTandaRoutes(tandaService));
 
   // Health check
   app.get('/health', (_req, res) => {
