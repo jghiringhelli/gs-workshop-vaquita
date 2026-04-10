@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import crypto from 'crypto';
 import request from 'supertest';
 import app from '../app';
 import { resetDatabase, closeDatabase, initializeDatabase } from '../db/database';
 import { verifyToken } from '../utils/jwt';
 import { logger } from '../logger';
+import { ValidationError } from '../errors/errors';
+import { setupActiveTanda } from './test-helpers';
 
 describe('User endpoints', () => {
   beforeEach(() => {
@@ -121,6 +124,69 @@ describe('User endpoints', () => {
   describe('JWT edge cases', () => {
     it('should reject token with missing userId in payload', () => {
       expect(() => verifyToken('eyJhbGciOiJIUzI1NiJ9.e30.invalid')).toThrow();
+    });
+
+    it('should reject token with non-numeric userId', () => {
+      const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+      const payload = Buffer.from(JSON.stringify({ userId: 'notanumber', iat: 1 })).toString('base64url');
+      const secret = process.env.JWT_SECRET ?? 'dev-secret-change-me';
+      const sig = crypto.createHmac('sha256', secret).update(`${header}.${payload}`).digest('base64url');
+      const token = `${header}.${payload}.${sig}`;
+
+      expect(() => verifyToken(token)).toThrow();
+    });
+  });
+
+  describe('Error classes coverage', () => {
+    it('should instantiate ValidationError', () => {
+      const err = new ValidationError('test');
+      expect(err.statusCode).toBe(400);
+      expect(err.message).toBe('test');
+    });
+  });
+
+  describe('optionalAuth with invalid token on GET endpoint', () => {
+    it('should still succeed with invalid token on optional auth route', async () => {
+      // Create a user and tanda first
+      const createRes = await request(app)
+        .post('/api/users')
+        .send({ email: 'opt@test.com', name: 'OptAuth' });
+      await request(app)
+        .post('/api/tandas')
+        .send({ name: 'T', contributionAmount: 100, organizerId: createRes.body.id });
+
+      // GET /api/tandas with a bad token — optionalAuth should ignore it
+      const res = await request(app)
+        .get('/api/tandas/1')
+        .set('Authorization', 'Bearer bad.token.here');
+
+      expect(res.status).toBe(200);
+    });
+  });
+
+  describe('Contribution with explicit participantId', () => {
+    it('should accept participantId in body', async () => {
+      const { tandaId, organizer, participantIds } = await setupActiveTanda();
+
+      const res = await request(app)
+        .post(`/api/tandas/${tandaId}/contributions`)
+        .set('Authorization', `Bearer ${organizer.token}`)
+        .send({ participantId: participantIds[0] });
+
+      expect(res.status).toBe(201);
+      expect(res.body.participantId).toBe(participantIds[0]);
+    });
+  });
+
+  describe('Error handler — generic error', () => {
+    it('should return 500 for unexpected non-AppError', async () => {
+      const res = await request(app)
+        .post('/api/users')
+        .set('Content-Type', 'application/json')
+        .send('{ invalid json }');
+
+      expect(res.status).toBe(500);
+      expect(res.body.error).toBe('Internal server error');
     });
   });
 });
