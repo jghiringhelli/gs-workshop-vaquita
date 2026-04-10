@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   // bcrypt hash, never return in responses
+
+  // Relations
+  tandas       Tanda[]       @relation("organizer")
+  participants Participant[]
+  auditLogs    TandaAuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+model Tanda {
+  id                  String   @id @default(cuid())
+  name                String
+  organizerId         String
+  organizer           User     @relation("organizer", fields: [organizerId], references: [id], onDelete: Restrict)
+  
+  // Business state
+  status              String   @default("FORMING") // FORMING | ACTIVE | COMPLETED | CANCELLED
+  contributionAmount  Int      // fixed amount in cents
+  currentRound        Int      @default(0)
+  totalRounds         Int
+  
+  // Relations
+  participants        Participant[]
+  contributions       Contribution[]
+  payouts             Payout[]
+  auditLogs           TandaAuditLog[]
+  
+  // Audit
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  rotationLockedAt    DateTime? // timestamp when rotation became immutable (at tanda start)
+
+  @@index([organizerId])
+  @@index([status])
+}
+
+model Participant {
+  id                String   @id @default(cuid())
+  userId            String
+  tandaId           String
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  tanda             Tanda    @relation(fields: [tandaId], references: [id], onDelete: Cascade)
+  
+  // Role and position
+  role              String   @default("MEMBER") // ORGANIZER | MEMBER
+  rotationPosition  Int      // 0-based index; who receives pot in round N? → participant at position (N % totalRounds)
+  
+  // Status tracking
+  flaggedAsDefaulter Boolean @default(false)
+  
+  // Relations
+  contributions     Contribution[]
+  
+  // Audit
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([tandaId, userId])
+  @@index([userId])
+  @@index([tandaId])
+}
+
+model Contribution {
+  id          String   @id @default(cuid())
+  tandaId     String
+  participantId String
+  
+  tanda       Tanda     @relation(fields: [tandaId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  
+  // Round and status
+  round       Int      // which round of this tanda
+  status      String   @default("PENDING") // PENDING | PAID | LATE | MISSED
+  
+  // Tracking
+  recordedAt  DateTime @default(now())
+  recordedByUserId String? // null if auto-recorded
+  
+  // Penalty tracking
+  isLate      Boolean  @default(false)
+  latePenaltyPercent Int @default(0) // e.g., 5 for 5%
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tandaId, participantId, round])
+  @@index([tandaId])
+  @@index([participantId])
+  @@index([round])
+}
+
+model Payout {
+  id                String   @id @default(cuid())
+  tandaId           String
+  round             Int
+  
+  tanda             Tanda    @relation(fields: [tandaId], references: [id], onDelete: Cascade)
+  
+  // Recipient
+  recipientParticipantId String
+  
+  // Amount calculation
+  totalContributed  Int      // sum of all contributions that round (in cents)
+  latePenaltyDeducted Int  @default(0) // total deducted for lateness
+  netPayout         Int      // totalContributed - latePenaltyDeducted
+  
+  // Audit
+  createdAt         DateTime @default(now())
+
+  @@unique([tandaId, round])
+  @@index([tandaId])
+  @@index([round])
+}
+
+model TandaAuditLog {
+  id          String   @id @default(cuid())
+  tandaId     String
+  userId      String
+  
+  tanda       Tanda    @relation(fields: [tandaId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  
+  // Event details
+  action      String   // "start", "advance", "cancel", "contribution_recorded", etc.
+  details     String?  // JSON snapshot of the state change
+  
+  createdAt   DateTime @default(now())
+
+  @@index([tandaId])
+  @@index([userId])
+  @@index([createdAt])
+}
