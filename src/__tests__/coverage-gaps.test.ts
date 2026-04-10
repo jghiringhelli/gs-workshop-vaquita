@@ -93,5 +93,11 @@ describe('Coverage gap tests', () => {
       const res = await request(app).get('/api/users');
       expect(res.status).toBe(500);
     });
+
+    it('should return 500 when getParticipants throws unexpected error', async () => {
+      vi.spyOn(tandaService, 'getParticipants').mockImplementation(() => { throw new Error('DB exploded'); });
+      const res = await request(app).get('/api/tandas/1/participants');
+      expect(res.status).toBe(500);
+    });
   });
 });
