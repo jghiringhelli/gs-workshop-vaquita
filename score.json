@@ -1,30 +1,30 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "88d6f49",
-    "branch": "condition-b",
-    "timestamp": "2026-03-30T15:45:10.479Z",
+    "commit": "ebd39aa",
+    "branch": "participant/P999-vaquita-b",
+    "timestamp": "2026-04-10T08:43:29.407Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
       "score": 1,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README updated by participant (3078 chars)"
     },
     "bounded": {
       "score": 2,
       "max": 2,
-      "details": "No direct DB calls in source files",
+      "details": "No direct DB calls in route/service files",
       "violations": []
     },
     "verifiable": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "Tests: 31 passed, 0 failed | Coverage: 92.1%",
+      "testsPassed": 31,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 92.06
     },
     "defended": {
       "score": 1,
@@ -34,9 +34,9 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 7/7 (100%) | ADR/decision doc: missing",
+      "details": "Conventional commits: 33/33 (100%) | Decision log: missing — add a doc recording one design choice you made and why",
       "conventionalPct": 1,
-      "hasAdr": false
+      "hasDecisionLog": false
     },
     "composable": {
       "score": null,
@@ -49,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 7,
       "max": 8
     },
     "total_with_live_tests": {
@@ -58,16 +58,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "consent_pending",
+    "consented": false,
+    "q1": null,
+    "q2": null,
+    "q3": null
+  },
   "external_metrics": {
     "tscErrors": 0,
     "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintWarnings": 7,
     "auditCritical": 0,
-    "auditHigh": 0,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
+    "auditHigh": 1,
+    "duplicatePct": 4.1,
+    "branchCount": 52,
+    "testCoverage": 92.06,
+    "testCount": 31,
     "depCount": 4
   }
 }
