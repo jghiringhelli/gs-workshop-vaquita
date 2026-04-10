@@ -1,30 +1,32 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "88d6f49",
-    "branch": "condition-b",
-    "timestamp": "2026-03-30T15:45:10.479Z",
+    "commit": "fa052b0",
+    "branch": "participant/P010",
+    "timestamp": "2026-04-10T17:32:34.712Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
-      "score": 1,
+      "score": 0,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README not modified from template — update it to describe what you built"
     },
     "bounded": {
-      "score": 2,
+      "score": 1,
       "max": 2,
-      "details": "No direct DB calls in source files",
-      "violations": []
+      "details": "1 direct DB call(s) outside repository layer",
+      "violations": [
+        "src/index.ts"
+      ]
     },
     "verifiable": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "Tests: 36 passed, 0 failed | Coverage: 88.5%",
+      "testsPassed": 36,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 88.53
     },
     "defended": {
       "score": 1,
@@ -32,11 +34,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 7/7 (100%) | ADR/decision doc: missing",
+      "details": "Conventional commits: 39/39 (100%) | Decision log: present",
       "conventionalPct": 1,
-      "hasAdr": false
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -49,7 +51,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
@@ -58,16 +60,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "complete",
+    "consented": true,
+    "q1": "6–18 months",
+    "q2": "weekly",
+    "q3": "still figuring it out"
+  },
   "external_metrics": {
     "tscErrors": 0,
-    "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintErrors": 7,
+    "eslintWarnings": 26,
     "auditCritical": 0,
     "auditHigh": 0,
-    "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
-    "depCount": 4
+    "duplicatePct": 9.39,
+    "branchCount": 62,
+    "testCoverage": 88.53,
+    "testCount": 36,
+    "depCount": 5
   }
 }
