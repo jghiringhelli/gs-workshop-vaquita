@@ -5,7 +5,9 @@ import { SqliteUserRepository } from './modules/users/repository/SqliteUserRepos
 import { UserService } from './modules/users/service/UserService';
 import { createUserRouter } from './modules/users/routes/userRoutes';
 import { SqliteTandaRepository } from './modules/tandas/repository/SqliteTandaRepository';
+import { SqliteContributionRepository } from './modules/tandas/repository/SqliteContributionRepository';
 import { TandaService } from './modules/tandas/service/TandaService';
+import { ContributionService } from './modules/tandas/service/ContributionService';
 import { createTandaRouter } from './modules/tandas/routes/tandaRoutes';
 
 /**
@@ -26,7 +28,9 @@ export function createApp(db: Database.Database) {
 
   const tandaRepo = new SqliteTandaRepository(db);
   const tandaService = new TandaService(tandaRepo, userRepo);
-  app.use('/api/tandas', createTandaRouter(tandaService));
+  const contributionRepo = new SqliteContributionRepository(db);
+  const contributionService = new ContributionService(tandaRepo, contributionRepo);
+  app.use('/api/tandas', createTandaRouter(tandaService, contributionService));
 
   app.use(errorHandler);
   return app;

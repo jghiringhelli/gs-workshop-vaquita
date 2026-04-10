@@ -11,11 +11,14 @@ async function seedUser(email: string): Promise<string> {
   return res.body.id as string;
 }
 
+let counter = 0;
+
 /** Build an ACTIVE tanda with 3 participants; returns { tandaId, organizerId, member1Id, member2Id, orgParticipantId, m1ParticipantId, m2ParticipantId } */
 async function seedActiveTanda() {
-  const organizerId = await seedUser('contrib-org@e.com');
-  const member1Id = await seedUser('contrib-m1@e.com');
-  const member2Id = await seedUser('contrib-m2@e.com');
+  const n = ++counter;
+  const organizerId = await seedUser(`contrib-org-${n}@e.com`);
+  const member1Id = await seedUser(`contrib-m1-${n}@e.com`);
+  const member2Id = await seedUser(`contrib-m2-${n}@e.com`);
 
   const tanda = await request(app).post('/api/tandas').send({
     name: 'Contrib Tanda',
