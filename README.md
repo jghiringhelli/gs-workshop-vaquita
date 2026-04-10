@@ -62,6 +62,7 @@ npm run lint
 ## Architecture
 
 - ADR: [docs/adrs/ADR-001-modular-feature-architecture.md](docs/adrs/ADR-001-modular-feature-architecture.md)
+- Architecture overview: [docs/Architecture.md](docs/Architecture.md)
 - Tech spec: [docs/TechSpec.md](docs/TechSpec.md)
 - Diagrams: [docs/diagrams](docs/diagrams)
 
