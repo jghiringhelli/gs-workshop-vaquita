@@ -6,6 +6,33 @@ Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business r
 
 ---
 
+## What was built
+
+A fully-layered REST API for managing rotating savings groups (tandas/vaquitas). The API enforces all business rules at the service layer — minimum 3 participants to start, randomised and locked rotation order, 5% late-payment penalty, automatic round advancement, and auto-completion after the final round.
+
+**Endpoints implemented:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/users` | Create a user |
+| GET | `/api/users` | List all users |
+| GET | `/api/users/:id` | Get user by ID |
+| POST | `/api/tandas` | Create a tanda (organizer auto-joined) |
+| GET | `/api/tandas?userId=` | List tandas for a user |
+| GET | `/api/tandas/:id` | Get tanda details |
+| POST | `/api/tandas/:id/join` | Join a forming tanda |
+| POST | `/api/tandas/:id/start` | Start tanda (organizer only, ≥3 participants) |
+| POST | `/api/tandas/:id/cancel` | Cancel tanda (organizer only) |
+| GET | `/api/tandas/:id/participants` | List participants with rotation positions |
+| POST | `/api/tandas/:id/contributions` | Record a contribution for the current round |
+| GET | `/api/tandas/:id/rounds/:round` | Round summary + pot recipient |
+| POST | `/api/tandas/:id/advance` | Advance round, auto-complete on last (organizer only) |
+| GET | `/api/tandas/:id/participants/:pid/history` | Contribution history for a participant |
+
+**Architecture:** `Routes → Services → Repositories → SQLite (better-sqlite3)`. No SQL in route handlers. See [ADR-001](docs/adrs/ADR-001-layered-architecture.md) for the design rationale.
+
+---
+
 ## Setup
 
 ```bash
