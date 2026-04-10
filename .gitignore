@@ -6,3 +6,7 @@ coverage/
 .env
 .env.local
 *.log
+test-output.txt
+.score-test-report.json
+.score-coverage/
+.score-jscpd/

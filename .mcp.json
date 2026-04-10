@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "node-exec": {
+      "command": "node",
+      "args": ["C:\\Sources\\IATraining\\mcp-node-exec.js"]
+    }
+  }
+}
