@@ -71,4 +71,25 @@ export class TandaRepository {
       createdAt: new Date(row.created_at),
     }));
   }
+
+  updateStatus(id: string, status: string): void {
+    const stmt = this.db.prepare(`
+      UPDATE tandas SET status = ? WHERE id = ?
+    `);
+    stmt.run(status, id);
+  }
+
+  updateRound(id: string, round: number): void {
+    const stmt = this.db.prepare(`
+      UPDATE tandas SET current_round = ? WHERE id = ?
+    `);
+    stmt.run(round, id);
+  }
+
+  updateStatusAndRound(id: string, status: string, round: number): void {
+    const stmt = this.db.prepare(`
+      UPDATE tandas SET status = ?, current_round = ? WHERE id = ?
+    `);
+    stmt.run(status, round, id);
+  }
 }

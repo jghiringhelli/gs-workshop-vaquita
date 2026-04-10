@@ -7,6 +7,8 @@ import { TandaRepository } from './repositories/tanda.repository';
 import { TandaService } from './services/tanda.service';
 import { ParticipantRepository } from './repositories/participant.repository';
 import { ParticipantService } from './services/participant.service';
+import { ContributionRepository } from './repositories/contribution.repository';
+import { TandaOperationService } from './services/tanda.operation.service';
 import { createUserRoutes } from './routes/user.routes';
 import { createTandaRoutes } from './routes/tanda.routes';
 import { createParticipantRoutes } from './routes/participant.routes';
@@ -24,16 +26,23 @@ const tandaRepository = new TandaRepository(db);
 tandaRepository.init();
 const participantRepository = new ParticipantRepository(db);
 participantRepository.init();
+const contributionRepository = new ContributionRepository(db);
+contributionRepository.init();
 
 // Initialize services
 const userService = new UserService(userRepository);
 const tandaService = new TandaService(tandaRepository);
 const participantService = new ParticipantService(participantRepository, tandaRepository);
+const tandaOperationService = new TandaOperationService(
+  tandaRepository,
+  participantRepository,
+  contributionRepository
+);
 
 // Register routes
 app.use('/api/users', createUserRoutes(userService));
 app.use('/api/tandas', createTandaRoutes(tandaService));
-app.use('/api/tandas/:id', createParticipantRoutes(participantService));
+app.use('/api/tandas/:id', createParticipantRoutes(participantService, tandaOperationService));
 
 // Health check
 app.get('/health', (req, res) => {
