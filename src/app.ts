@@ -1,5 +1,6 @@
 import express from "express";
 
+import { initializeSchema } from "./db/schema";
 import { apiRoutes } from "./routes/api-routes";
 import {
   errorMiddleware,
@@ -7,6 +8,8 @@ import {
 } from "./middleware/error-middleware";
 
 export function createApp(): express.Express {
+  initializeSchema();
+
   const app = express();
 
   app.use(express.json());
