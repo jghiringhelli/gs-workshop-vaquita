@@ -1,6 +1,6 @@
 # Tanda API — Spec
 
-A **tanda** (also called *vaquita*) is an informal rotating savings group common in Mexico
+A **tanda** (also called *vaquita*) is an informal rotating savings group common in Mexico 
 and Latin America. N participants each contribute a fixed amount every round. Each round,
 one participant receives the full pot. After N rounds, every participant has received exactly
 once.
