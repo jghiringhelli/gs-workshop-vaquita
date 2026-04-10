@@ -5,11 +5,11 @@ One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+Productive today
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+friction, confusion, or time sinks?
 
 ## How did you handle git commits today?
 
@@ -17,4 +17,4 @@ One sentence per question — no pressure to write more.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+It was interesting to see how the AI handled the git commands, and it was generally accurate.
