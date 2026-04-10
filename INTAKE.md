@@ -23,6 +23,3 @@ Answer: weekly
 
 Answer: still figuring it out
 
----
-
-*Replace the `<!-- ... -->` placeholders with your answers, tick the consent box, then commit this file.*

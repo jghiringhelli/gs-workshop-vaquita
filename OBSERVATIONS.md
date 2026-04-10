@@ -5,16 +5,16 @@ One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The organization of the markdown documents helped a lot the agent to have an estructured workflow
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+The understanding of the steps I had to take
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+I asked the agent to commit each endpoint completed and did a final commit with the last changes
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI took decisions on how to use the data for the tests. Decided to change the test cases and use a uuid instead an integer id
