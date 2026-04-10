@@ -16,3 +16,7 @@ export function closeDatabase(): void {
     db = null;
   }
 }
+
+export function resetDatabase(): void {
+  closeDatabase();
+}
