@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db.js';
+import { dbRun, dbGet, dbAll } from '../db.js';
 import { User } from '../domain/index.js';
 import { IUserRepository } from '../domain/repositories.js';
 
@@ -11,11 +11,10 @@ export class UserRepository implements IUserRepository {
    */
   async create(userData: Omit<User, 'id'>): Promise<User> {
     const id = uuidv4();
-    const stmt = db.prepare(`
-      INSERT INTO users (id, email, name)
-      VALUES (?, ?, ?)
-    `);
-    stmt.run(id, userData.email, userData.name);
+    await dbRun(
+      'INSERT INTO users (id, email, name) VALUES (?, ?, ?)',
+      [id, userData.email, userData.name]
+    );
     return { id, ...userData };
   }
 
@@ -25,9 +24,8 @@ export class UserRepository implements IUserRepository {
    * @returns The user or null
    */
   async findById(id: string): Promise<User | null> {
-    const stmt = db.prepare('SELECT id, email, name FROM users WHERE id = ?');
-    const row = stmt.get(id) as User | undefined;
-    return row || null;
+    const row = await dbGet('SELECT id, email, name FROM users WHERE id = ?', [id]);
+    return row as User | null;
   }
 
   /**
@@ -36,9 +34,8 @@ export class UserRepository implements IUserRepository {
    * @returns The user or null
    */
   async findByEmail(email: string): Promise<User | null> {
-    const stmt = db.prepare('SELECT id, email, name FROM users WHERE email = ?');
-    const row = stmt.get(email) as User | undefined;
-    return row || null;
+    const row = await dbGet('SELECT id, email, name FROM users WHERE email = ?', [email]);
+    return row as User | null;
   }
 
   /**
@@ -46,7 +43,7 @@ export class UserRepository implements IUserRepository {
    * @returns Array of users
    */
   async list(): Promise<User[]> {
-    const stmt = db.prepare('SELECT id, email, name FROM users ORDER BY created_at DESC');
-    return stmt.all() as User[];
+    const rows = await dbAll('SELECT id, email, name FROM users ORDER BY created_at DESC', []);
+    return rows as User[];
   }
 }

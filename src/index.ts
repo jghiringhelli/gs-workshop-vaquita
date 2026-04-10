@@ -3,7 +3,7 @@ import express from 'express';
 import 'dotenv/config';
 
 // Import infrastructure
-import '../src/db.js'; // Initialize database
+import { initializeDatabase } from './db.js';
 
 // Import repositories
 import {
@@ -27,35 +27,42 @@ import {
   createContributionRoutes
 } from './routes/index.js';
 
-// Create repositories
-const userRepository = new UserRepository();
-const tandaRepository = new TandaRepository();
-const participantRepository = new ParticipantRepository();
-const contributionRepository = new ContributionRepository();
+async function startServer() {
+  // Initialize database
+  await initializeDatabase();
 
-// Create services
-const userService = new UserService(userRepository);
-const tandaService = new TandaService(tandaRepository, participantRepository, userRepository);
-const contributionService = new ContributionService(contributionRepository, participantRepository, tandaRepository);
+  // Create repositories
+  const userRepository = new UserRepository();
+  const tandaRepository = new TandaRepository();
+  const participantRepository = new ParticipantRepository();
+  const contributionRepository = new ContributionRepository();
 
-// Create Express app
-const app = express();
-const PORT = process.env.PORT || 3000;
+  // Create services
+  const userService = new UserService(userRepository);
+  const tandaService = new TandaService(tandaRepository, participantRepository, userRepository);
+  const contributionService = new ContributionService(contributionRepository, participantRepository, tandaRepository);
 
-// Middleware
-app.use(express.json());
+  // Create Express app
+  const app = express();
+  const PORT = process.env.PORT || 3000;
 
-// Routes
-app.use('/api/users', createUserRoutes(userService));
-app.use('/api/tandas', createTandaRoutes(tandaService));
-app.use('/api', createContributionRoutes(contributionService));
+  // Middleware
+  app.use(express.json());
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+  // Routes
+  app.use('/api/users', createUserRoutes(userService));
+  app.use('/api/tandas', createTandaRoutes(tandaService));
+  app.use('/api', createContributionRoutes(contributionService));
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+  // Health check
+  app.get('/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Start server
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch(console.error);

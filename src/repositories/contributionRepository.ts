@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import db from '../db.js';
+import { dbRun, dbGet, dbAll } from '../db.js';
 import { Contribution } from '../domain/index.js';
 import { IContributionRepository } from '../domain/repositories.js';
 
@@ -11,11 +11,10 @@ export class ContributionRepository implements IContributionRepository {
    */
   async create(contributionData: Omit<Contribution, 'id'>): Promise<Contribution> {
     const id = uuidv4();
-    const stmt = db.prepare(`
-      INSERT INTO contributions (id, tanda_id, participant_id, round, amount, status)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    stmt.run(id, contributionData.tandaId, contributionData.participantId, contributionData.round, contributionData.amount, contributionData.status);
+    await dbRun(
+      'INSERT INTO contributions (id, tanda_id, participant_id, round, amount, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [id, contributionData.tandaId, contributionData.participantId, contributionData.round, contributionData.amount, contributionData.status]
+    );
     return { id, ...contributionData };
   }
 
@@ -25,9 +24,8 @@ export class ContributionRepository implements IContributionRepository {
    * @returns The contribution or null
    */
   async findById(id: string): Promise<Contribution | null> {
-    const stmt = db.prepare('SELECT id, tanda_id as tandaId, participant_id as participantId, round, amount, status FROM contributions WHERE id = ?');
-    const row = stmt.get(id) as Contribution | undefined;
-    return row || null;
+    const row = await dbGet('SELECT id, tanda_id as tandaId, participant_id as participantId, round, amount, status FROM contributions WHERE id = ?', [id]);
+    return row as Contribution | null;
   }
 
   /**
@@ -37,8 +35,8 @@ export class ContributionRepository implements IContributionRepository {
    * @returns Array of contributions
    */
   async findByTandaAndRound(tandaId: string, round: number): Promise<Contribution[]> {
-    const stmt = db.prepare('SELECT id, tanda_id as tandaId, participant_id as participantId, round, amount, status FROM contributions WHERE tanda_id = ? AND round = ? ORDER BY participant_id');
-    return stmt.all(tandaId, round) as Contribution[];
+    const rows = await dbAll('SELECT id, tanda_id as tandaId, participant_id as participantId, round, amount, status FROM contributions WHERE tanda_id = ? AND round = ? ORDER BY participant_id', [tandaId, round]);
+    return rows as Contribution[];
   }
 
   /**
@@ -47,8 +45,8 @@ export class ContributionRepository implements IContributionRepository {
    * @returns Array of contributions
    */
   async findByParticipantId(participantId: string): Promise<Contribution[]> {
-    const stmt = db.prepare('SELECT id, tanda_id as tandaId, participant_id as participantId, round, amount, status FROM contributions WHERE participant_id = ? ORDER BY round');
-    return stmt.all(participantId) as Contribution[];
+    const rows = await dbAll('SELECT id, tanda_id as tandaId, participant_id as participantId, round, amount, status FROM contributions WHERE participant_id = ? ORDER BY round', [participantId]);
+    return rows as Contribution[];
   }
 
   /**
@@ -65,8 +63,7 @@ export class ContributionRepository implements IContributionRepository {
                      field === 'participantId' ? 'participant_id' : field;
       return `${dbField} = ?`;
     }).join(', ');
-    const stmt = db.prepare(`UPDATE contributions SET ${setClause} WHERE id = ?`);
-    stmt.run(...values, id);
+    await dbRun(`UPDATE contributions SET ${setClause} WHERE id = ?`, [...values, id]);
     const contribution = await this.findById(id);
     if (!contribution) throw new Error('Contribution not found after update');
     return contribution;

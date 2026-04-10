@@ -1,5 +1,6 @@
 import { ITandaRepository, IParticipantRepository, IUserRepository } from '../domain/repositories.js';
 import { Tanda, Participant } from '../domain/index.js';
+import { NotFoundError, UnauthorizedError, ConflictError, ValidationError } from '../errors.js';
 
 export class TandaService {
   constructor(
@@ -17,7 +18,7 @@ export class TandaService {
     // Verify organizer exists
     const organizer = await this.userRepository.findById(tandaData.organizerId);
     if (!organizer) {
-      throw new Error('Organizer not found');
+      throw new NotFoundError('Organizer not found');
     }
 
     const tanda = await this.tandaRepository.create({
@@ -46,7 +47,7 @@ export class TandaService {
   async getTandaById(id: string): Promise<Tanda> {
     const tanda = await this.tandaRepository.findById(id);
     if (!tanda) {
-      throw new Error('Tanda not found');
+      throw new NotFoundError('Tanda not found');
     }
     return tanda;
   }
@@ -69,13 +70,13 @@ export class TandaService {
   async joinTanda(tandaId: string, userId: string): Promise<Participant> {
     const tanda = await this.getTandaById(tandaId);
     if (tanda.status !== 'forming') {
-      throw new Error('Cannot join tanda that is not in forming status');
+      throw new ValidationError('Cannot join tanda that is not in forming status');
     }
 
     // Check if already joined
     const existing = await this.participantRepository.findByUserAndTanda(userId, tandaId);
     if (existing) {
-      throw new Error('User already joined this tanda');
+      throw new ConflictError('User already joined this tanda');
     }
 
     return this.participantRepository.create({
@@ -95,15 +96,15 @@ export class TandaService {
   async startTanda(tandaId: string, organizerId: string): Promise<Tanda> {
     const tanda = await this.getTandaById(tandaId);
     if (tanda.organizerId !== organizerId) {
-      throw new Error('Only organizer can start tanda');
+      throw new UnauthorizedError('Only organizer can start tanda');
     }
     if (tanda.status !== 'forming') {
-      throw new Error('Tanda is not in forming status');
+      throw new ValidationError('Tanda is not in forming status');
     }
 
     const participants = await this.participantRepository.findByTandaId(tandaId);
     if (participants.length < 3) {
-      throw new Error('Tanda needs at least 3 participants to start');
+      throw new ValidationError('Tanda needs at least 3 participants to start');
     }
 
     // Randomize rotation positions
@@ -130,10 +131,10 @@ export class TandaService {
   async cancelTanda(tandaId: string, organizerId: string): Promise<Tanda> {
     const tanda = await this.getTandaById(tandaId);
     if (tanda.organizerId !== organizerId) {
-      throw new Error('Only organizer can cancel tanda');
+      throw new UnauthorizedError('Only organizer can cancel tanda');
     }
     if (tanda.status === 'completed' || tanda.status === 'cancelled') {
-      throw new Error('Tanda is already completed or cancelled');
+      throw new ValidationError('Tanda is already completed or cancelled');
     }
 
     return this.tandaRepository.update(tandaId, { status: 'cancelled' });
@@ -148,13 +149,13 @@ export class TandaService {
   async advanceRound(tandaId: string, organizerId: string): Promise<Tanda> {
     const tanda = await this.getTandaById(tandaId);
     if (tanda.organizerId !== organizerId) {
-      throw new Error('Only organizer can advance round');
+      throw new UnauthorizedError('Only organizer can advance round');
     }
     if (tanda.status !== 'active') {
-      throw new Error('Tanda is not active');
+      throw new ValidationError('Tanda is not active');
     }
     if (tanda.currentRound >= tanda.totalRounds) {
-      throw new Error('Tanda is already completed');
+      throw new ValidationError('Tanda is already completed');
     }
 
     const nextRound = tanda.currentRound + 1;

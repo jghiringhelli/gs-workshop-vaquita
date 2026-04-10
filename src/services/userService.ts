@@ -1,5 +1,6 @@
 import { IUserRepository } from '../domain/repositories.js';
 import { User } from '../domain/index.js';
+import { ConflictError, NotFoundError } from '../errors.js';
 
 export class UserService {
   constructor(private userRepository: IUserRepository) {}
@@ -13,7 +14,7 @@ export class UserService {
     // Check if email already exists
     const existing = await this.userRepository.findByEmail(userData.email);
     if (existing) {
-      throw new Error('User with this email already exists');
+      throw new ConflictError('User with this email already exists');
     }
     return this.userRepository.create(userData);
   }
@@ -26,7 +27,7 @@ export class UserService {
   async getUserById(id: string): Promise<User> {
     const user = await this.userRepository.findById(id);
     if (!user) {
-      throw new Error('User not found');
+      throw new NotFoundError('User not found');
     }
     return user;
   }
