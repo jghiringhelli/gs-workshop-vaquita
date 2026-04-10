@@ -193,5 +193,82 @@ describe('Contribution endpoints', () => {
 
       expect(res.status).toBe(404);
     });
+
+    it('should return empty array for participant with no contributions', async () => {
+      const { tandaId, organizer, participantIds } = await setupActiveTanda();
+
+      const res = await request(app)
+        .get(`/api/tandas/${tandaId}/participants/${participantIds[1]}/history`)
+        .set('Authorization', `Bearer ${organizer.token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+  });
+
+  describe('POST /api/tandas/:id/advance — edge cases', () => {
+    it('should return 400 when advancing a non-active tanda', async () => {
+      const organizer = await createUser('org@test.com', 'Org');
+      const tandaRes = await request(app)
+        .post('/api/tandas')
+        .set('Authorization', `Bearer ${organizer.token}`)
+        .send({ name: 'Forming', contributionAmount: 500, totalRounds: 3 });
+
+      const res = await request(app)
+        .post(`/api/tandas/${tandaRes.body.id}/advance`)
+        .set('Authorization', `Bearer ${organizer.token}`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 when advancing a completed tanda', async () => {
+      const { tandaId, organizer } = await setupActiveTanda();
+
+      // Complete the tanda (totalRounds=3, advance twice: 1->2, 2->3=completed)
+      await request(app).post(`/api/tandas/${tandaId}/advance`).set('Authorization', `Bearer ${organizer.token}`);
+      await request(app).post(`/api/tandas/${tandaId}/advance`).set('Authorization', `Bearer ${organizer.token}`);
+
+      const res = await request(app)
+        .post(`/api/tandas/${tandaId}/advance`)
+        .set('Authorization', `Bearer ${organizer.token}`);
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('GET /api/tandas/:id/rounds/:round — edge cases', () => {
+    it('should return 400 for invalid round number (0)', async () => {
+      const { tandaId, organizer } = await setupActiveTanda();
+
+      const res = await request(app)
+        .get(`/api/tandas/${tandaId}/rounds/0`)
+        .set('Authorization', `Bearer ${organizer.token}`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 for round exceeding totalRounds', async () => {
+      const { tandaId, organizer } = await setupActiveTanda();
+
+      const res = await request(app)
+        .get(`/api/tandas/${tandaId}/rounds/99`)
+        .set('Authorization', `Bearer ${organizer.token}`);
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe('Contribution — non-participant', () => {
+    it('should return 404 when non-participant tries to contribute', async () => {
+      const { tandaId } = await setupActiveTanda();
+      const outsider = await createUser('outsider@test.com', 'Outsider');
+
+      const res = await request(app)
+        .post(`/api/tandas/${tandaId}/contributions`)
+        .set('Authorization', `Bearer ${outsider.token}`)
+        .send({});
+
+      expect(res.status).toBe(404);
+    });
   });
 });
