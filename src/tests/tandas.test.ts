@@ -14,7 +14,7 @@ function createTestDb() {
   return db;
 }
 
-function makeToken(userId: string) {
+function makeToken(userId: number) {
   return jwt.sign({ userId }, JWT_SECRET);
 }
 
@@ -56,7 +56,7 @@ describe('Tandas API', () => {
     it('returns 404 for unknown organizer', async () => {
       const res = await request(app).post('/api/tandas').send({
         name: 'Tanda',
-        organizerId: 'nonexistent',
+        organizerId: 99999,
         contributionAmount: 1000,
       });
       expect(res.status).toBe(404);

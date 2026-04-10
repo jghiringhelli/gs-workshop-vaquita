@@ -7,7 +7,7 @@ import * as userRepo from '../repositories/userRepository';
 import { NotFoundError, ValidationError } from '../errors/AppError';
 
 const LoginSchema = z.object({
-  userId: z.string().min(1, 'userId is required'),
+  userId: z.coerce.number().int().positive('userId must be a positive integer'),
 });
 
 export function createAuthRouter(db?: Database.Database): Router {

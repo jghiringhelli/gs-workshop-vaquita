@@ -13,12 +13,12 @@ import {
 
 const CreateTandaSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  organizerId: z.string().min(1, 'organizerId is required'),
+  organizerId: z.coerce.number().int().positive('organizerId must be a positive integer'),
   contributionAmount: z.number().positive('contributionAmount must be positive'),
 });
 
 const JoinTandaSchema = z.object({
-  userId: z.string().min(1, 'userId is required'),
+  userId: z.coerce.number().int().positive('userId must be a positive integer'),
 });
 
 export function createTanda(data: unknown, db?: Database.Database) {
@@ -37,7 +37,7 @@ export function createTanda(data: unknown, db?: Database.Database) {
   return tanda;
 }
 
-export function listTandas(userId?: string, db?: Database.Database) {
+export function listTandas(userId?: number, db?: Database.Database) {
   if (userId) {
     return tandaRepo.findTandasByUserId(userId, db);
   }
@@ -81,7 +81,7 @@ export function joinTanda(tandaId: string, data: unknown, db?: Database.Database
   );
 }
 
-export function startTanda(tandaId: string, requestingUserId: string, db?: Database.Database) {
+export function startTanda(tandaId: string, requestingUserId: number, db?: Database.Database) {
   const tanda = tandaRepo.findTandaById(tandaId, db);
   if (!tanda) throw new NotFoundError(`Tanda ${tandaId} not found`);
   if (tanda.organizerId !== requestingUserId) {
@@ -114,7 +114,7 @@ export function startTanda(tandaId: string, requestingUserId: string, db?: Datab
   return tandaRepo.findTandaById(tandaId, db)!;
 }
 
-export function cancelTanda(tandaId: string, requestingUserId: string, db?: Database.Database) {
+export function cancelTanda(tandaId: string, requestingUserId: number, db?: Database.Database) {
   const tanda = tandaRepo.findTandaById(tandaId, db);
   if (!tanda) throw new NotFoundError(`Tanda ${tandaId} not found`);
   if (tanda.organizerId !== requestingUserId) {
@@ -134,7 +134,7 @@ export function listParticipants(tandaId: string, db?: Database.Database) {
   return participantRepo.findParticipantsByTandaId(tandaId, db);
 }
 
-export function advanceRound(tandaId: string, requestingUserId: string, db?: Database.Database) {
+export function advanceRound(tandaId: string, requestingUserId: number, db?: Database.Database) {
   const tanda = tandaRepo.findTandaById(tandaId, db);
   if (!tanda) throw new NotFoundError(`Tanda ${tandaId} not found`);
   if (tanda.organizerId !== requestingUserId) {

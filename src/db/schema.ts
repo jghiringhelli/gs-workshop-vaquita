@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 export function runMigrations(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
       name TEXT NOT NULL
     );
@@ -11,7 +11,7 @@ export function runMigrations(db: Database.Database): void {
     CREATE TABLE IF NOT EXISTS tandas (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      organizerId TEXT NOT NULL,
+      organizerId INTEGER NOT NULL,
       contributionAmount REAL NOT NULL,
       status TEXT NOT NULL DEFAULT 'forming',
       currentRound INTEGER,
@@ -21,7 +21,7 @@ export function runMigrations(db: Database.Database): void {
 
     CREATE TABLE IF NOT EXISTS participants (
       id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
+      userId INTEGER NOT NULL,
       tandaId TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'member',
       rotationPosition INTEGER,

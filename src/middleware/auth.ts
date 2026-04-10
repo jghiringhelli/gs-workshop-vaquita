@@ -4,7 +4,7 @@ import { config } from '../config';
 import { UnauthorizedError } from '../errors/AppError';
 
 export interface AuthPayload {
-  userId: string;
+  userId: number;
 }
 
 declare global {

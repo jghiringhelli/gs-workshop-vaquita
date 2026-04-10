@@ -5,7 +5,7 @@ import { getDb } from '../db/database';
 export interface TandaRow {
   id: string;
   name: string;
-  organizerId: string;
+  organizerId: number;
   contributionAmount: number;
   status: string;
   currentRound: number | null;
@@ -13,7 +13,7 @@ export interface TandaRow {
 }
 
 export function createTanda(
-  data: { name: string; organizerId: string; contributionAmount: number },
+  data: { name: string; organizerId: number; contributionAmount: number },
   db: Database.Database = getDb(),
 ): TandaRow {
   const id = uuidv4();
@@ -35,7 +35,7 @@ export function findAllTandas(db: Database.Database = getDb()): TandaRow[] {
   return db.prepare('SELECT * FROM tandas').all() as TandaRow[];
 }
 
-export function findTandasByUserId(userId: string, db: Database.Database = getDb()): TandaRow[] {
+export function findTandasByUserId(userId: number, db: Database.Database = getDb()): TandaRow[] {
   return db
     .prepare(
       'SELECT t.* FROM tandas t JOIN participants p ON t.id = p.tandaId WHERE p.userId = ?',

@@ -19,7 +19,8 @@ export function createTandasRouter(db?: Database.Database): Router {
 
   router.get('/', (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = req.query.userId as string | undefined;
+      const rawUserId = req.query.userId as string | undefined;
+      const userId = rawUserId ? parseInt(rawUserId, 10) : undefined;
       const tandas = tandaService.listTandas(userId, db);
       res.json(tandas);
     } catch (err) {

@@ -4,14 +4,14 @@ import { getDb } from '../db/database';
 
 export interface ParticipantRow {
   id: string;
-  userId: string;
+  userId: number;
   tandaId: string;
   role: string;
   rotationPosition: number | null;
 }
 
 export function createParticipant(
-  data: { userId: string; tandaId: string; role: string },
+  data: { userId: number; tandaId: string; role: string },
   db: Database.Database = getDb(),
 ): ParticipantRow {
   const id = uuidv4();
@@ -31,7 +31,7 @@ export function findParticipantsByTandaId(
 }
 
 export function findParticipantByUserAndTanda(
-  userId: string,
+  userId: number,
   tandaId: string,
   db: Database.Database = getDb(),
 ): ParticipantRow | undefined {

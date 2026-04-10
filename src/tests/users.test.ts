@@ -81,7 +81,7 @@ describe('Users API', () => {
     });
 
     it('returns 404 for unknown user', async () => {
-      const res = await request(app).get('/api/users/nonexistent-id');
+      const res = await request(app).get('/api/users/99999');
       expect(res.status).toBe(404);
       expect(res.body.error.code).toBe('NOT_FOUND');
     });

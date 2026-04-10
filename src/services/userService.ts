@@ -24,8 +24,12 @@ export function listUsers(db?: Database.Database) {
   return userRepo.findAllUsers(db);
 }
 
-export function getUserById(id: string, db?: Database.Database) {
-  const user = userRepo.findUserById(id, db);
+export function getUserById(id: string | number, db?: Database.Database) {
+  const numericId = Number(id);
+  if (!Number.isInteger(numericId) || numericId <= 0) {
+    throw new NotFoundError(`User ${id} not found`);
+  }
+  const user = userRepo.findUserById(numericId, db);
   if (!user) throw new NotFoundError(`User ${id} not found`);
   return user;
 }
