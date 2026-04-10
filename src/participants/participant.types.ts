@@ -10,6 +10,8 @@ export interface Participant {
   /** Assigned when the tanda starts; null while still forming */
   readonly rotationPosition: number | null;
   readonly consecutiveMisses: number;
+  /** True when consecutiveMisses has reached the configured threshold */
+  readonly isDefaulter: boolean;
   readonly createdAt: string;
 }
 
@@ -21,5 +23,6 @@ export interface ParticipantResponseDto {
   readonly role: ParticipantRole;
   readonly rotationPosition: number | null;
   readonly consecutiveMisses: number;
+  readonly isDefaulter: boolean;
   readonly createdAt: string;
 }

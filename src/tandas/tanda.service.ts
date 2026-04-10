@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from "uuid";
-import { MAX_PARTICIPANTS, MIN_PARTICIPANTS } from "../config/index.js";
+import { MAX_CONSECUTIVE_MISSES, MAX_PARTICIPANTS, MIN_PARTICIPANTS } from "../config/index.js";
 import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
   UnprocessableError,
 } from "../errors/index.js";
+import type { IContributionRepository } from "../contributions/contribution.repository.js";
 import type { IParticipantRepository } from "../participants/participant.repository.js";
 import type { Participant, ParticipantResponseDto } from "../participants/participant.types.js";
 import type { IUserRepository } from "../users/user.repository.js";
@@ -17,7 +18,8 @@ export class TandaService {
   constructor(
     private readonly tandaRepository: ITandaRepository,
     private readonly participantRepository: IParticipantRepository,
-    private readonly userRepository: IUserRepository
+    private readonly userRepository: IUserRepository,
+    private readonly contributionRepository: IContributionRepository
   ) {}
 
   /**
@@ -51,6 +53,7 @@ export class TandaService {
       role: "organizer",
       rotationPosition: null,
       consecutiveMisses: 0,
+      isDefaulter: false,
       createdAt: now,
     };
     this.participantRepository.create(organizerParticipant);
@@ -113,6 +116,7 @@ export class TandaService {
       role: "member",
       rotationPosition: null,
       consecutiveMisses: 0,
+      isDefaulter: false,
       createdAt: new Date().toISOString(),
     };
 
@@ -185,6 +189,9 @@ export class TandaService {
 
   /**
    * Advances the tanda to the next round. Auto-completes after the last round.
+   * Records missed contributions for all participants who did not pay in the closing round,
+   * and increments their consecutiveMisses counter. Participants with
+   * consecutiveMisses >= MAX_CONSECUTIVE_MISSES are exposed as defaulters via isDefaulter.
    * @param tandaId - The tanda to advance.
    * @param callerId - The user requesting the advance (must be organizer).
    * @throws ForbiddenError if caller is not the organizer.
@@ -199,6 +206,32 @@ export class TandaService {
     }
     if (tanda.status !== "active") {
       throw new ConflictError(`Tanda cannot be advanced from status '${tanda.status}'`);
+    }
+
+    const participants = this.participantRepository.findByTandaId(tandaId);
+    const participantIds = participants.map((p) => p.id);
+
+    // Record missed contributions for non-payers in the closing round
+    this.contributionRepository.createMissedForRound(tandaId, tanda.currentRound, participantIds);
+
+    // Increment consecutiveMisses for each participant who missed this round
+    const closingRoundContributions = this.contributionRepository.findByTandaAndRound(
+      tandaId,
+      tanda.currentRound
+    );
+    const missedIds = new Set(
+      closingRoundContributions
+        .filter((c) => c.status === "missed")
+        .map((c) => c.participantId)
+    );
+
+    for (const participant of participants) {
+      if (missedIds.has(participant.id)) {
+        this.participantRepository.updateConsecutiveMisses(
+          participant.id,
+          participant.consecutiveMisses + 1
+        );
+      }
     }
 
     const isLastRound = tanda.currentRound >= tanda.totalRounds;
@@ -254,6 +287,7 @@ export class TandaService {
       role: participant.role,
       rotationPosition: participant.rotationPosition,
       consecutiveMisses: participant.consecutiveMisses,
+      isDefaulter: participant.isDefaulter,
       createdAt: participant.createdAt,
     };
   }

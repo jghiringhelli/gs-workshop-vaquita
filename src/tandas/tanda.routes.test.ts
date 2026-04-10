@@ -221,6 +221,53 @@ describe("POST /api/tandas/:id/advance", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe("completed");
   });
+
+  it("creates missed contributions for non-paying participants on advance", async () => {
+    const org = await createUser("org@x.com", "Org");
+    const m1 = await createUser("m1@x.com", "M1");
+    const m2 = await createUser("m2@x.com", "M2");
+    const tandaId = await createTanda(org);
+
+    await request(app).post(`/api/tandas/${tandaId}/join`).send({ userId: m1 });
+    await request(app).post(`/api/tandas/${tandaId}/join`).send({ userId: m2 });
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ organizerId: org });
+
+    // Nobody pays — advance closes the round
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ organizerId: org });
+
+    // Round 1 should now have 3 missed contributions (all 3 participants)
+    const roundRes = await request(app).get(`/api/tandas/${tandaId}/rounds/1`);
+    expect(roundRes.status).toBe(200);
+    expect(roundRes.body.data.contributions).toHaveLength(3);
+    expect(roundRes.body.data.contributions.every((c: { status: string }) => c.status === "missed")).toBe(true);
+  });
+
+  it("increments consecutiveMisses and flags isDefaulter after 2 consecutive misses", async () => {
+    const org = await createUser("org@x.com", "Org");
+    const m1 = await createUser("m1@x.com", "M1");
+    const m2 = await createUser("m2@x.com", "M2");
+    const tandaId = await createTanda(org);
+
+    await request(app).post(`/api/tandas/${tandaId}/join`).send({ userId: m1 });
+    await request(app).post(`/api/tandas/${tandaId}/join`).send({ userId: m2 });
+    await request(app).post(`/api/tandas/${tandaId}/start`).send({ organizerId: org });
+
+    // Round 1: nobody pays
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ organizerId: org });
+
+    const afterRound1 = await request(app).get(`/api/tandas/${tandaId}/participants`);
+    const allMissed1 = afterRound1.body.data.every((p: { consecutiveMisses: number }) => p.consecutiveMisses === 1);
+    expect(allMissed1).toBe(true);
+    expect(afterRound1.body.data.every((p: { isDefaulter: boolean }) => p.isDefaulter === false)).toBe(true);
+
+    // Round 2: nobody pays again — crosses the threshold
+    await request(app).post(`/api/tandas/${tandaId}/advance`).send({ organizerId: org });
+
+    const afterRound2 = await request(app).get(`/api/tandas/${tandaId}/participants`);
+    const allDefaulters = afterRound2.body.data.every((p: { isDefaulter: boolean }) => p.isDefaulter === true);
+    expect(allDefaulters).toBe(true);
+    expect(afterRound2.body.data.every((p: { consecutiveMisses: number }) => p.consecutiveMisses === 2)).toBe(true);
+  });
 });
 
 describe("GET /api/tandas/:id/participants", () => {

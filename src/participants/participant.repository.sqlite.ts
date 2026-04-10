@@ -1,4 +1,5 @@
 import type Database from "better-sqlite3";
+import { MAX_CONSECUTIVE_MISSES } from "../config/index.js";
 import type { IParticipantRepository } from "./participant.repository.js";
 import type { Participant, ParticipantRole } from "./participant.types.js";
 
@@ -90,6 +91,7 @@ export class SqliteParticipantRepository implements IParticipantRepository {
       role: row.role,
       rotationPosition: row.rotation_position,
       consecutiveMisses: row.consecutive_misses,
+      isDefaulter: row.consecutive_misses >= MAX_CONSECUTIVE_MISSES,
       createdAt: row.created_at,
     };
   }

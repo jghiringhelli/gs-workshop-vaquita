@@ -30,7 +30,7 @@ export function createApp(db: Database.Database): express.Application {
 
   // Services
   const userService = new UserService(userRepository);
-  const tandaService = new TandaService(tandaRepository, participantRepository, userRepository);
+  const tandaService = new TandaService(tandaRepository, participantRepository, userRepository, contributionRepository);
   const contributionService = new ContributionService(
     contributionRepository,
     tandaRepository,
