@@ -30,6 +30,12 @@ export class ValidationAppError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  public constructor(message: string, context: ErrorContext = {}) {
+    super(message, 409, "CONFLICT", context);
+  }
+}
+
 export class NotImplementedAppError extends AppError {
   public constructor(message: string, context: ErrorContext = {}) {
     super(message, 501, "NOT_IMPLEMENTED", context);
