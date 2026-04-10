@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "9b24d1b",
+    "commit": "b645f76",
     "branch": "participant/P019",
-    "timestamp": "2026-04-10T17:57:50.308Z",
+    "timestamp": "2026-04-10T18:38:04.940Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -34,11 +34,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 30/31 (97%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.967741935483871,
-      "hasDecisionLog": false
+      "details": "Conventional commits: 32/33 (97%) | Decision log: present",
+      "conventionalPct": 0.9696969696969697,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -51,7 +51,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 6,
+      "score": 7,
       "max": 8
     },
     "total_with_live_tests": {
@@ -61,11 +61,11 @@
     }
   },
   "intake": {
-    "status": "consent_pending",
-    "consented": false,
-    "q1": null,
-    "q2": null,
-    "q3": null
+    "status": "complete",
+    "consented": true,
+    "q1": "18+ months",
+    "q2": "daily",
+    "q3": "still figuring it out"
   },
   "external_metrics": {
     "tscErrors": 0,
