@@ -1,0 +1,18 @@
+import { Router, Request, Response } from 'express';
+
+/** Stub — implement user handlers here. */
+const router = Router();
+
+router.post('/', (_req: Request, res: Response) => {
+  res.status(501).json({ error: 'Not implemented' });
+});
+
+router.get('/', (_req: Request, res: Response) => {
+  res.status(501).json({ error: 'Not implemented' });
+});
+
+router.get('/:id', (_req: Request, res: Response) => {
+  res.status(501).json({ error: 'Not implemented' });
+});
+
+export { router as userRouter };
