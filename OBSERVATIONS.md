@@ -4,17 +4,16 @@ Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
-
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The way Copilot explained and made the changes was very easy to understand and implement.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+I structured the plan and made sure that what the co-pilot did made sense
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Mixed, I use some AI and some for me.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+I didn't expect AI to be so efficient.
