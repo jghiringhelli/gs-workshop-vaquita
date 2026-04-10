@@ -1,67 +1,98 @@
-# 🫰 Tanda API — Workshop
+# 🫰 Tanda API
 
-Build a REST API for managing **tandas** (rotating savings groups / vaquitas).
+REST API for managing **tandas / vaquitas** built with **TypeScript**, **Express**, **SQLite**, **Zod**, and **Vitest**.
 
-Read [`docs/spec.md`](docs/spec.md) first — it has the full domain, business rules, and API surface.
+The API covers user management, workshop-friendly JWT authentication, tanda lifecycle management, round tracking, contribution recording, penalties for late payments, and participant history.
 
----
+## What I built
+
+### Users and auth
+
+- `POST /api/users` creates a user
+- `GET /api/users` lists users
+- `GET /api/users/:id` returns a user by ID
+- `POST /api/auth/token` issues a JWT for an existing user
+
+### Tandas
+
+- `POST /api/tandas` creates a tanda for the authenticated organizer
+- `GET /api/tandas` lists tandas for the authenticated user
+- `GET /api/tandas/:id` returns tanda detail
+- `POST /api/tandas/:id/join` joins a forming tanda
+- `POST /api/tandas/:id/start` starts a tanda
+- `POST /api/tandas/:id/cancel` cancels a tanda
+- `GET /api/tandas/:id/participants` lists participants
+
+### Rounds and contributions
+
+- `POST /api/tandas/:id/contributions` records the authenticated participant's contribution for the current round
+- `GET /api/tandas/:id/rounds/:round` returns a round summary
+- `POST /api/tandas/:id/advance` advances the tanda to the next round
+- `GET /api/tandas/:id/participants/:pid/history` returns contribution history for a participant
+
+## Business rules implemented
+
+- a tanda needs at least **3 participants** to start
+- the maximum number of participants is configurable through environment variables
+- the organizer automatically joins when creating the tanda
+- only the organizer can start, cancel, or advance a tanda
+- the rotation order is randomized when the tanda moves from `forming` to `active`
+- contributions can become `paid`, `late`, `pending`, or `missed`
+- late contributions apply a configurable penalty percentage
+- a participant with **2 consecutive missed contributions** is marked as a defaulter
+- the tanda is automatically marked as `completed` after the final round
+
+## Architecture
+
+The project is organized with clear layer separation:
+
+- **routes** handle HTTP translation only
+- **services** enforce business rules
+- **repositories** contain all SQL access
+- **database** initializes SQLite schema and connection
+
+There are no direct `db.prepare`, `db.get`, `db.run`, or `db.all` calls inside route handlers.
+
+## Design decision
+
+I kept authentication lightweight by issuing JWTs from an existing `userId` instead of adding passwords and login flows, because the workshop domain model focused on tanda behavior and not on full account management.
 
 ## Setup
 
 ```bash
 npm install
-npm run dev     # starts on http://localhost:3000
-npm test        # run tests
+npm run dev
 ```
 
----
+Useful commands:
 
-## Your instructions are in START.md
+```bash
+npm test
+npm run typecheck
+npm run lint
+```
 
-Open `START.md` — it has your task brief, scoring rubric, and step-by-step instructions for your group.
+Default server URL:
 
----
+```bash
+http://localhost:3000
+```
 
-## How scoring works
+## Environment variables
 
-Every time you push to your `participant/PXXX` branch, a GitHub Actions workflow runs automatically:
+The project uses these environment variables:
 
-1. Checks out your code
-2. Runs `npm run score` — a scoring script that analyses your repo against 7 code quality properties
-3. Writes the result to `score.json` on your branch (committed by the bot)
-4. Uploads it as a workflow artifact
+```env
+NODE_ENV=development
+DATABASE_URL="file:./dev.db"
+JWT_SECRET=change-me-to-a-long-random-string
+JWT_EXPIRES_IN_HOURS=12
+PORT=3000
+MAX_PARTICIPANTS=20
+LATE_PENALTY_PERCENT=5
+CONTRIBUTION_WINDOW_DAYS=7
+```
 
-**You never need to run scoring manually.** Push your code → wait ~60s → check the Actions tab.
+## Reference
 
-The score is re-computed on every push, so the latest push always reflects your current state.
-
----
-
-## What gets scored (automated, 8 pts)
-
-| Property | Pts | What earns it |
-|----------|-----|---------------|
-| **Executable** | 3 | API contracts pass hidden live tests (HTTP status codes, response shapes) |
-| **Composable** | 3 | Business logic does not leak into route handlers (hidden live test) |
-| **Verifiable** | 2 | All tests pass + ≥60% line coverage on new files |
-| **Bounded** | 2 | Zero direct `db.*` calls in route files |
-| **Auditable** | 2 | ≥50% conventional commits + one decision log entry |
-| **Self-describing** | 1 | README describes what you built |
-| **Defended** | 1 | Zero TypeScript errors |
-
-Executable and Composable are scored via hidden live tests after the session. The other 8 points are computed automatically on every push and visible in your `score.json`.
-
----
-
-## Scoring is blind
-
-`score.ts` receives no information about which experimental condition you are in — it analyses whatever code is on your branch. This makes the experiment inherently double-blind by design.
-
----
-
-## What good looks like
-
-- Business rules enforced (min 3 participants, rotation locked on start, auto-complete after last round)
-- No SQL in route handlers — services and repositories are separate layers
-- JWT secret comes from an env var, never hardcoded
-- Every endpoint has at least one test
+The original workshop specification is in [`docs/spec.md`](docs/spec.md).
