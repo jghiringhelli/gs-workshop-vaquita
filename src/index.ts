@@ -9,7 +9,7 @@ const app = createApp(context);
 const server = createServer(app);
 
 server.listen(config.port, () => {
-	console.log(`API listening on http://localhost:${config.port}`);
+	writeInfo(`API listening on http://localhost:${config.port}`);
 });
 
 registerShutdownHandlers(server);
@@ -25,16 +25,24 @@ function registerShutdownHandlers(serverInstance: Server): void {
 }
 
 function shutdown(serverInstance: Server, signal: NodeJS.Signals): void {
-	console.log(`Received ${signal}. Shutting down.`);
+	writeInfo(`Received ${signal}. Shutting down.`);
 	serverInstance.close((error?: Error) => {
 		disposeApplicationContext(context);
 
 		if (error) {
-			console.error("Shutdown failed.", error);
+			writeError(`Shutdown failed. ${error.message}`);
 			process.exitCode = 1;
 			return;
 		}
 
 		process.exitCode = 0;
 	});
+}
+
+function writeInfo(message: string): void {
+	process.stdout.write(`${message}\n`);
+}
+
+function writeError(message: string): void {
+	process.stderr.write(`${message}\n`);
 }
