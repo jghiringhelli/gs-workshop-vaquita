@@ -65,10 +65,15 @@ function checkSelfDescribing(): { score: number; max: number; details: string } 
   const readme = join(ROOT, 'README.md');
   if (!existsSync(readme)) return { score: 0, max: 1, details: 'README.md missing' };
   const content = readFileSync(readme, 'utf8');
-  // Must have substantive content (> 300 chars) and mention something the participant built
+
+  // Check if README was modified by the participant — diff vs condition branch
+  const diffOutput = run('git diff origin/condition-a -- README.md || git diff origin/condition-b -- README.md');
+  const wasModified = diffOutput.trim().length > 0;
+  if (!wasModified) return { score: 0, max: 1, details: 'README not modified from template — update it to describe what you built' };
+
   const hasContent = content.length > 300;
-  if (!hasContent) return { score: 0, max: 1, details: `README too short (${content.length} chars)` };
-  return { score: 1, max: 1, details: `README present (${content.length} chars)` };
+  if (!hasContent) return { score: 0, max: 1, details: `README modified but too short (${content.length} chars) — add more detail` };
+  return { score: 1, max: 1, details: `README updated by participant (${content.length} chars)` };
 }
 
 function checkBounded(): { score: number; max: number; details: string; violations: string[] } {
