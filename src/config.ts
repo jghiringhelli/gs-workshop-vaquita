@@ -12,4 +12,5 @@ export const config = {
   jwtSecret: requireEnv('JWT_SECRET'),
   maxParticipants: parseInt(process.env.MAX_PARTICIPANTS ?? '20', 10),
   latePenaltyRate: parseFloat(process.env.LATE_PENALTY_RATE ?? '0.05'),
+  roundDurationDays: parseInt(process.env.ROUND_DURATION_DAYS ?? '7', 10),
 } as const;
