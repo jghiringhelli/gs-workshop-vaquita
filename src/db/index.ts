@@ -66,6 +66,32 @@ function applySchema(database: Database.Database): void {
       FOREIGN KEY (tandaId)       REFERENCES tandas(id),
       FOREIGN KEY (participantId) REFERENCES participants(id)
     );
+
+    CREATE TABLE IF NOT EXISTS withdrawals (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      tandaId     INTEGER NOT NULL,
+      requestedBy INTEGER NOT NULL,
+      amountCents INTEGER NOT NULL,
+      reason      TEXT    NOT NULL,
+      receiptUrl  TEXT,
+      status      TEXT    NOT NULL DEFAULT 'pending'
+                          CHECK (status IN ('pending','approved','rejected')),
+      resolvedAt  TEXT,
+      createdAt   TEXT    NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (tandaId)     REFERENCES tandas(id),
+      FOREIGN KEY (requestedBy) REFERENCES users(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS withdrawal_votes (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      withdrawalId INTEGER NOT NULL,
+      voterId      INTEGER NOT NULL,
+      vote         TEXT    NOT NULL CHECK (vote IN ('approve','reject')),
+      createdAt    TEXT    NOT NULL DEFAULT (datetime('now')),
+      UNIQUE (withdrawalId, voterId),
+      FOREIGN KEY (withdrawalId) REFERENCES withdrawals(id),
+      FOREIGN KEY (voterId)      REFERENCES users(id)
+    );
   `);
 }
 

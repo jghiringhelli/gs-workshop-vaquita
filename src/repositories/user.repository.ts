@@ -36,3 +36,19 @@ export function create(
 
   return findById(result.lastInsertRowid as number) as SafeUser;
 }
+
+/** Spec-compatible simple user creation (no password). */
+export function createSimple(email: string, name: string): SafeUser {
+  const result = getDb()
+    .prepare(
+      "INSERT INTO users (email, username, passwordHash) VALUES (?, ?, '')",
+    )
+    .run(email, name);
+  return findById(result.lastInsertRowid as number) as SafeUser;
+}
+
+export function findAll(): SafeUser[] {
+  return getDb()
+    .prepare('SELECT id, email, username, createdAt FROM users ORDER BY id ASC')
+    .all() as SafeUser[];
+}

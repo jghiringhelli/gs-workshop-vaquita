@@ -7,6 +7,7 @@ import {
 } from '../errors';
 import * as tandaRepo from '../repositories/tanda.repository';
 import * as userRepo from '../repositories/user.repository';
+import * as withdrawalRepo from '../repositories/withdrawal.repository';
 
 /** Create a tanda and auto-add the creator as organizer. */
 export function createTanda(
@@ -130,12 +131,32 @@ export function recordContribution(tandaId: number, userId: number) {
   return contribution;
 }
 
-/** Live balance: sum of all paid contributions (withdrawals handled in next prompt). */
+/** Live balance: sum of paid contributions minus sum of approved withdrawals. */
 export function getBalance(tandaId: number) {
   const tanda = tandaRepo.findById(tandaId);
   if (!tanda) throw new NotFoundError('Tanda', tandaId);
   const totalContributions = tandaRepo.sumPaidContributions(tandaId);
-  return { tandaId, balance: totalContributions, status: tanda.status };
+  const totalWithdrawn = withdrawalRepo.sumApproved(tandaId);
+  return { tandaId, balance: totalContributions - totalWithdrawn, status: tanda.status };
+}
+
+/** Organizer dissolves (cancels) a tanda. */
+export function dissolveTanda(tandaId: number, userId: number) {
+  const tanda = tandaRepo.findById(tandaId);
+  if (!tanda) throw new NotFoundError('Tanda', tandaId);
+  if (tanda.organizerId !== userId) {
+    throw new ForbiddenError('Only the organizer can dissolve the tanda');
+  }
+  if (tanda.status === 'cancelled' || tanda.status === 'completed') {
+    throw new ValidationError(`Tanda is already ${tanda.status}`);
+  }
+  tandaRepo.updateStatus(tandaId, 'cancelled');
+  return tandaRepo.findById(tandaId)!;
+}
+
+/** List tandas — optionally filtered by organizerId. */
+export function listTandas(organizerId?: number) {
+  return tandaRepo.findAll(organizerId);
 }
 
 /** Public no-auth summary. */

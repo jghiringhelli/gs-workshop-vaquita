@@ -155,3 +155,14 @@ export function listContributions(tandaId: number): ContributionRow[] {
     .prepare('SELECT * FROM contributions WHERE tandaId = ? ORDER BY createdAt ASC')
     .all(tandaId) as ContributionRow[];
 }
+
+export function findAll(organizerId?: number): TandaRow[] {
+  if (organizerId !== undefined) {
+    return getDb()
+      .prepare('SELECT * FROM tandas WHERE organizerId = ? ORDER BY createdAt DESC')
+      .all(organizerId) as TandaRow[];
+  }
+  return getDb()
+    .prepare('SELECT * FROM tandas ORDER BY createdAt DESC')
+    .all() as TandaRow[];
+}

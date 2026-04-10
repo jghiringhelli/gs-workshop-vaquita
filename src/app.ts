@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { AppError } from './errors';
 import tandasRouter from './routes/tandas';
 import usersRouter from './routes/users';
+import withdrawalsRouter from './routes/withdrawals';
 
 export const app = express();
 
@@ -10,6 +11,7 @@ app.use(express.json());
 // Routes
 app.use('/api/users', usersRouter);
 app.use('/api/tandas', tandasRouter);
+app.use('/api/withdrawals', withdrawalsRouter);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {
