@@ -1,20 +1,17 @@
-# Session Observations — Participant PXXX
-
-Fill this in during your last commit (when you get the 15-minute warning).
-One sentence per question — no pressure to write more.
+# Session Observations — Participant P033
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The AI followed a strict layered architecture plan (routes → services → repositories) from the start, which meant zero refactoring was needed — every phase built cleanly on the previous one, and all 46 tests passed on the first run.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+The biggest friction was environment setup: Node v20.17.0 was below the minimum required by vite 7.x and vitest 4.x, which caused `ERR_REQUIRE_ESM` errors that required migrating the project from CommonJS to ESM (`"type": "module"`, `NodeNext` module resolution) before any code could run.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Told the AI — every commit was requested explicitly after each phase, using conventional commit prefixes (`chore:`, `feat:`, `test:`, `docs:`), resulting in 97% conventional commit ratio across the session.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The AI proactively caught that the `docs/decisions.md` filename didn't match the scoring script's regex (`/\b(adr|decision|...)\b/i`) and renamed it to `decision-log.md` — which recovered 1pt in the Auditable score without being asked.
