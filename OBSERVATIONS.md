@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P031
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+The AI completed the entire project quickly, following the explicit instructions it was given.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Started with Copilot in the IDE but switched tools because it was behaving unexpectedly.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+mixed
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+The CLI usage was very good — hadn't used it before and it was a positive surprise.
