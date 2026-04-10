@@ -1,6 +1,7 @@
-import { NotImplementedAppError } from "../../lib/errors";
+import { NotFoundError, NotImplementedAppError } from "../../lib/errors";
 
 import type { TandaRepository } from "./tandas.repository";
+import type { UserRepository } from "../users";
 import type {
   CreateTandaInput,
   JoinTandaInput,
@@ -19,48 +20,67 @@ export interface TandasService {
 }
 
 export class DefaultTandasService implements TandasService {
-  public constructor(private readonly tandaRepository: TandaRepository) {
-    void this.tandaRepository;
-  }
+  public constructor(
+    private readonly tandaRepository: TandaRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
   /**
    * Creates a new tanda aggregate.
-   * @param _input Tanda creation payload.
+   * @param input Tanda creation payload.
    * @returns Persisted tanda projection.
    */
-  public createTanda(_input: CreateTandaInput): Tanda {
-    throw new NotImplementedAppError("DefaultTandasService.createTanda is not implemented yet.");
+  public createTanda(input: CreateTandaInput): Tanda {
+    const organizer = this.userRepository.findById(input.organizerId);
+    if (!organizer) {
+      throw new NotFoundError("Organizer not found.", {
+        details: { organizerId: input.organizerId },
+      });
+    }
+
+    return this.tandaRepository.create({
+      name: input.name.trim(),
+      organizerId: input.organizerId,
+      contributionAmount: input.contributionAmount,
+    });
   }
 
   /**
    * Returns tanda details by identifier.
-   * @param _id Tanda identifier.
+   * @param id Tanda identifier.
    * @returns Tanda details.
    */
-  public getTandaById(_id: number): Tanda {
-    throw new NotImplementedAppError("DefaultTandasService.getTandaById is not implemented yet.");
+  public getTandaById(id: number): Tanda {
+    const tanda = this.tandaRepository.findById(id);
+    if (!tanda) {
+      throw new NotFoundError("Tanda not found.", { details: { id } });
+    }
+
+    return tanda;
   }
 
   /**
    * Lists tandas for a user.
-   * @param _userId User identifier.
+   * @param userId User identifier.
    * @returns Tandas associated with the user.
    */
-  public listTandasForUser(_userId: number): ReadonlyArray<Tanda> {
-    throw new NotImplementedAppError(
-      "DefaultTandasService.listTandasForUser is not implemented yet.",
-    );
+  public listTandasForUser(userId: number): ReadonlyArray<Tanda> {
+    const user = this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError("User not found.", { details: { userId } });
+    }
+
+    return this.tandaRepository.listByUserId(userId);
   }
 
   /**
    * Lists participants for a tanda.
-   * @param _tandaId Tanda identifier.
+   * @param tandaId Tanda identifier.
    * @returns Tanda participants.
    */
-  public listParticipants(_tandaId: number): ReadonlyArray<TandaParticipant> {
-    throw new NotImplementedAppError(
-      "DefaultTandasService.listParticipants is not implemented yet.",
-    );
+  public listParticipants(tandaId: number): ReadonlyArray<TandaParticipant> {
+    this.getTandaById(tandaId);
+    return this.tandaRepository.listParticipants(tandaId);
   }
 
   /**

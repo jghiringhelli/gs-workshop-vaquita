@@ -43,7 +43,7 @@ export function createApplicationContext(config: AppConfig = loadConfig()): Appl
     config,
     database,
     usersService: new DefaultUsersService(userRepository),
-    tandasService: new DefaultTandasService(tandaRepository),
+    tandasService: new DefaultTandasService(tandaRepository, userRepository),
   };
 }
 

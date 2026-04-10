@@ -22,7 +22,7 @@ export const createTandaBodySchema = z.object({
 
 export const listTandasQuerySchema = z.object({
   userId: z.coerce.number().int().positive(),
-});
+}).strict();
 
 export const joinTandaBodySchema = z.object({
   userId: z.coerce.number().int().positive(),
