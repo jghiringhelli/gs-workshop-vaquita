@@ -1,4 +1,4 @@
-import { Tanda, CreateTandaDTO } from './tanda.types';
+import { Tanda, TandaStatus, CreateTandaDTO } from './tanda.types';
 
 /**
  * Data required to atomically start a tanda.
@@ -53,4 +53,18 @@ export interface ITandaRepository {
    * @returns The updated Tanda entity
    */
   cancelTanda(tandaId: string): Tanda;
+
+  /**
+   * Atomically increments currentRound and, if the new round exceeds totalRounds,
+   * transitions the tanda to COMPLETED — all in a single UPDATE statement.
+   *
+   * A single SQL UPDATE is inherently atomic in SQLite. Doing both writes in one
+   * statement avoids any window where round is incremented but status is still active.
+   *
+   * @param tandaId   - Tanda UUID
+   * @param newRound  - The incremented round number (computed by the service)
+   * @param newStatus - 'active' or 'completed', determined by the service
+   * @returns The updated Tanda entity
+   */
+  advanceTanda(tandaId: string, newRound: number, newStatus: TandaStatus): Tanda;
 }

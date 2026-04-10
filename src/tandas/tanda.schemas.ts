@@ -24,7 +24,13 @@ export const cancelTandaSchema = z.object({
   requesterId: z.string().uuid({ message: 'requesterId must be a valid UUID' }),
 });
 
+/** Zod schema for POST /api/tandas/:id/advance request body. */
+export const advanceTandaSchema = z.object({
+  requesterId: z.string().uuid({ message: 'requesterId must be a valid UUID' }),
+});
+
 export type CreateTandaInput = z.infer<typeof createTandaSchema>;
 export type ListTandasQuery = z.infer<typeof listTandasQuerySchema>;
 export type StartTandaInput = z.infer<typeof startTandaSchema>;
 export type CancelTandaInput = z.infer<typeof cancelTandaSchema>;
+export type AdvanceTandaInput = z.infer<typeof advanceTandaSchema>;
