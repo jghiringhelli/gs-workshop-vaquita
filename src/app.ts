@@ -17,7 +17,10 @@ export function createApp(db: Database.Database) {
   const app = express();
   app.use(express.json());
 
-  const userRepo = new SqliteUserRepository(db);
+  app.get('/', (_req, res) => res.json({ status: 'ok', api: '/api/users, /api/tandas' }));
+  app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+  const userRepo= new SqliteUserRepository(db);
   const userService = new UserService(userRepo);
   app.use('/api/users', createUserRouter(userService));
 
