@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
 import type { AppConfig } from "../config/env";
+import { requireAuth, requireSameUser } from "../middleware/auth-middleware";
 import { HealthRepository } from "../repositories/health-repository";
 import { UserRepository } from "../repositories/user-repository";
 import { TandaRepository } from "../repositories/tanda-repository";
 import { ParticipantRepository } from "../repositories/participant-repository";
 import { ContributionRepository } from "../repositories/contribution-repository";
+import { AuthService } from "../services/auth-service";
 import { HealthService } from "../services/health-service";
 import { UserService } from "../services/user-service";
 import { TandaService } from "../services/tanda-service";
@@ -37,6 +39,8 @@ const recordContributionSchema = z.object({
   isLate: z.boolean().optional(),
 });
 
+const issueTokenSchema = z.object({ userId: z.number().int().positive() });
+
 /**
  * Creates and returns the main API router.
  * All repositories and services are instantiated here at runtime.
@@ -52,15 +56,26 @@ export function createApiRoutes(config: AppConfig): Router {
   const participantRepository = new ParticipantRepository();
   const contributionRepository = new ContributionRepository();
 
+  const authService = new AuthService(userRepository, config);
   const healthService = new HealthService(healthRepository, config);
   const userService = new UserService(userRepository);
   const tandaService = new TandaService(
     tandaRepository, userRepository, participantRepository, contributionRepository, config,
   );
 
+  const authGuard = requireAuth(authService);
+
   // ── Health ──────────────────────────────────────────────────────────────────
   router.get("/health", (_req, res) => {
     res.status(200).json(healthService.getHealth());
+  });
+
+  // ── Auth ────────────────────────────────────────────────────────────────────
+  router.post("/auth/token", (req, res, next) => {
+    try {
+      const { userId } = parseSchema(issueTokenSchema, req.body);
+      res.status(200).json({ token: authService.issueToken(userId) });
+    } catch (err) { next(err); }
   });
 
   // ── Users ───────────────────────────────────────────────────────────────────
@@ -85,9 +100,10 @@ export function createApiRoutes(config: AppConfig): Router {
   });
 
   // ── Tandas ──────────────────────────────────────────────────────────────────
-  router.post("/tandas", (req, res, next) => {
+  router.post("/tandas", authGuard, (req, res, next) => {
     try {
       const body = parseSchema(createTandaSchema, req.body);
+      requireSameUser(res.locals.authUserId as number, body.organizerId);
       res.status(201).json(tandaService.createTanda(body));
     } catch (err) { next(err); }
   });
@@ -107,10 +123,11 @@ export function createApiRoutes(config: AppConfig): Router {
   });
 
   // ── Participants ─────────────────────────────────────────────────────────────
-  router.post("/tandas/:id/join", (req, res, next) => {
+  router.post("/tandas/:id/join", authGuard, (req, res, next) => {
     try {
       const { id } = parseSchema(tandaIdParamSchema, req.params);
       const { userId } = parseSchema(joinTandaSchema, req.body);
+      requireSameUser(res.locals.authUserId as number, userId);
       res.status(201).json(tandaService.joinTanda({ tandaId: id, userId }));
     } catch (err) { next(err); }
   });
@@ -123,42 +140,42 @@ export function createApiRoutes(config: AppConfig): Router {
   });
 
   // ── Tanda lifecycle ──────────────────────────────────────────────────────────
-  router.post("/tandas/:id/start", (req, res, next) => {
+  router.post("/tandas/:id/start", authGuard, (req, res, next) => {
     try {
       const { id } = parseSchema(tandaIdParamSchema, req.params);
       const { organizerId } = parseSchema(organizerActionSchema, req.body);
+      requireSameUser(res.locals.authUserId as number, organizerId);
       res.status(200).json(tandaService.startTanda({ tandaId: id, organizerId }));
     } catch (err) { next(err); }
   });
 
-  router.post("/tandas/:id/cancel", (req, res, next) => {
+  router.post("/tandas/:id/cancel", authGuard, (req, res, next) => {
     try {
       const { id } = parseSchema(tandaIdParamSchema, req.params);
       const { organizerId } = parseSchema(organizerActionSchema, req.body);
+      requireSameUser(res.locals.authUserId as number, organizerId);
       res.status(200).json(tandaService.cancelTanda({ tandaId: id, organizerId }));
     } catch (err) { next(err); }
   });
 
-  router.post("/tandas/:id/advance", (req, res, next) => {
+  router.post("/tandas/:id/advance", authGuard, (req, res, next) => {
     try {
       const { id } = parseSchema(tandaIdParamSchema, req.params);
       const { organizerId } = parseSchema(organizerActionSchema, req.body);
+      requireSameUser(res.locals.authUserId as number, organizerId);
       res.status(200).json(tandaService.advanceRound({ tandaId: id, organizerId }));
     } catch (err) { next(err); }
   });
 
   // ── Contributions ────────────────────────────────────────────────────────────
-  router.post("/tandas/:id/contributions", (req, res, next) => {
+  router.post("/tandas/:id/contributions", authGuard, (req, res, next) => {
     try {
       const { id } = parseSchema(tandaIdParamSchema, req.params);
       const body = parseSchema(recordContributionSchema, req.body);
-      // actorUserId will be replaced by auth token in Phase 6; for now take from participantId owner
-      const participant = participantRepository.findById(body.participantId);
-      if (!participant) { res.status(404).json({ error: "Participant not found" }); return; }
       res.status(201).json(tandaService.recordContribution({
         tandaId: id,
         participantId: body.participantId,
-        actorUserId: participant.userId,
+        actorUserId: res.locals.authUserId as number,
         isLate: body.isLate,
       }));
     } catch (err) { next(err); }
