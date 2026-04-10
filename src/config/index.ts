@@ -12,5 +12,6 @@ export const config = {
   jwtSecret: requireEnv('JWT_SECRET'),
   maxParticipants: parseInt(process.env['MAX_PARTICIPANTS'] ?? '20', 10),
   penaltyPercent: parseFloat(process.env['PENALTY_PERCENT'] ?? '5'),
+  bcryptSaltRounds: parseInt(process.env['BCRYPT_SALT_ROUNDS'] ?? '10', 10),
   nodeEnv: process.env['NODE_ENV'] ?? 'development',
 } as const;

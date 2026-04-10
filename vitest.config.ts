@@ -8,6 +8,7 @@ export default defineConfig({
       NODE_ENV: "test",
       JWT_SECRET: "test-secret-do-not-use-in-production",
       DATABASE_URL: ":memory:",
+      BCRYPT_SALT_ROUNDS: "1",
     },
     include: ["src/**/*.test.ts", "src/**/*.spec.ts"],
     coverage: {

@@ -1,10 +1,9 @@
 import bcrypt from 'bcryptjs';
 import { ConflictError, UnauthorizedError } from '../errors';
 import { signToken } from '../lib/jwt';
+import { config } from '../config';
 import * as userRepo from '../repositories/user.repository';
 import type { SafeUser } from '../repositories/user.repository';
-
-const SALT_ROUNDS = 10;
 
 export async function register(
   email: string,
@@ -16,7 +15,7 @@ export async function register(
     throw new ConflictError(`Email ${email} is already registered`);
   }
 
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const passwordHash = await bcrypt.hash(password, config.bcryptSaltRounds);
   return userRepo.create(email, username, passwordHash);
 }
 
