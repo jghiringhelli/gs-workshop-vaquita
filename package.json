@@ -15,17 +15,22 @@
     "score": "tsx scripts/score.ts"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.7.0",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^11.7.0",
     "dotenv": "^17.4.1",
     "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.3",
     "uuid": "^11.1.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@prisma/client": "^7.7.0",
+    "@types/bcryptjs": "^3.0.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.0.0",
     "@types/supertest": "^6.0.0",
     "@types/uuid": "^10.0.0",

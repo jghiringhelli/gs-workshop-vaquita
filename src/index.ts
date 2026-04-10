@@ -1,2 +1,7 @@
-// Tanda API — Entry point
-// Build your API here. Good luck! 🫰
+import "dotenv/config";
+import { app } from "./app";
+import { env } from "./config/env";
+
+app.listen(env.port, () => {
+  console.log(`Tanda API running on http://localhost:${env.port}`);
+});
