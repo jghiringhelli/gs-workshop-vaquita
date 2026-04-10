@@ -1,30 +1,36 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "88d6f49",
-    "branch": "condition-b",
-    "timestamp": "2026-03-30T15:45:10.479Z",
+    "commit": "01e5af5",
+    "branch": "participant/P024",
+    "timestamp": "2026-04-10T18:20:26.040Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
-      "score": 1,
+      "score": 0,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README not modified from template — update it to describe what you built"
     },
     "bounded": {
-      "score": 2,
-      "max": 2,
-      "details": "No direct DB calls in source files",
-      "violations": []
-    },
-    "verifiable": {
       "score": 0,
       "max": 2,
-      "details": "Tests: 0 passed, 0 failed | Coverage: not measured",
-      "testsPassed": 0,
+      "details": "7 direct DB calls found — repository layer missing",
+      "violations": [
+        "src\\modules\\tandas\\contribution.repository.ts",
+        "src\\modules\\tandas\\participant.repository.ts",
+        "src\\modules\\tandas\\tanda.repository.ts",
+        "src\\modules\\users\\user.repository.ts",
+        "src\\shared\\database\\index.ts"
+      ]
+    },
+    "verifiable": {
+      "score": 2,
+      "max": 2,
+      "details": "Tests: 48 passed, 0 failed | Coverage: 81.3%",
+      "testsPassed": 48,
       "testsFailed": 0,
-      "coveragePct": null
+      "coveragePct": 81.25
     },
     "defended": {
       "score": 1,
@@ -32,11 +38,11 @@
       "details": "Structural guard present: CI workflow"
     },
     "auditable": {
-      "score": 1,
+      "score": 2,
       "max": 2,
-      "details": "Conventional commits: 7/7 (100%) | ADR/decision doc: missing",
-      "conventionalPct": 1,
-      "hasAdr": false
+      "details": "Conventional commits: 37/38 (97%) | Decision log: present",
+      "conventionalPct": 0.9736842105263158,
+      "hasDecisionLog": true
     },
     "composable": {
       "score": null,
@@ -58,16 +64,23 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "consent_pending",
+    "consented": false,
+    "q1": "less than 6 months",
+    "q2": "weekly",
+    "q3": "still figuring it out"
+  },
   "external_metrics": {
     "tscErrors": 0,
     "eslintErrors": 0,
-    "eslintWarnings": 0,
+    "eslintWarnings": 21,
     "auditCritical": 0,
     "auditHigh": 0,
     "duplicatePct": null,
-    "branchCount": 0,
-    "testCoverage": null,
-    "testCount": 0,
+    "branchCount": 117,
+    "testCoverage": 81.25,
+    "testCount": 48,
     "depCount": 4
   }
 }

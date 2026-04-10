@@ -19,6 +19,18 @@ import { ValidationError } from '../../shared/exceptions/index.js';
 export function buildTandaRouter(service: TandaService): Router {
   const router = Router();
 
+  /**
+   * Normalizes a route param to a single string.
+   * @param value - Raw param value from Express
+   * @param name - Param name for error message
+   * @returns Normalized param string
+   */
+  function requireParam(value: string | string[] | undefined, name: string): string {
+    if (typeof value === 'string') return value;
+    if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+    throw new ValidationError(`Route param '${name}' is required`);
+  }
+
   /** POST /api/tandas — create a tanda */
   router.post('/', validate(CreateTandaSchema), (req, res, next) => {
     try {
@@ -54,7 +66,8 @@ export function buildTandaRouter(service: TandaService): Router {
   /** POST /api/tandas/:id/join — join a tanda */
   router.post('/:id/join', validate(JoinTandaSchema), (req, res, next) => {
     try {
-      const participant = service.join(req.params['id']!, req.body);
+      const tandaId = requireParam(req.params['id'], 'id');
+      const participant = service.join(tandaId, req.body);
       res.status(201).json(participant);
     } catch (err) {
       next(err);
@@ -64,7 +77,8 @@ export function buildTandaRouter(service: TandaService): Router {
   /** POST /api/tandas/:id/start — start a tanda (organizer only) */
   router.post('/:id/start', validate(StartTandaSchema), (req, res, next) => {
     try {
-      const tanda = service.start(req.params['id']!, req.body);
+      const tandaId = requireParam(req.params['id'], 'id');
+      const tanda = service.start(tandaId, req.body);
       res.json(tanda);
     } catch (err) {
       next(err);
@@ -74,7 +88,8 @@ export function buildTandaRouter(service: TandaService): Router {
   /** POST /api/tandas/:id/cancel — cancel a tanda (organizer only) */
   router.post('/:id/cancel', validate(CancelTandaSchema), (req, res, next) => {
     try {
-      const tanda = service.cancel(req.params['id']!, req.body);
+      const tandaId = requireParam(req.params['id'], 'id');
+      const tanda = service.cancel(tandaId, req.body);
       res.json(tanda);
     } catch (err) {
       next(err);
@@ -93,7 +108,8 @@ export function buildTandaRouter(service: TandaService): Router {
   /** POST /api/tandas/:id/contributions — record a contribution */
   router.post('/:id/contributions', validate(RecordContributionSchema), (req, res, next) => {
     try {
-      const contribution = service.recordContribution(req.params['id']!, req.body);
+      const tandaId = requireParam(req.params['id'], 'id');
+      const contribution = service.recordContribution(tandaId, req.body);
       res.status(201).json(contribution);
     } catch (err) {
       next(err);
@@ -114,7 +130,8 @@ export function buildTandaRouter(service: TandaService): Router {
   /** POST /api/tandas/:id/advance — advance to next round (organizer only) */
   router.post('/:id/advance', validate(AdvanceRoundSchema), (req, res, next) => {
     try {
-      const tanda = service.advanceRound(req.params['id']!, req.body);
+      const tandaId = requireParam(req.params['id'], 'id');
+      const tanda = service.advanceRound(tandaId, req.body);
       res.json(tanda);
     } catch (err) {
       next(err);

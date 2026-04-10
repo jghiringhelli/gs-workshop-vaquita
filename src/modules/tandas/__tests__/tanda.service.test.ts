@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { TandaService } from '../tanda.service.js';
 import { ITandaRepository, IParticipantRepository, IContributionRepository } from '../tanda.port.js';
 import { IUserRepository } from '../../users/user.port.js';
