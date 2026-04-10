@@ -1,20 +1,20 @@
-# Session Observations — Participant PXXX
+# Session Observations — Participant P055
 
 Fill this in during your last commit (when you get the 15-minute warning).
 One sentence per question — no pressure to write more.
 
 ## What worked well?
 
-<!-- Replace with one sentence: what felt smooth or productive today? -->
+Having the AI help scaffold the full 3-layer architecture upfront saved a ton of time, and the integration tests immediately caught issues I would've missed manually.
 
 ## What slowed you down?
 
-<!-- Replace with one sentence: friction, confusion, or time sinks? -->
+Initially I wasn't sure how to structure the database constraints versus business logic validation, so I had to ask for clarification and iterate a couple times before it clicked.
 
 ## How did you handle git commits today?
 
-<!-- Replace with one of: typed commands manually / told the AI / mixed -->
+Mixed — I typed the first few commands manually to understand the workflow, then asked the AI to handle the pattern once I understood what was expected.
 
 ## Anything surprising?
 
-<!-- Optional: anything the AI did or didn't do that you didn't expect? -->
+I was surprised how quickly the AI caught the direct database call violation in services.ts; I didn't even notice it until the scoring bot flagged it, and the fix was cleaner than I would've written.
