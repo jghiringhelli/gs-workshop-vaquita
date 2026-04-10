@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ──────────────────────────────────────────────
+// Enums (stored as TEXT in SQLite)
+// ──────────────────────────────────────────────
+
+enum TandaStatus {
+  FORMING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantRole {
+  ORGANIZER
+  MEMBER
+}
+
+enum ContributionStatus {
+  PENDING
+  PAID
+  LATE
+  MISSED
+}
+
+// ──────────────────────────────────────────────
+// Models
+// ──────────────────────────────────────────────
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  name         String
+  participants Participant[]
+  createdAt    DateTime      @default(now())
+}
+
+/// A rotating savings group (tanda / vaquita).
+/// totalRounds is set to the participant count when the tanda starts.
+model Tanda {
+  id                 String         @id @default(cuid())
+  name               String
+  organizerId        String
+  contributionAmount Float
+  status             TandaStatus    @default(FORMING)
+  currentRound       Int            @default(0)
+  totalRounds        Int            @default(0)
+  participants       Participant[]
+  contributions      Contribution[]
+  createdAt          DateTime       @default(now())
+}
+
+/// Join table between User and Tanda.
+/// rotationPosition is null until the tanda starts (randomised at FORMING → ACTIVE).
+model Participant {
+  id               String             @id @default(cuid())
+  userId           String
+  tandaId          String
+  role             ParticipantRole    @default(MEMBER)
+  rotationPosition Int?
+  user             User               @relation(fields: [userId], references: [id])
+  tanda            Tanda              @relation(fields: [tandaId], references: [id])
+  contributions    Contribution[]
+  createdAt        DateTime           @default(now())
+
+  @@unique([userId, tandaId])
+}
+
+/// A single payment by one participant for one round.
+/// The unique constraint prevents duplicate contributions per participant per round.
+model Contribution {
+  id            String             @id @default(cuid())
+  tandaId       String
+  participantId String
+  round         Int
+  amount        Float
+  status        ContributionStatus @default(PENDING)
+  tanda         Tanda              @relation(fields: [tandaId], references: [id])
+  participant   Participant        @relation(fields: [participantId], references: [id])
+  createdAt     DateTime           @default(now())
+
+  @@unique([participantId, round])
+}
