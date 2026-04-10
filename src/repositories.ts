@@ -150,6 +150,14 @@ export const tandaRepository = {
     stmt.run(id);
   },
 
+  updateTotalRounds(id: string, totalRounds: number): void {
+    const db = getDatabase();
+    const stmt = db.prepare(
+      "UPDATE tandas SET total_rounds = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+    );
+    stmt.run(totalRounds, id);
+  },
+
   list(): Tanda[] {
     const db = getDatabase();
     const stmt = db.prepare("SELECT * FROM tandas ORDER BY created_at DESC");
