@@ -15,7 +15,7 @@
 
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, basename } from 'path';
 
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
