@@ -143,6 +143,45 @@ export class TandaService {
   }
 
   /**
+   * Advances the tanda to the next round, auto-completing if the last round is passed.
+   *
+   * Guards (in order):
+   * 1. Tanda must exist.
+   * 2. Requester must be the organizer (BR-8).
+   * 3. Tanda must be in ACTIVE status.
+   *
+   * Auto-complete rule (BR-6): if newRound > totalRounds, status flips to 'completed'
+   * in the same atomic write — no zombie rounds can accept contributions after the tanda ends.
+   *
+   * @param tandaId     - Tanda UUID
+   * @param requesterId - UUID of the user attempting to advance
+   * @throws NotFoundError  if the tanda does not exist
+   * @throws ForbiddenError if the requester is not the organizer
+   * @throws ConflictError  if the tanda is not active
+   * @returns The updated tanda as a response DTO
+   */
+  advanceTanda(tandaId: string, requesterId: string): TandaResponseDTO {
+    const tanda = this.tandaRepository.findById(tandaId);
+    if (!tanda) throw new NotFoundError('Tanda', tandaId);
+
+    if (tanda.organizerId !== requesterId) {
+      throw new ForbiddenError(`Only the organizer can advance tanda '${tandaId}'`);
+    }
+
+    if (tanda.status !== 'active') {
+      throw new ConflictError(
+        `Cannot advance tanda '${tandaId}': status is '${tanda.status}', expected 'active'`,
+      );
+    }
+
+    const newRound = tanda.currentRound + 1;
+    const newStatus = newRound > tanda.totalRounds ? 'completed' : 'active';
+
+    const updated = this.tandaRepository.advanceTanda(tandaId, newRound, newStatus);
+    return toTandaResponseDTO(updated);
+  }
+
+  /**
    * Retrieves a single tanda by ID.
    * @param id - Tanda UUID
    * @throws NotFoundError if no tanda with that ID exists
