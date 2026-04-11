@@ -1,5 +1,4 @@
 name: Experiment Metrics
-
 on:
   push:
     branches:
@@ -10,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,309 +18,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts
+      - run: npm ci
 
-      - name: TypeScript type-check
-        run: npx tsc --noEmit 2>&1 | tee type-check.log || true
+      - name: Run GS scoring
+        run: npm run score
 
-      - name: ESLint
-        run: npx eslint 'src/**/*.ts' --format json -o eslint-report.json || true
-
-      - name: Tests with coverage
-        run: npx vitest run --coverage --coverage.reporter=json 2>&1 || true
-
-      - name: Structural metrics
+      - name: Commit score.json
         run: |
-          echo "=== STRUCTURAL METRICS ==="
-          echo "Total .ts files: $(find src -name '*.ts' | wc -l)"
-          echo "Total test files: $(find src \( -name '*.test.ts' -o -name '*.spec.ts' \) | wc -l)"
-          echo "Total lines (src): $(find src -name '*.ts' ! -name '*.test.*' ! -name '*.spec.*' -exec cat {} + | wc -l)"
-          echo "Total commits: $(git rev-list --count HEAD)"
-          echo "Directories under src: $(find src -type d | wc -l)"
-          echo "Files with 'interface': $(grep -rl 'interface ' src --include='*.ts' | wc -l)"
-          echo "console.log count: $(grep -rn 'console\.log' src --include='*.ts' | wc -l)"
-          echo "Error classes: $(grep -rn 'extends Error' src --include='*.ts' | wc -l)"
-
-      - name: Commit discipline
-        run: |
-          echo "=== COMMIT HISTORY ==="
-          git log --oneline --format="%H %s" | head -50
-          echo "Conventional commits: $(git log --oneline | grep -cE '^[a-f0-9]+ (feat|fix|refactor|test|chore|docs)\(' || echo 0)"
-          echo "Total commits: $(git rev-list --count HEAD)"
-
-      - name: Install Hurl
-        run: |
-          HURL_VERSION=7.0.0
-          curl -LsSo /tmp/hurl.deb \
-            "https://github.com/Orange-OpenSource/hurl/releases/download/${HURL_VERSION}/hurl_${HURL_VERSION}_amd64.deb"
-          sudo dpkg -i /tmp/hurl.deb
-
-      - name: Start dev server
-        run: |
-          cp .env.example .env 2>/dev/null || echo "" > .env
-          grep -q 'JWT_SECRET' .env || echo 'JWT_SECRET=argos-scoring-secret' >> .env
-          npx tsx src/index.ts &
-          echo "Waiting for server on :3000..."
-          for i in $(seq 1 40); do
-            curl -s -o /dev/null http://localhost:3000 && echo "Server ready after ${i}x500ms" && break
-            sleep 0.5
-          done
-
-      - name: Write Hurl test files
-        run: |
-          mkdir -p /tmp/hurl
-
-          cat > /tmp/hurl/executable.hurl << 'HURL_EOF'
-# Test 1 — POST /api/users returns correct shape {id, email, name, token}
-POST http://localhost:3000/api/users
-Content-Type: application/json
-{
-    "email": "organizer@vaquita.test",
-    "name": "Test Organizer"
-}
-
-HTTP 201
-[Captures]
-user_id: jsonpath "$.id"
-user_token: jsonpath "$.token"
-[Asserts]
-jsonpath "$.id" isInteger
-jsonpath "$.email" == "organizer@vaquita.test"
-jsonpath "$.name" == "Test Organizer"
-
-
-# Test 2 — POST /api/tandas returns correct shape {id, name, status, contributionAmount, currentRound}
-POST http://localhost:3000/api/tandas
-Content-Type: application/json
-Authorization: Bearer {{user_token}}
-{
-    "name": "Mi Tanda",
-    "contributionAmount": 500,
-    "totalRounds": 4
-}
-
-HTTP 201
-[Captures]
-tanda_id: jsonpath "$.id"
-[Asserts]
-jsonpath "$.id" isInteger
-jsonpath "$.name" == "Mi Tanda"
-jsonpath "$.status" == "forming"
-jsonpath "$.contributionAmount" isInteger
-jsonpath "$.currentRound" isInteger
-
-
-# Test 3 — GET /api/tandas/:id includes a participants array
-GET http://localhost:3000/api/tandas/{{tanda_id}}
-Authorization: Bearer {{user_token}}
-
-HTTP 200
-[Asserts]
-jsonpath "$.id" isInteger
-jsonpath "$.participants" isCollection
-HURL_EOF
-
-          cat > /tmp/hurl/composable.hurl << 'HURL_EOF'
-# Setup — create organizer (auto-joined as participant #1)
-POST http://localhost:3000/api/users
-Content-Type: application/json
-{
-    "email": "comp-organizer@vaquita.test",
-    "name": "Comp Organizer"
-}
-
-HTTP 201
-[Captures]
-organizer_token: jsonpath "$.token"
-
-
-# Setup — create tanda
-POST http://localhost:3000/api/tandas
-Content-Type: application/json
-Authorization: Bearer {{organizer_token}}
-{
-    "name": "Comp Tanda",
-    "contributionAmount": 200,
-    "totalRounds": 3
-}
-
-HTTP 201
-[Captures]
-comp_tanda_id: jsonpath "$.id"
-
-
-# Test 1 — start with only 1 participant returns 4xx (business rule: need >=3)
-POST http://localhost:3000/api/tandas/{{comp_tanda_id}}/start
-Authorization: Bearer {{organizer_token}}
-
-HTTP *
-[Asserts]
-status >= 400
-status < 500
-
-
-# Setup — create second member
-POST http://localhost:3000/api/users
-Content-Type: application/json
-{
-    "email": "member-two@vaquita.test",
-    "name": "Member Two"
-}
-
-HTTP 201
-[Captures]
-member2_token: jsonpath "$.token"
-
-
-# Test 2a — join tanda returns 2xx
-POST http://localhost:3000/api/tandas/{{comp_tanda_id}}/join
-Authorization: Bearer {{member2_token}}
-
-HTTP *
-[Asserts]
-status >= 200
-status < 300
-
-
-# Test 2b — GET participants returns 2 items (organizer + member2)
-GET http://localhost:3000/api/tandas/{{comp_tanda_id}}/participants
-Authorization: Bearer {{organizer_token}}
-
-HTTP 200
-[Asserts]
-jsonpath "$" count == 2
-
-
-# Test 3 — POST /api/users with missing email returns 4xx (Zod validation)
-POST http://localhost:3000/api/users
-Content-Type: application/json
-{
-    "name": "No Email User"
-}
-
-HTTP *
-[Asserts]
-status >= 400
-status < 500
-HURL_EOF
-
-      - name: Run Hurl live tests
-        run: |
-          mkdir -p /tmp/exec-report /tmp/comp-report
-          hurl --report-json /tmp/exec-report --test /tmp/hurl/executable.hurl 2>&1 || true
-          hurl --report-json /tmp/comp-report --test /tmp/hurl/composable.hurl 2>&1 || true
-
-      - name: Compute and write score.json
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-        run: |
-          node << 'NODE_EOF'
-          const fs = require('fs');
-
-          function scoreHurl(reportDir) {
-            const reportPath = reportDir + '/report.json';
-            try {
-              const raw = JSON.parse(fs.readFileSync(reportPath, 'utf-8'));
-              const files = Array.isArray(raw) ? raw : [raw];
-              const entries = files.flatMap(f => f.entries ?? []);
-              const failed = entries.filter(e => (e.asserts ?? []).some(a => !a.success)).length;
-              return Math.max(0, 3 - failed);
-            } catch { return 0; }
-          }
-
-          // defended (0-2): TypeScript errors
-          let tscErrors = 0;
-          try {
-            const log = fs.readFileSync('type-check.log', 'utf-8');
-            tscErrors = (log.match(/error TS\d+/g) ?? []).length;
-          } catch {}
-          const tscScore = tscErrors === 0 ? 2 : tscErrors <= 3 ? 1 : 0;
-
-          // self_describing (0-2): ESLint errors
-          let eslintErrors = 0;
-          try {
-            const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf-8'));
-            eslintErrors = Array.isArray(report)
-              ? report.reduce((sum, f) => sum + (f.errorCount ?? 0), 0)
-              : 0;
-          } catch {}
-          const eslintScore = eslintErrors === 0 ? 2 : eslintErrors <= 5 ? 1 : 0;
-
-          // verifiable (0-2): test line coverage %
-          let coverage = 0;
-          try {
-            const cov = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf-8'));
-            coverage = cov.total?.lines?.pct ?? 0;
-          } catch {}
-          const verifiableScore = coverage >= 80 ? 2 : coverage >= 50 ? 1 : 0;
-
-          // bounded (0-2): raw SQLite calls outside repository/db layer
-          let boundedViolations = 0;
-          try {
-            const { execSync } = require('child_process');
-            const out = execSync(
-              'grep -rl "db\\.prepare\\|db\\.run\\|db\\.exec\\|new Database" src --include="*.ts"'
-              + ' | grep -v -iE "(repositor|database\\.ts|db\\.ts|storage\\.ts)" | wc -l',
-              { encoding: 'utf-8' }
-            ).trim();
-            boundedViolations = parseInt(out, 10) || 0;
-          } catch {}
-          const boundedScore = boundedViolations === 0 ? 2 : boundedViolations <= 2 ? 1 : 0;
-
-          const autoTotal = tscScore + eslintScore + verifiableScore + boundedScore;
-          const execScore = scoreHurl('/tmp/exec-report');
-          const compScore = scoreHurl('/tmp/comp-report');
-
-          const score = {
-            rubric: 'GS DX Experiment v1',
-            commit: process.env.GITHUB_SHA ?? 'unknown',
-            scored_at: new Date().toISOString(),
-            gs_scores: {
-              defended:        { score: tscScore,        max: 2, details: `${tscErrors} TypeScript error(s)` },
-              self_describing: { score: eslintScore,     max: 2, details: `${eslintErrors} ESLint error(s)` },
-              verifiable:      { score: verifiableScore, max: 2, details: `${coverage.toFixed(1)}% line coverage` },
-              bounded:         { score: boundedScore,    max: 2, details: `${boundedViolations} out-of-layer DB call(s)` },
-              total_automated: { score: autoTotal, max: 8 },
-              executable:      { score: execScore, max: 3, details: `Live Hurl: ${execScore}/3` },
-              composable:      { score: compScore, max: 3, details: `Live Hurl: ${compScore}/3` },
-              total_with_live_tests: {
-                score: autoTotal + execScore + compScore,
-                max: 14,
-                details: `Automated ${autoTotal}/8 + Live ${execScore + compScore}/6`,
-              },
-            },
-            raw_metrics: {
-              tscErrors,
-              eslintErrors,
-              testCoverage: Math.round(coverage),
-              boundedViolations,
-            },
-          };
-
-          fs.writeFileSync('score.json', JSON.stringify(score, null, 2));
-          const t = score.gs_scores.total_with_live_tests;
-          console.log(`\n  Score: ${t.score}/${t.max}  (${autoTotal}/8 auto + ${execScore + compScore}/6 live)`);
-          NODE_EOF
-
-      - name: Commit score.json back to branch
-        run: |
-          git config user.email "scoring-bot@pragma-works.io"
-          git config user.name "Argos Scoring Bot"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add score.json
-          if ! git diff --staged --quiet; then
-            git commit -m "score: automated GS 14-pt [skip ci]"
-            git push
-          else
-            echo "score.json unchanged -- skipping commit"
-          fi
+          git diff --cached --quiet || git commit -m "chore(score): update score.json [skip ci]"
+          git pull --rebase && git push
 
-      - name: Upload artifacts
+      - name: Upload score artifact
         uses: actions/upload-artifact@v4
         with:
-          name: metrics-${{ github.sha }}
-          path: |
-            type-check.log
-            eslint-report.json
-            score.json
-            coverage/
+          name: score
+          path: score.json
+
+      - name: Print summary
+        run: cat score.json
+
+
