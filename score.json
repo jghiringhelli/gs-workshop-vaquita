@@ -1,16 +1,16 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "8a8807d",
+    "commit": "8840390",
     "branch": "participant/P000",
-    "timestamp": "2026-04-03T02:14:44.008Z",
+    "timestamp": "2026-04-11T05:13:21.470Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
     "self_describing": {
       "score": 1,
       "max": 1,
-      "details": "README present (2296 chars)"
+      "details": "README updated by participant (2296 chars)"
     },
     "bounded": {
       "score": 0,
@@ -36,9 +36,9 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 15/16 (94%) | ADR/decision doc: missing",
-      "conventionalPct": 0.9375,
-      "hasAdr": false
+      "details": "Conventional commits: 19/20 (95%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.95,
+      "hasDecisionLog": false
     },
     "composable": {
       "score": null,
@@ -60,12 +60,19 @@
       "details": "Available after hidden live tests (Composable + Executable)"
     }
   },
+  "intake": {
+    "status": "missing",
+    "consented": false,
+    "q1": null,
+    "q2": null,
+    "q3": null
+  },
   "external_metrics": {
     "tscErrors": 1,
     "eslintErrors": 1,
     "eslintWarnings": 2,
     "auditCritical": 0,
-    "auditHigh": 0,
+    "auditHigh": 1,
     "duplicatePct": 8.07,
     "branchCount": 41,
     "testCoverage": 48.54,
