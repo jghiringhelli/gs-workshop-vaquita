@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "04b213f",
-    "branch": "participant/P004-vaquita-b",
-    "timestamp": "2026-04-10T17:54:28.059Z",
+    "commit": "aef16af",
+    "branch": "participant/P004",
+    "timestamp": "2026-04-11T05:13:27.472Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -36,7 +36,7 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 33/33 (100%) | Decision log: present",
+      "details": "Conventional commits: 37/37 (100%) | Decision log: present",
       "conventionalPct": 1,
       "hasDecisionLog": true
     },
