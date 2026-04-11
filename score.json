@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "36dde98",
+    "commit": "fed177b",
     "branch": "participant/P037",
-    "timestamp": "2026-04-10T18:10:35.500Z",
+    "timestamp": "2026-04-11T05:14:05.368Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,13 +13,10 @@
       "details": "README not modified from template — update it to describe what you built"
     },
     "bounded": {
-      "score": 0,
+      "score": 2,
       "max": 2,
-      "details": "10 direct DB calls found — repository layer missing",
-      "violations": [
-        "src/modules/system/system.repository.ts",
-        "src/modules/tandas/tandas.repository.ts"
-      ]
+      "details": "No direct DB calls in route/service files",
+      "violations": []
     },
     "verifiable": {
       "score": 2,
@@ -37,8 +34,8 @@
     "auditable": {
       "score": 1,
       "max": 2,
-      "details": "Conventional commits: 28/31 (90%) | Decision log: missing — add a doc recording one design choice you made and why",
-      "conventionalPct": 0.9032258064516129,
+      "details": "Conventional commits: 32/35 (91%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.9142857142857143,
       "hasDecisionLog": false
     },
     "composable": {
@@ -52,7 +49,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 4,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
