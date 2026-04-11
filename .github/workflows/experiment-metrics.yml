@@ -19,10 +19,10 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci
+      - run: npm install
 
       - name: Run GS scoring
-        run: npm run score
+        run: npx --yes tsx scripts/score.ts
 
       - name: Commit score.json
         run: |
