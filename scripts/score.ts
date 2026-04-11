@@ -83,7 +83,11 @@ function checkBounded(): { score: number; max: number; details: string; violatio
   const routeFiles = collectFiles(SRC, f => {
     if (!f.endsWith('.ts') || f.endsWith('.test.ts') || f.endsWith('.spec.ts')) return false;
     const rel = relative(SRC, f).replace(/\\/g, '/');
-    return !DB_DIRS.some(d => rel.startsWith(d + '/') || rel === d + '.ts');
+    // Exclude known top-level DB/repository directories
+    if (DB_DIRS.some(d => rel.startsWith(d + '/') || rel === d + '.ts')) return false;
+    // Exclude files named *Repository*.ts anywhere in the module tree (e.g. SqliteTandaRepository.ts)
+    if (/repositor/i.test(basename(f))) return false;
+    return true;
   });
   // Direct DB call patterns: db.prepare, db.exec, db.run, db.get, db.all, new Database
   const [count, violations] = countMatches(routeFiles, /\bdb\.(prepare|exec|run|get|all|transaction)\b|new Database\(/g);
