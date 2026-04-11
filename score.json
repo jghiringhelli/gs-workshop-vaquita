@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "364cb8d",
+    "commit": "8f8274c",
     "branch": "participant/P016",
-    "timestamp": "2026-04-10T17:58:25.147Z",
+    "timestamp": "2026-04-11T05:13:40.443Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -34,8 +34,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 43/46 (93%) | Decision log: present",
-      "conventionalPct": 0.9347826086956522,
+      "details": "Conventional commits: 47/50 (94%) | Decision log: present",
+      "conventionalPct": 0.94,
       "hasDecisionLog": true
     },
     "composable": {
