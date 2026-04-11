@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "80ded02",
+    "commit": "adb3985",
     "branch": "participant/P010",
-    "timestamp": "2026-04-10T20:14:57.902Z",
+    "timestamp": "2026-04-11T05:13:31.238Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -36,7 +36,7 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 41/41 (100%) | Decision log: present",
+      "details": "Conventional commits: 45/45 (100%) | Decision log: present",
       "conventionalPct": 1,
       "hasDecisionLog": true
     },
