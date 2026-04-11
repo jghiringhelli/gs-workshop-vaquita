@@ -1,9 +1,9 @@
 {
   "meta": {
     "repo": "tanda-api",
-    "commit": "f1bb15f",
+    "commit": "66fd162",
     "branch": "participant/P024",
-    "timestamp": "2026-04-10T20:14:31.798Z",
+    "timestamp": "2026-04-11T05:14:03.200Z",
     "scorer_version": "1.0.0"
   },
   "gs_scores": {
@@ -13,14 +13,10 @@
       "details": "README not modified from template — update it to describe what you built"
     },
     "bounded": {
-      "score": 0,
+      "score": 1,
       "max": 2,
-      "details": "7 direct DB calls found — repository layer missing",
+      "details": "2 direct DB call(s) outside repository layer",
       "violations": [
-        "src/modules/tandas/contribution.repository.ts",
-        "src/modules/tandas/participant.repository.ts",
-        "src/modules/tandas/tanda.repository.ts",
-        "src/modules/users/user.repository.ts",
         "src/shared/database/index.ts"
       ]
     },
@@ -40,8 +36,8 @@
     "auditable": {
       "score": 2,
       "max": 2,
-      "details": "Conventional commits: 40/41 (98%) | Decision log: present",
-      "conventionalPct": 0.975609756097561,
+      "details": "Conventional commits: 44/45 (98%) | Decision log: present",
+      "conventionalPct": 0.9777777777777777,
       "hasDecisionLog": true
     },
     "composable": {
@@ -55,7 +51,7 @@
       "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
     },
     "total_automated": {
-      "score": 5,
+      "score": 6,
       "max": 8
     },
     "total_with_live_tests": {
