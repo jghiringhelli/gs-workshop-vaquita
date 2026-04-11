@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "repo": "tanda-api",
+    "commit": "3e5ed46",
+    "branch": "participant/P001",
+    "timestamp": "2026-04-11T06:18:06.223Z",
+    "scorer_version": "1.0.0"
+  },
+  "gs_scores": {
+    "self_describing": {
+      "score": 1,
+      "max": 1,
+      "details": "README updated by participant (2296 chars)"
+    },
+    "bounded": {
+      "score": 2,
+      "max": 2,
+      "details": "No direct DB calls in route/service files",
+      "violations": []
+    },
+    "verifiable": {
+      "score": 1,
+      "max": 2,
+      "details": "Tests: 3 passed, 0 failed | Coverage: 51.9%",
+      "testsPassed": 3,
+      "testsFailed": 0,
+      "coveragePct": 51.89
+    },
+    "defended": {
+      "score": 1,
+      "max": 1,
+      "details": "Structural guard present: CI workflow"
+    },
+    "auditable": {
+      "score": 1,
+      "max": 2,
+      "details": "Conventional commits: 9/11 (82%) | Decision log: missing — add a doc recording one design choice you made and why",
+      "conventionalPct": 0.8181818181818182,
+      "hasDecisionLog": false
+    },
+    "composable": {
+      "score": null,
+      "max": 3,
+      "details": "Pending — scored via hidden live test after submission (clean architecture, DI, no unexpected coupling)"
+    },
+    "executable": {
+      "score": null,
+      "max": 3,
+      "details": "Pending — scored via hidden live test after submission (server starts, API behavioral contracts pass)"
+    },
+    "total_automated": {
+      "score": 6,
+      "max": 8
+    },
+    "total_with_live_tests": {
+      "score": null,
+      "max": 14,
+      "details": "Available after hidden live tests (Composable + Executable)"
+    }
+  },
+  "intake": {
+    "status": "missing",
+    "consented": false,
+    "q1": null,
+    "q2": null,
+    "q3": null
+  },
+  "external_metrics": {
+    "tscErrors": 0,
+    "eslintErrors": 0,
+    "eslintWarnings": 0,
+    "auditCritical": 0,
+    "auditHigh": 0,
+    "duplicatePct": 0.88,
+    "branchCount": 57,
+    "testCoverage": 51.89,
+    "testCount": 3,
+    "depCount": 4
+  }
+}
