@@ -8,14 +8,14 @@
  *   Bounded          2pt  — Zero direct DB calls in route/handler files
  *   Verifiable       2pt  — Tests pass (1pt) + coverage ≥ 60% on src (1pt)
  *   Defended         1pt  — CI config present OR pre-commit hook present
- *   Auditable        2pt  — ≥50% conventional commits (1pt) + ADR/decision doc (1pt)
+ *   Auditable        2pt  — ≥50% conventional commits (1pt) + decision log (1pt)
  *   Composable       3pt  — Scored externally via hidden live test (clean arch / DI / no coupling)
  *   Executable       3pt  — Scored externally via hidden live test (server starts, contracts pass)
  */
 
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from 'fs';
-import { join, relative } from 'path';
+import { join, relative, basename } from 'path';
 
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
@@ -65,10 +65,15 @@ function checkSelfDescribing(): { score: number; max: number; details: string } 
   const readme = join(ROOT, 'README.md');
   if (!existsSync(readme)) return { score: 0, max: 1, details: 'README.md missing' };
   const content = readFileSync(readme, 'utf8');
-  // Must have substantive content (> 300 chars) and mention something the participant built
+
+  // Check if README was modified by the participant — diff vs condition branch
+  const diffOutput = run('git diff origin/condition-a -- README.md || git diff origin/condition-b -- README.md');
+  const wasModified = diffOutput.trim().length > 0;
+  if (!wasModified) return { score: 0, max: 1, details: 'README not modified from template — update it to describe what you built' };
+
   const hasContent = content.length > 300;
-  if (!hasContent) return { score: 0, max: 1, details: `README too short (${content.length} chars)` };
-  return { score: 1, max: 1, details: `README present (${content.length} chars)` };
+  if (!hasContent) return { score: 0, max: 1, details: `README modified but too short (${content.length} chars) — add more detail` };
+  return { score: 1, max: 1, details: `README updated by participant (${content.length} chars)` };
 }
 
 function checkBounded(): { score: number; max: number; details: string; violations: string[] } {
@@ -78,7 +83,11 @@ function checkBounded(): { score: number; max: number; details: string; violatio
   const routeFiles = collectFiles(SRC, f => {
     if (!f.endsWith('.ts') || f.endsWith('.test.ts') || f.endsWith('.spec.ts')) return false;
     const rel = relative(SRC, f).replace(/\\/g, '/');
-    return !DB_DIRS.some(d => rel.startsWith(d + '/') || rel === d + '.ts');
+    // Exclude known top-level DB/repository directories
+    if (DB_DIRS.some(d => rel.startsWith(d + '/') || rel === d + '.ts')) return false;
+    // Exclude files named *Repository*.ts anywhere in the module tree (e.g. SqliteTandaRepository.ts)
+    if (/repositor/i.test(basename(f))) return false;
+    return true;
   });
   // Direct DB call patterns: db.prepare, db.exec, db.run, db.get, db.all, new Database
   const [count, violations] = countMatches(routeFiles, /\bdb\.(prepare|exec|run|get|all|transaction)\b|new Database\(/g);
@@ -109,7 +118,8 @@ function checkVerifiable(): { score: number; max: number; details: string; tests
   if (existsSync(coverageSummaryPath)) {
     try {
       const summary = JSON.parse(readFileSync(coverageSummaryPath, 'utf8'));
-      coveragePct = summary.total?.lines?.pct ?? null;
+      const rawPct = summary.total?.lines?.pct ?? null;
+      coveragePct = rawPct !== null && !isNaN(Number(rawPct)) ? Number(rawPct) : null;
     } catch { /* ignore */ }
   }
 
@@ -136,7 +146,7 @@ function checkDefended(): { score: number; max: number; details: string } {
   return { score: 0, max: 1, details: 'No CI config or pre-commit hook found' };
 }
 
-function checkAuditable(): { score: number; max: number; details: string; conventionalPct: number; hasAdr: boolean } {
+function checkAuditable(): { score: number; max: number; details: string; conventionalPct: number; hasDecisionLog: boolean } {
   // Conventional commits
   const logOutput = run('git log --oneline');
   const lines = logOutput.split('\n').filter(Boolean);
@@ -145,18 +155,50 @@ function checkAuditable(): { score: number; max: number; details: string; conven
   const conventionalCount = lines.filter(l => conventionalPattern.test(l)).length;
   const conventionalPct = totalCommits > 0 ? (conventionalCount / totalCommits) : 0;
 
-  // ADR or decision doc
-  const hasAdr = existsSync(join(ROOT, 'docs', 'adr')) ||
-                 existsSync(join(ROOT, 'docs', 'decisions')) ||
-                 collectFiles(ROOT, f => /adr|decision/i.test(f) && f.endsWith('.md') && !f.includes('node_modules')).length > 0;
+  // Decision log: any doc recording a design choice and reasoning
+  const hasDecisionLog =
+    existsSync(join(ROOT, 'docs', 'adr')) ||
+    existsSync(join(ROOT, 'docs', 'decisions')) ||
+    collectFiles(ROOT, f =>
+      /\b(adr|decision|design-log|design-notes|rationale|choices)\b/i.test(basename(f)) &&
+      f.endsWith('.md') && !f.includes('node_modules')
+    ).length > 0;
 
-  const score = (conventionalPct >= 0.5 ? 1 : 0) + (hasAdr ? 1 : 0);
+  const score = (conventionalPct >= 0.5 ? 1 : 0) + (hasDecisionLog ? 1 : 0);
   const details = [
     `Conventional commits: ${conventionalCount}/${totalCommits} (${(conventionalPct * 100).toFixed(0)}%)`,
-    `ADR/decision doc: ${hasAdr ? 'present' : 'missing'}`,
+    `Decision log: ${hasDecisionLog ? 'present' : 'missing — add a doc recording one design choice you made and why'}`,
   ].join(' | ');
 
-  return { score, max: 2, details, conventionalPct, hasAdr };
+  return { score, max: 2, details, conventionalPct, hasDecisionLog };
+}
+// --- Participant Intake ----------------------------------------------------------
+
+function checkIntake(): {
+  status: 'complete' | 'consent_pending' | 'missing';
+  consented: boolean;
+  q1: string | null;
+  q2: string | null;
+  q3: string | null;
+} {
+  const intakePath = join(ROOT, 'INTAKE.md');
+  if (!existsSync(intakePath)) return { status: 'missing', consented: false, q1: null, q2: null, q3: null };
+
+  const content = readFileSync(intakePath, 'utf8');
+  const consented = /- \[x\] I consent/i.test(content);
+
+  const sections = content.split(/\*\*Q\d/);
+  const extractAnswer = (section: string): string | null => {
+    const m = section.match(/Answer:\s*([^\n]+)/);
+    const val = m?.[1]?.replace(/<!--.*?-->/g, '').trim() ?? null;
+    return val && val.length > 0 ? val : null;
+  };
+
+  const q1 = sections[1] ? extractAnswer(sections[1]) : null;
+  const q2 = sections[2] ? extractAnswer(sections[2]) : null;
+  const q3 = sections[3] ? extractAnswer(sections[3]) : null;
+  const status = consented && q1 && q2 && q3 ? 'complete' : 'consent_pending';
+  return { status, consented, q1, q2, q3 };
 }
 
 // ─── External Metrics ────────────────────────────────────────────────────────
@@ -224,6 +266,7 @@ function main(): void {
   const verifiable = checkVerifiable();
   const defended = checkDefended();
   const auditable = checkAuditable();
+  const intake = checkIntake();
 
   const automatedScore = selfDescribing.score + bounded.score + verifiable.score + defended.score + auditable.score;
   const automatedMax = selfDescribing.max + bounded.max + verifiable.max + defended.max + auditable.max;
@@ -255,6 +298,7 @@ function main(): void {
       total_automated: { score: automatedScore, max: automatedMax },
       total_with_live_tests: { score: null, max: automatedMax + 6, details: 'Available after hidden live tests (Composable + Executable)' },
     },
+    intake: intake,
     external_metrics: metrics,
   };
 
@@ -272,6 +316,17 @@ function main(): void {
   console.log(`─────────────────────────────────────────`);
   console.log(`Automated total  ${automatedScore}/${automatedMax}  (14 total with live tests)`);
   console.log('\nscore.json written.\n');
+  // Intake gate — loud CI warning if consent not recorded
+  if (intake.status !== 'complete') {
+    const msg = intake.status === 'missing'
+      ? 'INTAKE.md not found — complete and commit it before your final push.'
+      : 'INTAKE incomplete — tick the consent checkbox and answer all three questions.';
+    console.error('\n' + '═'.repeat(50));
+    console.error('⚠️  CONSENT GATE: ' + msg);
+    console.error('Your score is recorded but this session may be EXCLUDED from analysis.');
+    console.error('═'.repeat(50) + '\n');
+  }
 }
 
 main();
+
